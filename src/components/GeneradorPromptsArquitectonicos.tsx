@@ -5,7 +5,6 @@ import {
   caos,
   descripcionesCamara,
   alturasTecho,
-  ejemplosPrompt,
   estilosMidjourney,
   estilizados,
   materialesPorCategoria,
@@ -108,17 +107,18 @@ const parametrosEspaciales = (valores: ValoresFormulario) => {
   return `${tamano} ${proporcion} retail space, ${techo} ceiling, ${niveles}, ${ventanas} natural light`;
 };
 
-const construirPrompt = (tabId: TabId, valores: ValoresFormulario) => {
-  const materiales = valorLista(valores.materiales, "premium Colineal retail materials");
+const construirPrompt = (tabId: TabId, valores: ValoresFormulario, fuenteImagen = "") => {
+  const materiales = valorLista(valores.materiales, "premium ArquiRender retail materials");
   const color = limpiarColor(valores.color) || "warm neutral";
   const notas = valorTexto(valores.notas).trim();
 
   if (tabId === "sketch") {
     const descripcion = valorTexto(valores.descripcion).trim();
-    return `${valorTexto(valores.transformacion)}.${descripcion ? ` Use this architectural image analysis as reference: ${descripcion}.` : ""} Preserve ${valorLista(valores.preservar, "the exact architectural intent")}. Apply ${materiales} with ${color} tones. Use ${valorTexto(valores.iluminacion)} creating realistic shadows, reflections and depth. ${valorTexto(valores.camara)}. Photorealistic architectural render, high detail, realistic textures, soft global illumination.${notas ? ` ${notas}` : ""} ${parametrosMidjourney(valores, false)}`.replace(/\s+/g, " ").trim();
+    const origen = fuenteImagen ? `Starting from ${fuenteImagen}. ` : "";
+    return `${origen}${valorTexto(valores.transformacion)}.${descripcion ? ` Use this architectural image analysis as reference: ${descripcion}.` : ""} Preserve ${valorLista(valores.preservar, "the exact architectural intent")}. Apply ${materiales} with ${color} tones. Use ${valorTexto(valores.iluminacion)} creating realistic shadows, reflections and depth. ${valorTexto(valores.camara)}. Photorealistic architectural render, high detail, realistic textures, soft global illumination.${notas ? ` ${notas}` : ""} ${parametrosMidjourney(valores, false)}`.replace(/\s+/g, " ").trim();
   }
 
-  const tipoEspacio = tabId === "nueva" ? `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}` : tabId === "remodelacion" ? `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}, ${valorTexto(valores.descripcion, "existing Colineal retail space")}, ${valorTexto(valores.cambio)}` : `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}, ${valorTexto(valores.visualizacion)}, ${valorTexto(valores.descripcion, "architectural plan translated into retail space")}`;
+  const tipoEspacio = tabId === "nueva" ? `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}` : tabId === "remodelacion" ? `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}, ${valorTexto(valores.descripcion, "existing ArquiRender retail space")}, ${valorTexto(valores.cambio)}` : `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}, ${valorTexto(valores.visualizacion)}, ${valorTexto(valores.descripcion, "architectural plan translated into retail space")}`;
   const foco = tabId === "nueva" ? valorTexto(valores.zona) : tabId === "remodelacion" ? `preserve: ${valorLista(valores.conservar, "selected existing elements")}` : valorTexto(valores.software);
   const hora = tabId === "nueva" ? valorTexto(valores.hora) : "time of day coherent with the selected lighting";
   const camaraReferencia = tabId === "nueva" ? `${valorTexto(valores.camaraReferencia)} ` : "";
@@ -127,11 +127,23 @@ const construirPrompt = (tabId: TabId, valores: ValoresFormulario) => {
   const arquitecto = valorTexto(valores.arquitecto);
   const referencia = arquitecto && arquitecto !== "Sin referencia" ? `, inspired by the work of ${nombreArquitecto(arquitecto)}` : "";
 
-  return `Photorealistic architectural visualization, ${tipoEspacio}, Colineal Ecuador retail brand, ${valorTexto(valores.estilo)} style, ${materiales} with ${color} color palette, ${foco}, ${valorTexto(valores.iluminacion)}, ${hora}, ${camaraReferencia}${valorTexto(valores.camara)}, ${biofilia}, ${calidad}, realistic shadows and reflections, soft global illumination${referencia}${notas ? `, ${notas}` : ""} ${parametrosMidjourney(valores)}`.replace(/\s+/g, " ").trim();
+  return `Photorealistic architectural visualization, ${tipoEspacio}, ArquiRender Ecuador retail brand,${valorTexto(valores.estilo)} style, ${materiales} with ${color} color palette, ${foco}, ${valorTexto(valores.iluminacion)}, ${hora}, ${camaraReferencia}${valorTexto(valores.camara)}, ${biofilia}, ${calidad}, realistic shadows and reflections, soft global illumination${referencia}${notas ? `, ${notas}` : ""} ${parametrosMidjourney(valores)}`.replace(/\s+/g, " ").trim();
 };
 
+const tiposImagen = [
+  { id: "sketch", etiqueta: "Sketch a mano", descriptor: "a hand-drawn architectural sketch" },
+  { id: "planta", etiqueta: "Planta arquitectónica", descriptor: "an architectural floor plan" },
+  { id: "sketchup", etiqueta: "Captura SketchUp", descriptor: "a SketchUp screenshot" },
+  { id: "render", etiqueta: "Render existente", descriptor: "an existing render" },
+] as const;
+
+type TipoImagenId = typeof tiposImagen[number]["id"];
+
+const tabsVisibles = tabsPrompt.filter((item) => item.id === "sketch");
+
 const GeneradorPromptsArquitectonicos = () => {
-  const [tabActiva, setTabActiva] = useState<TabId>("nueva");
+  const [tabActiva, setTabActiva] = useState<TabId>("sketch");
+  const [tipoImagen, setTipoImagen] = useState<TipoImagenId>("sketch");
   const [valoresPorTab, setValoresPorTab] = useState<Record<TabId, ValoresFormulario>>({
     nueva: estadoInicial("nueva"),
     remodelacion: estadoInicial("remodelacion"),
@@ -221,7 +233,8 @@ const GeneradorPromptsArquitectonicos = () => {
       return;
     }
     setError("");
-    setPrompt(construirPrompt(tabActiva, valores));
+    const fuente = tiposImagen.find((item) => item.id === tipoImagen)?.descriptor || "";
+    setPrompt(construirPrompt(tabActiva, valores, fuente));
   };
 
   const copiarTexto = async (texto: string, tipo: "prompt" | string) => {
@@ -399,9 +412,8 @@ const GeneradorPromptsArquitectonicos = () => {
         <div className="mx-auto w-[min(1180px,calc(100%-32px))] py-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="mb-3 text-xs font-extrabold uppercase tracking-[0.2em] text-brand-gold">Colineal · Arquitectura</div>
+              <div className="mb-3 text-xs font-extrabold uppercase tracking-[0.2em] text-brand-gold">ArquiRender · Arquitectura</div>
               <h1 className="m-0 text-[clamp(28px,4vw,48px)] font-black leading-tight tracking-normal text-foreground">Generador de Prompts Arquitectónicos</h1>
-              <p className="mt-3 text-base text-muted-foreground">Colineal · Herramienta interna del equipo de Arquitectura</p>
             </div>
             <div className="flex shrink-0 items-center gap-2 rounded-md border border-brand-gold bg-transparent px-3 py-2 text-xs font-extrabold text-brand-gold" aria-label="Estado del análisis con IA">
               <Settings className="h-4 w-4" aria-hidden="true" />
@@ -409,7 +421,7 @@ const GeneradorPromptsArquitectonicos = () => {
             </div>
           </div>
           <nav className="mt-6 flex gap-6 overflow-x-auto border-b border-brand-border" aria-label="Tipos de prompt">
-            {tabsPrompt.map((item) => (
+            {tabsVisibles.map((item) => (
               <button key={item.id} type="button" className={`whitespace-nowrap border-b-[3px] px-0 py-4 text-sm transition ${item.id === tabActiva ? "border-brand-gold font-bold text-foreground" : "border-transparent font-semibold text-muted-foreground hover:text-foreground"}`} onClick={() => { setTabActiva(item.id); setPrompt(""); setError(""); }}>
                 {item.etiqueta}
               </button>
@@ -424,11 +436,27 @@ const GeneradorPromptsArquitectonicos = () => {
             <h2 className="m-0 text-2xl font-black tracking-normal text-foreground">{tab.titulo}</h2>
           </div>
 
+          <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+            <label className="mb-3 flex text-sm font-semibold text-brand-gold">
+              <span>Tipo de imagen de origen</span>
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {tiposImagen.map((tipo) => {
+                const seleccionado = tipoImagen === tipo.id;
+                return (
+                  <button key={tipo.id} type="button" className={`rounded-md border px-3 py-3 text-sm font-bold transition ${seleccionado ? "border-[#B8860B] bg-[#B8860B] text-black" : "border-[hsl(var(--pill-border))] bg-card text-[hsl(var(--secondary-foreground))] hover:border-brand-gold"}`} onClick={() => setTipoImagen(tipo.id)}>
+                    {tipo.etiqueta}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {tab.campos.map((campo, indice) => (
             <div key={`${campo.id}-${indice}`} className="border-t border-brand-border px-5 py-5 sm:px-6">
               {campo.tipo !== "archivo" && campo.tipo !== "archivoAnalisis" && (
                 <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
-                  <span>{campo.etiqueta}</span>
+                  <span>{campo.etiqueta === "Parámetros técnicos Midjourney" ? "Parámetros técnicos" : campo.etiqueta}</span>
                   {campo.opcional && <span className="font-bold text-muted-foreground">Opcional</span>}
                 </label>
               )}
@@ -438,13 +466,13 @@ const GeneradorPromptsArquitectonicos = () => {
 
           <div className="px-5 pb-6 sm:px-6">
             {error && <div className="mb-3 text-sm font-bold text-destructive">{error}</div>}
-            <button className="w-full rounded-md border-0 bg-foreground px-4 py-4 text-base font-bold text-brand-gold transition hover:bg-brand-wine hover:text-brand-gold-foreground" onClick={generarPrompt}>Generar Prompt</button>
+            <button className="w-full rounded-md border-0 bg-foreground px-4 py-4 text-base font-bold text-brand-gold transition hover:bg-brand-wine hover:text-brand-gold-foreground" onClick={generarPrompt}>Generar Render</button>
           </div>
         </section>
 
         <aside className="sticky top-5 rounded-md border border-brand-border bg-card p-5">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="m-0 text-xl font-black tracking-normal text-foreground">Prompt generado</h2>
+            <h2 className="m-0 text-xl font-black tracking-normal text-foreground">Tu render</h2>
             <span className="text-xs font-bold text-muted-foreground">{prompt.length} caracteres</span>
           </div>
           <div className="min-h-72 overflow-wrap-anywhere whitespace-pre-wrap rounded-md border border-brand-gold bg-input p-4 text-sm leading-relaxed text-foreground">{prompt || "Completa las opciones y genera un prompt optimizado para herramientas de imagen IA."}</div>
@@ -452,20 +480,10 @@ const GeneradorPromptsArquitectonicos = () => {
             <button className="rounded-md border border-brand-gold bg-transparent px-3 py-3 text-sm font-extrabold text-brand-gold transition hover:bg-brand-gold hover:text-brand-gold-foreground" onClick={() => copiarTexto(prompt, "prompt")}>{copiado ? "¡Copiado! ✓" : "Copiar prompt"}</button>
             <button className="rounded-md border border-brand-border bg-input px-3 py-3 text-sm font-extrabold text-foreground transition hover:border-brand-gold hover:text-brand-gold" onClick={nuevoPrompt}>Nuevo prompt</button>
           </div>
-          <p className="mt-3 text-center text-xs text-muted-foreground">Pega este prompt en ChatGPT, Gemini o Midjourney</p>
-
-          <div className="mt-5 grid gap-3">
-            {ejemplosPrompt.map((ejemplo) => (
-              <div key={ejemplo.titulo} className="rounded-md border border-brand-border bg-input p-4">
-                <strong className="mb-2 block text-sm font-black">{ejemplo.titulo}</strong>
-                <span className="text-xs leading-relaxed text-muted-foreground">{ejemplo.texto}</span>
-              </div>
-            ))}
-          </div>
         </aside>
       </main>
 
-      <footer className="border-t border-brand-border py-7 text-center text-sm text-muted-foreground">Desarrollado por AYAlgoritmo.ai · ayalgoritmo.ai</footer>
+      <footer className="border-t border-brand-border py-7 text-center text-sm text-muted-foreground">Desarrollado por ArquiRender.lat · arquirender.lat</footer>
     </div>
   );
 };
