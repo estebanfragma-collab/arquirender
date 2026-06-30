@@ -54,9 +54,14 @@ export const estilos = [
 export const materialesPorCategoria = [
   { categoria: "Maderas", opciones: ["Oak clara", "Nogal oscuro", "Pino natural", "Cedro", "Bambú", "Madera blanca lacada"] },
   { categoria: "Metales", opciones: ["Metal negro mate", "Metal blanco", "Aluminio cepillado", "Acero inoxidable", "Cobre", "Bronce", "Dorado", "Hierro forjado"] },
-  { categoria: "Piedras y cemento", opciones: ["Mármol blanco", "Mármol negro", "Travertino", "Piedra natural", "Granito", "Terrazo", "Concreto pulido", "Ladrillo visto"] },
+  { categoria: "Piedras y cemento", opciones: ["Mármol blanco", "Mármol negro", "Travertino", "Piedra natural", "Granito", "Terrazo", "Concreto pulido", "Ladrillo visto", "Estuco", "Enlucido", "Pintura"] },
   { categoria: "Textiles y acabados", opciones: ["Terciopelo", "Lino", "Tejido boucle", "Cuero natural", "Cuero eco", "Tela gris perla", "Lacado mate", "Vidrio templado"] },
+  { categoria: "Vidrios y fachada", opciones: ["Muro cortina de vidrio", "Vidrio templado"] },
 ];
+
+export const estilosDiseno = ["Moderno", "Minimalista", "Industrial", "Contemporáneo", "Brutalista", "Bauhaus", "Art Deco", "Orgánico", "Paramétrico", "Neoclásico", "Mediterráneo", "Rústico"];
+
+export const arquitectosReferencia = ["Zaha Hadid", "Frank Gehry", "Le Corbusier", "Mies van der Rohe", "Tadao Ando", "Frank Lloyd Wright", "Santiago Calatrava", "Kengo Kuma"];
 
 export const materiales = materialesPorCategoria.flatMap((grupo) => grupo.opciones);
 

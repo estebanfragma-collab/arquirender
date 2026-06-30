@@ -1,11 +1,12 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   caos,
   coloresDominantes,
-  descripcionesCamara,
   alturasTecho,
+  arquitectosReferencia,
+  estilosDiseno,
   estilosMidjourney,
   estilizados,
   materialesPorCategoria,
@@ -47,8 +48,6 @@ const nombresCamaraSimple: Record<string, string> = {
   "Detalle de material — 85mm macro": "Detalle de material",
   "Gran angular interior — 16mm f/2.8": "Gran angular",
 };
-
-const camposOcultos = ["transformacion", "preservar", "parametros"];
 
 const mensajeErrorAnalisis = "No se pudo analizar la imagen con IA. Intenta nuevamente o pega una descripción manual.";
 
@@ -126,10 +125,14 @@ const construirPrompt = (tabId: TabId, valores: ValoresFormulario, fuenteImagen 
   const color = limpiarColor(valores.color) || "warm neutral";
   const notas = valorTexto(valores.notas).trim();
 
+  const estiloDiseno = valorTexto(valores.estiloDiseno).trim();
+  const arquitectoRef = valorTexto(valores.arquitectoRef).trim();
+  const estiloContexto = [estiloDiseno ? `${estiloDiseno} architectural style` : "", arquitectoRef ? `inspired by the work of ${arquitectoRef}` : ""].filter(Boolean).join(", ");
+
   if (tabId === "sketch") {
     const descripcion = valorTexto(valores.descripcion).trim();
     const origen = fuenteImagen ? `Starting from ${fuenteImagen}. ` : "";
-    return `${origen}${valorTexto(valores.transformacion)}.${descripcion ? ` Use this architectural image analysis as reference: ${descripcion}.` : ""} Preserve ${valorLista(valores.preservar, "the exact architectural intent")}. Apply ${materiales} with ${color} tones. Use ${valorTexto(valores.iluminacion)} creating realistic shadows, reflections and depth. ${valorTexto(valores.camara)}. Photorealistic architectural render, high detail, realistic textures, soft global illumination.${notas ? ` ${notas}` : ""} ${parametrosMidjourney(valores, false)}`.replace(/\s+/g, " ").trim();
+    return `${origen}${valorTexto(valores.transformacion)}.${descripcion ? ` Use this architectural image analysis as reference: ${descripcion}.` : ""} Preserve ${valorLista(valores.preservar, "the exact architectural intent")}. Apply ${materiales} with ${color} tones.${estiloContexto ? ` ${estiloContexto}.` : ""} Use ${valorTexto(valores.iluminacion)} creating realistic shadows, reflections and depth. ${valorTexto(valores.camara)}. Photorealistic architectural render, high detail, realistic textures, soft global illumination.${notas ? ` ${notas}` : ""} ${parametrosMidjourney(valores, false)}`.replace(/\s+/g, " ").trim();
   }
 
   const tipoEspacio = tabId === "nueva" ? `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}` : tabId === "remodelacion" ? `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}, ${valorTexto(valores.descripcion, "existing ArquiRender retail space")}, ${valorTexto(valores.cambio)}` : `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}, ${valorTexto(valores.visualizacion)}, ${valorTexto(valores.descripcion, "architectural plan translated into retail space")}`;
@@ -172,9 +175,12 @@ const GeneradorPromptsArquitectonicos = () => {
   const [analizando, setAnalizando] = useState<Record<TabId, boolean>>({ nueva: false, remodelacion: false, planta: false, sketch: false });
   const [descripcionIA, setDescripcionIA] = useState<Record<TabId, boolean>>({ nueva: false, remodelacion: false, planta: false, sketch: false });
   const [errorAnalisis, setErrorAnalisis] = useState("");
+  const [acordeones, setAcordeones] = useState<Record<string, boolean>>({ materiales: false, estilo: false, iluminacion: false, vista: false });
 
   const tab = useMemo(() => tabsPrompt.find((item) => item.id === tabActiva)!, [tabActiva]);
   const valores = valoresPorTab[tabActiva];
+  const campoPorId = (id: string) => tab.campos.find((campo) => campo.id === id);
+  const toggleAcordeon = (clave: string) => setAcordeones((actual) => ({ ...actual, [clave]: !actual[clave] }));
 
   const actualizarCampo = (campo: CampoPrompt, valor: string) => {
     setValoresPorTab((actual) => {
@@ -279,7 +285,7 @@ const GeneradorPromptsArquitectonicos = () => {
       {opciones.map((opcion) => {
         const seleccionado = Array.isArray(valores[campo.id]) && valores[campo.id].includes(opcion);
         return (
-            <button key={opcion} type="button" className={`rounded-md border px-3 py-2 text-xs font-bold transition ${seleccionado ? "border-[#B8860B] bg-[#B8860B] text-black" : "border-[hsl(var(--pill-border))] bg-card text-[hsl(var(--secondary-foreground))] hover:border-brand-gold"}`} onClick={() => actualizarCampo(campo, opcion)}>
+            <button key={opcion} type="button" className={`rounded-full border px-4 py-2 text-xs font-bold transition ${seleccionado ? "border-[#B8860B] bg-[#B8860B] text-black" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-brand-gold"}`} onClick={() => actualizarCampo(campo, opcion)}>
             {opcion}
           </button>
         );
@@ -288,16 +294,38 @@ const GeneradorPromptsArquitectonicos = () => {
   );
 
   const renderSelectorCamara = (campo: CampoPrompt) => (
-    <div className="grid gap-2">
+    <div className="flex flex-wrap gap-2">
       {campo.opciones?.map((opcion) => {
         const seleccionado = valorTexto(valores[campo.id]) === opcion;
         return (
-          <button key={opcion} type="button" className={`rounded-md border px-3 py-2 text-left transition ${seleccionado ? "border-[#B8860B] bg-[#B8860B] text-black" : "border-[hsl(var(--input-border))] bg-input hover:border-brand-gold"}`} onClick={() => actualizarCampo(campo, opcion)}>
-            <span className={`block text-sm font-bold ${seleccionado ? "text-black" : "text-foreground"}`}>{nombresCamaraSimple[opcion] || opcion}</span>
-            <span className={`mt-1 block text-[11px] font-semibold leading-snug ${seleccionado ? "text-black/70" : "text-[hsl(var(--brand-muted-gold))]"}`}>{descripcionesCamara[opcion]}</span>
+          <button key={opcion} type="button" className={`rounded-full border px-4 py-2 text-xs font-bold transition ${seleccionado ? "border-[#B8860B] bg-[#B8860B] text-black" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-brand-gold"}`} onClick={() => actualizarCampo(campo, opcion)}>
+            {nombresCamaraSimple[opcion] || opcion}
           </button>
         );
       })}
+    </div>
+  );
+
+  const renderChipsSimple = (campoId: string, opciones: string[]) => (
+    <div className="flex flex-wrap gap-2">
+      {opciones.map((opcion) => {
+        const seleccionado = valorTexto(valores[campoId]) === opcion;
+        return (
+          <button key={opcion} type="button" className={`rounded-full border px-4 py-2 text-xs font-bold transition ${seleccionado ? "border-[#B8860B] bg-[#B8860B] text-black" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-brand-gold"}`} onClick={() => actualizarCampo({ id: campoId, etiqueta: campoId, tipo: "select" }, seleccionado ? "" : opcion)}>
+            {opcion}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const renderAcordeon = (clave: string, titulo: string, contenido: ReactNode) => (
+    <div className="border-t border-brand-border">
+      <button type="button" onClick={() => toggleAcordeon(clave)} className="flex w-full items-center justify-between gap-3 px-5 py-5 text-left text-sm font-semibold text-brand-gold sm:px-6">
+        <span>{titulo}</span>
+        <span className="text-base" aria-hidden="true">{acordeones[clave] ? "▾" : "▸"}</span>
+      </button>
+      {acordeones[clave] && <div className="px-5 pb-5 sm:px-6">{contenido}</div>}
     </div>
   );
 
@@ -450,11 +478,11 @@ const GeneradorPromptsArquitectonicos = () => {
             <label className="mb-3 flex text-sm font-semibold text-brand-gold">
               <span>Tipo de imagen de origen</span>
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-wrap gap-2">
               {tiposImagen.map((tipo) => {
                 const seleccionado = tipoImagen === tipo.id;
                 return (
-                  <button key={tipo.id} type="button" className={`rounded-md border px-3 py-3 text-sm font-bold transition ${seleccionado ? "border-[#B8860B] bg-[#B8860B] text-black" : "border-[hsl(var(--pill-border))] bg-card text-[hsl(var(--secondary-foreground))] hover:border-brand-gold"}`} onClick={() => setTipoImagen(tipo.id)}>
+                  <button key={tipo.id} type="button" className={`rounded-full border px-4 py-2 text-xs font-bold transition ${seleccionado ? "border-[#B8860B] bg-[#B8860B] text-black" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-brand-gold"}`} onClick={() => setTipoImagen(tipo.id)}>
                     {tipo.etiqueta}
                   </button>
                 );
@@ -462,17 +490,57 @@ const GeneradorPromptsArquitectonicos = () => {
             </div>
           </div>
 
-          {tab.campos.filter((campo) => !camposOcultos.includes(campo.id)).map((campo, indice) => (
-            <div key={`${campo.id}-${indice}`} className="border-t border-brand-border px-5 py-5 sm:px-6">
-              {campo.tipo !== "archivo" && campo.tipo !== "archivoAnalisis" && (
-                <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
-                  <span>{campo.etiqueta}</span>
-                  {campo.opcional && <span className="font-bold text-muted-foreground">Opcional</span>}
-                </label>
-              )}
-              {renderCampo(campo)}
+          {campoPorId("imagen") && (
+            <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+              {renderCampo(campoPorId("imagen")!)}
+            </div>
+          )}
+
+          {campoPorId("descripcion") && (
+            <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+              <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
+                <span>{campoPorId("descripcion")!.etiqueta}</span>
+              </label>
+              {renderCampo(campoPorId("descripcion")!)}
+            </div>
+          )}
+
+          {renderAcordeon("materiales", "Materiales a aplicar", (
+            <div className="space-y-5">
+              {campoPorId("materiales") && renderCampo(campoPorId("materiales")!)}
+              <div>
+                <div className="mb-2 text-xs font-extrabold uppercase tracking-normal text-muted-foreground">Color dominante</div>
+                {renderChipsSimple("color", coloresDominantes)}
+              </div>
             </div>
           ))}
+
+          {renderAcordeon("estilo", "Estilo", (
+            <div className="space-y-5">
+              <div>
+                <div className="mb-2 text-xs font-extrabold uppercase tracking-normal text-muted-foreground">Estilo de diseño</div>
+                {renderChipsSimple("estiloDiseno", estilosDiseno)}
+              </div>
+              <div>
+                <div className="mb-2 text-xs font-extrabold uppercase tracking-normal text-muted-foreground">Arquitecto de referencia</div>
+                {renderChipsSimple("arquitectoRef", arquitectosReferencia)}
+              </div>
+            </div>
+          ))}
+
+          {renderAcordeon("iluminacion", "Iluminación destino", campoPorId("iluminacion") ? renderCampo(campoPorId("iluminacion")!) : null)}
+
+          {renderAcordeon("vista", "Vista y cámara", campoPorId("camara") ? renderCampo(campoPorId("camara")!) : null)}
+
+          {campoPorId("notas") && (
+            <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+              <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
+                <span>{campoPorId("notas")!.etiqueta}</span>
+                <span className="font-bold text-muted-foreground">Opcional</span>
+              </label>
+              {renderCampo(campoPorId("notas")!)}
+            </div>
+          )}
 
           <div className="border-t border-brand-border px-5 py-5 sm:px-6">
             <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
