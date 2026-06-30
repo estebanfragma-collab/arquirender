@@ -37,18 +37,6 @@ const valorTexto = (valor: string | string[] | undefined, fallback = "") => (Arr
 const valorLista = (valor: string | string[] | undefined, fallback = "") => (Array.isArray(valor) && valor.length ? valor.join(", ") : fallback);
 const limpiarColor = (valor: string | string[] | undefined) => valorTexto(valor).replace(/^[^A-Za-zÁÉÍÓÚáéíóúÑñ]+\s*/, "");
 const nombreArquitecto = (valor: string) => valor.split(" (")[0];
-const esCampoCamara = (campo: CampoPrompt) => campo.id === "camara" && campo.tipo === "select";
-
-const nombresCamaraSimple: Record<string, string> = {
-  "Interior frontal — 24mm f/1.4": "Vista frontal",
-  "Perspectiva 3/4 interior — 35mm f/2.8": "Vista en diagonal",
-  "Vista de pasillo — 50mm f/2.8": "Vista de pasillo",
-  "Fachada exterior — 35mm f/2.8": "Vista de calle / fachada",
-  "Vista aérea / axonométrica": "Vista aérea",
-  "Detalle de material — 85mm macro": "Detalle de material",
-  "Gran angular interior — 16mm f/2.8": "Gran angular",
-};
-
 const mensajeErrorAnalisis = "No se pudo analizar la imagen con IA. Intenta nuevamente o pega una descripción manual.";
 
 const extraerMensajeErrorAnalisis = async (error: unknown) => {
@@ -132,7 +120,8 @@ const construirPrompt = (tabId: TabId, valores: ValoresFormulario, fuenteImagen 
   if (tabId === "sketch") {
     const descripcion = valorTexto(valores.descripcion).trim();
     const origen = fuenteImagen ? `Starting from ${fuenteImagen}. ` : "";
-    return `${origen}${valorTexto(valores.transformacion)}.${descripcion ? ` Use this architectural image analysis as reference: ${descripcion}.` : ""} Preserve ${valorLista(valores.preservar, "the exact architectural intent")}. Apply ${materiales} with ${color} tones.${estiloContexto ? ` ${estiloContexto}.` : ""} Use ${valorTexto(valores.iluminacion)} creating realistic shadows, reflections and depth. ${valorTexto(valores.camara)}. Photorealistic architectural render, high detail, realistic textures, soft global illumination.${notas ? ` ${notas}` : ""} ${parametrosMidjourney(valores, false)}`.replace(/\s+/g, " ").trim();
+    const evitar = valorTexto(valores.negativePrompt).trim();
+    return `${origen}${valorTexto(valores.transformacion)}.${descripcion ? ` Use this architectural image analysis as reference: ${descripcion}.` : ""} Preserve ${valorLista(valores.preservar, "the exact architectural intent")}. Preserve the exact camera angle, framing and composition of the reference image. Do not change the viewpoint. Apply ${materiales}.${estiloContexto ? ` ${estiloContexto}.` : ""} Use ${valorTexto(valores.iluminacion)} creating realistic shadows, reflections and depth. Photorealistic architectural render, high detail, realistic textures, soft global illumination.${notas ? ` ${notas}` : ""}${evitar ? ` Avoid: ${evitar}.` : ""}`.replace(/\s+/g, " ").trim();
   }
 
   const tipoEspacio = tabId === "nueva" ? `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}` : tabId === "remodelacion" ? `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}, ${valorTexto(valores.descripcion, "existing ArquiRender retail space")}, ${valorTexto(valores.cambio)}` : `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}, ${valorTexto(valores.visualizacion)}, ${valorTexto(valores.descripcion, "architectural plan translated into retail space")}`;
@@ -175,7 +164,7 @@ const GeneradorPromptsArquitectonicos = () => {
   const [analizando, setAnalizando] = useState<Record<TabId, boolean>>({ nueva: false, remodelacion: false, planta: false, sketch: false });
   const [descripcionIA, setDescripcionIA] = useState<Record<TabId, boolean>>({ nueva: false, remodelacion: false, planta: false, sketch: false });
   const [errorAnalisis, setErrorAnalisis] = useState("");
-  const [acordeones, setAcordeones] = useState<Record<string, boolean>>({ materiales: false, estilo: false, iluminacion: false, vista: false });
+  const [acordeones, setAcordeones] = useState<Record<string, boolean>>({ materiales: false, estilo: false, iluminacion: false });
 
   const tab = useMemo(() => tabsPrompt.find((item) => item.id === tabActiva)!, [tabActiva]);
   const valores = valoresPorTab[tabActiva];
@@ -285,21 +274,8 @@ const GeneradorPromptsArquitectonicos = () => {
       {opciones.map((opcion) => {
         const seleccionado = Array.isArray(valores[campo.id]) && valores[campo.id].includes(opcion);
         return (
-            <button key={opcion} type="button" className={`rounded-full border px-4 py-2 text-xs font-bold transition ${seleccionado ? "border-[#B8860B] bg-[#B8860B] text-black" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-brand-gold"}`} onClick={() => actualizarCampo(campo, opcion)}>
+            <button key={opcion} type="button" className={`rounded-full border px-4 py-2 text-xs font-bold transition ${seleccionado ? "border-[#EA580C] bg-[#EA580C] text-black" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-brand-gold"}`} onClick={() => actualizarCampo(campo, opcion)}>
             {opcion}
-          </button>
-        );
-      })}
-    </div>
-  );
-
-  const renderSelectorCamara = (campo: CampoPrompt) => (
-    <div className="flex flex-wrap gap-2">
-      {campo.opciones?.map((opcion) => {
-        const seleccionado = valorTexto(valores[campo.id]) === opcion;
-        return (
-          <button key={opcion} type="button" className={`rounded-full border px-4 py-2 text-xs font-bold transition ${seleccionado ? "border-[#B8860B] bg-[#B8860B] text-black" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-brand-gold"}`} onClick={() => actualizarCampo(campo, opcion)}>
-            {nombresCamaraSimple[opcion] || opcion}
           </button>
         );
       })}
@@ -311,7 +287,7 @@ const GeneradorPromptsArquitectonicos = () => {
       {opciones.map((opcion) => {
         const seleccionado = valorTexto(valores[campoId]) === opcion;
         return (
-          <button key={opcion} type="button" className={`rounded-full border px-4 py-2 text-xs font-bold transition ${seleccionado ? "border-[#B8860B] bg-[#B8860B] text-black" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-brand-gold"}`} onClick={() => actualizarCampo({ id: campoId, etiqueta: campoId, tipo: "select" }, seleccionado ? "" : opcion)}>
+          <button key={opcion} type="button" className={`rounded-full border px-4 py-2 text-xs font-bold transition ${seleccionado ? "border-[#EA580C] bg-[#EA580C] text-black" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-brand-gold"}`} onClick={() => actualizarCampo({ id: campoId, etiqueta: campoId, tipo: "select" }, seleccionado ? "" : opcion)}>
             {opcion}
           </button>
         );
@@ -412,8 +388,6 @@ const GeneradorPromptsArquitectonicos = () => {
     }
 
     if (campo.tipo === "select") {
-      if (esCampoCamara(campo)) return renderSelectorCamara(campo);
-
       return (
         <select className={clasesControl} value={valorTexto(valores[campo.id])} onChange={(e) => actualizarCampo(campo, e.target.value)}>
           {campo.opciones?.map((opcion) => <option key={opcion}>{opcion}</option>)}
@@ -482,7 +456,7 @@ const GeneradorPromptsArquitectonicos = () => {
               {tiposImagen.map((tipo) => {
                 const seleccionado = tipoImagen === tipo.id;
                 return (
-                  <button key={tipo.id} type="button" className={`rounded-full border px-4 py-2 text-xs font-bold transition ${seleccionado ? "border-[#B8860B] bg-[#B8860B] text-black" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-brand-gold"}`} onClick={() => setTipoImagen(tipo.id)}>
+                  <button key={tipo.id} type="button" className={`rounded-full border px-4 py-2 text-xs font-bold transition ${seleccionado ? "border-[#EA580C] bg-[#EA580C] text-black" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-brand-gold"}`} onClick={() => setTipoImagen(tipo.id)}>
                     {tipo.etiqueta}
                   </button>
                 );
@@ -508,10 +482,6 @@ const GeneradorPromptsArquitectonicos = () => {
           {renderAcordeon("materiales", "Materiales a aplicar", (
             <div className="space-y-5">
               {campoPorId("materiales") && renderCampo(campoPorId("materiales")!)}
-              <div>
-                <div className="mb-2 text-xs font-extrabold uppercase tracking-normal text-muted-foreground">Color dominante</div>
-                {renderChipsSimple("color", coloresDominantes)}
-              </div>
             </div>
           ))}
 
@@ -529,8 +499,6 @@ const GeneradorPromptsArquitectonicos = () => {
           ))}
 
           {renderAcordeon("iluminacion", "Iluminación destino", campoPorId("iluminacion") ? renderCampo(campoPorId("iluminacion")!) : null)}
-
-          {renderAcordeon("vista", "Vista y cámara", campoPorId("camara") ? renderCampo(campoPorId("camara")!) : null)}
 
           {campoPorId("notas") && (
             <div className="border-t border-brand-border px-5 py-5 sm:px-6">
@@ -552,7 +520,7 @@ const GeneradorPromptsArquitectonicos = () => {
 
           <div className="px-5 pb-6 sm:px-6">
             {error && <div className="mb-3 text-sm font-bold text-destructive">{error}</div>}
-            <button className="w-full rounded-md border-0 bg-foreground px-4 py-4 text-base font-bold text-brand-gold transition hover:bg-[#B8860B] hover:text-black" onClick={generarPrompt}>Generar Render</button>
+            <button className="w-full rounded-md border-0 bg-[#EA580C] px-4 py-4 text-base font-bold text-white transition hover:bg-[#c2470a]" onClick={generarPrompt}>Generar Render</button>
           </div>
         </section>
 
