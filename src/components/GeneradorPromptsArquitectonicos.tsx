@@ -3,6 +3,7 @@ import { Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   caos,
+  coloresDominantes,
   descripcionesCamara,
   alturasTecho,
   estilosMidjourney,
@@ -36,6 +37,18 @@ const valorLista = (valor: string | string[] | undefined, fallback = "") => (Arr
 const limpiarColor = (valor: string | string[] | undefined) => valorTexto(valor).replace(/^[^A-Za-zÁÉÍÓÚáéíóúÑñ]+\s*/, "");
 const nombreArquitecto = (valor: string) => valor.split(" (")[0];
 const esCampoCamara = (campo: CampoPrompt) => campo.id === "camara" && campo.tipo === "select";
+
+const nombresCamaraSimple: Record<string, string> = {
+  "Interior frontal — 24mm f/1.4": "Vista frontal",
+  "Perspectiva 3/4 interior — 35mm f/2.8": "Vista en diagonal",
+  "Vista de pasillo — 50mm f/2.8": "Vista de pasillo",
+  "Fachada exterior — 35mm f/2.8": "Vista de calle / fachada",
+  "Vista aérea / axonométrica": "Vista aérea",
+  "Detalle de material — 85mm macro": "Detalle de material",
+  "Gran angular interior — 16mm f/2.8": "Gran angular",
+};
+
+const camposOcultos = ["transformacion", "preservar", "parametros"];
 
 const mensajeErrorAnalisis = "No se pudo analizar la imagen con IA. Intenta nuevamente o pega una descripción manual.";
 
@@ -108,7 +121,8 @@ const parametrosEspaciales = (valores: ValoresFormulario) => {
 };
 
 const construirPrompt = (tabId: TabId, valores: ValoresFormulario, fuenteImagen = "") => {
-  const materiales = valorLista(valores.materiales, "premium ArquiRender retail materials");
+  const materialOtro = valorTexto(valores.materialOtro).trim();
+  const materiales = [valorLista(valores.materiales, ""), materialOtro].filter(Boolean).join(", ") || "premium ArquiRender retail materials";
   const color = limpiarColor(valores.color) || "warm neutral";
   const notas = valorTexto(valores.notas).trim();
 
@@ -265,7 +279,7 @@ const GeneradorPromptsArquitectonicos = () => {
       {opciones.map((opcion) => {
         const seleccionado = Array.isArray(valores[campo.id]) && valores[campo.id].includes(opcion);
         return (
-            <button key={opcion} type="button" className={`rounded-md border px-3 py-2 text-xs font-bold transition ${seleccionado ? "border-brand-wine bg-brand-wine text-brand-gold-foreground" : "border-[hsl(var(--pill-border))] bg-card text-[hsl(var(--secondary-foreground))] hover:border-brand-gold"}`} onClick={() => actualizarCampo(campo, opcion)}>
+            <button key={opcion} type="button" className={`rounded-md border px-3 py-2 text-xs font-bold transition ${seleccionado ? "border-[#B8860B] bg-[#B8860B] text-black" : "border-[hsl(var(--pill-border))] bg-card text-[hsl(var(--secondary-foreground))] hover:border-brand-gold"}`} onClick={() => actualizarCampo(campo, opcion)}>
             {opcion}
           </button>
         );
@@ -278,9 +292,9 @@ const GeneradorPromptsArquitectonicos = () => {
       {campo.opciones?.map((opcion) => {
         const seleccionado = valorTexto(valores[campo.id]) === opcion;
         return (
-          <button key={opcion} type="button" className={`rounded-md border px-3 py-2 text-left transition ${seleccionado ? "border-brand-wine bg-brand-wine text-brand-gold-foreground" : "border-[hsl(var(--input-border))] bg-input hover:border-brand-gold"}`} onClick={() => actualizarCampo(campo, opcion)}>
-            <span className={`block text-sm font-bold ${seleccionado ? "text-brand-gold-foreground" : "text-foreground"}`}>{opcion}</span>
-            <span className="mt-1 block text-[11px] font-semibold leading-snug text-[hsl(var(--brand-muted-gold))]">{descripcionesCamara[opcion]}</span>
+          <button key={opcion} type="button" className={`rounded-md border px-3 py-2 text-left transition ${seleccionado ? "border-[#B8860B] bg-[#B8860B] text-black" : "border-[hsl(var(--input-border))] bg-input hover:border-brand-gold"}`} onClick={() => actualizarCampo(campo, opcion)}>
+            <span className={`block text-sm font-bold ${seleccionado ? "text-black" : "text-foreground"}`}>{nombresCamaraSimple[opcion] || opcion}</span>
+            <span className={`mt-1 block text-[11px] font-semibold leading-snug ${seleccionado ? "text-black/70" : "text-[hsl(var(--brand-muted-gold))]"}`}>{descripcionesCamara[opcion]}</span>
           </button>
         );
       })}
@@ -353,7 +367,7 @@ const GeneradorPromptsArquitectonicos = () => {
             <div className="space-y-3">
               <img src={vistaPrevia.url} alt={`Vista previa local de ${vistaPrevia.nombre}`} className="h-auto max-h-none w-full rounded-[8px] border border-brand-gold object-contain" />
               <div className="border-l-4 border-brand-gold bg-brand-gold-surface p-4 text-sm font-bold leading-relaxed text-foreground">
-                Tu imagen está lista. Ahora copia el prompt de análisis de abajo y pégalo junto con esta imagen en ChatGPT o Gemini.
+                Tu imagen está lista. La describiremos automáticamente para generar tu render.
               </div>
               {analizando[tabActiva] && (
                 <div className="flex items-center gap-3 rounded-md border border-brand-gold/50 bg-brand-gold-surface p-3 text-sm font-bold text-foreground">
@@ -363,15 +377,6 @@ const GeneradorPromptsArquitectonicos = () => {
               )}
               {descripcionIA[tabActiva] && <p className="text-xs font-bold text-brand-gold">Descripción generada por IA — puedes editarla</p>}
               {errorAnalisis && <p className="text-xs font-bold text-destructive">{errorAnalisis}</p>}
-            </div>
-          )}
-          {campo.tipo === "archivoAnalisis" && campo.promptAnalisis && (
-            <div className="rounded-md bg-brand-gold-surface p-4">
-              <p className="border-l-4 border-brand-gold pl-3 font-mono text-xs leading-relaxed text-foreground">{campo.promptAnalisis}</p>
-              <button type="button" className="mt-3 rounded-md border border-brand-gold bg-transparent px-4 py-3 text-sm font-extrabold text-brand-gold transition hover:bg-brand-gold hover:text-background" onClick={() => copiarTexto(campo.promptAnalisis!, campo.id)}>
-                {copiadoAnalisis === campo.id ? "¡Copiado! ✓" : "Copiar prompt de análisis"}
-              </button>
-              {campo.instruccion && <p className="mt-3 text-xs text-muted-foreground">{campo.instruccion}</p>}
             </div>
           )}
         </div>
@@ -392,16 +397,21 @@ const GeneradorPromptsArquitectonicos = () => {
       return <textarea className={`${clasesControl} min-h-32 resize-y leading-relaxed`} placeholder={campo.placeholder || "Añade detalles específicos del proyecto..."} value={valorTexto(valores[campo.id])} onChange={(e) => actualizarCampo(campo, e.target.value)} />;
     }
 
-    if (campo.tipo === "color") return renderPills(campo);
+    if (campo.tipo === "color") return renderPills(campo, coloresDominantes);
 
     return (
       <div className="space-y-4">
-        {campo.id === "materiales" ? materialesPorCategoria.map((grupo) => (
-          <div key={grupo.categoria}>
-            <div className="mb-2 text-xs font-extrabold uppercase tracking-normal text-muted-foreground">{grupo.categoria}</div>
-            {renderPills(campo, grupo.opciones)}
-          </div>
-        )) : renderPills(campo)}
+        {campo.id === "materiales" ? (
+          <>
+            {materialesPorCategoria.map((grupo) => (
+              <div key={grupo.categoria}>
+                <div className="mb-2 text-xs font-extrabold uppercase tracking-normal text-muted-foreground">{grupo.categoria}</div>
+                {renderPills(campo, grupo.opciones)}
+              </div>
+            ))}
+            <input className={clasesControl} placeholder="Otro material (especifica)..." value={valorTexto(valores.materialOtro)} onChange={(e) => actualizarCampo({ id: "materialOtro", etiqueta: "Otro material", tipo: "textarea" }, e.target.value)} />
+          </>
+        ) : renderPills(campo)}
       </div>
     );
   };
@@ -452,11 +462,11 @@ const GeneradorPromptsArquitectonicos = () => {
             </div>
           </div>
 
-          {tab.campos.map((campo, indice) => (
+          {tab.campos.filter((campo) => !camposOcultos.includes(campo.id)).map((campo, indice) => (
             <div key={`${campo.id}-${indice}`} className="border-t border-brand-border px-5 py-5 sm:px-6">
               {campo.tipo !== "archivo" && campo.tipo !== "archivoAnalisis" && (
                 <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
-                  <span>{campo.etiqueta === "Parámetros técnicos Midjourney" ? "Parámetros técnicos" : campo.etiqueta}</span>
+                  <span>{campo.etiqueta}</span>
                   {campo.opcional && <span className="font-bold text-muted-foreground">Opcional</span>}
                 </label>
               )}
@@ -464,9 +474,17 @@ const GeneradorPromptsArquitectonicos = () => {
             </div>
           ))}
 
+          <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+            <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
+              <span>Qué evitar en el render</span>
+              <span className="font-bold text-muted-foreground">Opcional</span>
+            </label>
+            <input className={clasesControl} placeholder="Ej: personas, texto, marcas de agua, desenfoque" value={valorTexto(valores.negativePrompt)} onChange={(e) => actualizarCampo({ id: "negativePrompt", etiqueta: "Qué evitar", tipo: "textarea" }, e.target.value)} />
+          </div>
+
           <div className="px-5 pb-6 sm:px-6">
             {error && <div className="mb-3 text-sm font-bold text-destructive">{error}</div>}
-            <button className="w-full rounded-md border-0 bg-foreground px-4 py-4 text-base font-bold text-brand-gold transition hover:bg-brand-wine hover:text-brand-gold-foreground" onClick={generarPrompt}>Generar Render</button>
+            <button className="w-full rounded-md border-0 bg-foreground px-4 py-4 text-base font-bold text-brand-gold transition hover:bg-[#B8860B] hover:text-black" onClick={generarPrompt}>Generar Render</button>
           </div>
         </section>
 
