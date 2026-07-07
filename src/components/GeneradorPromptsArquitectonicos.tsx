@@ -1,6 +1,9 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import AuthModal from "@/components/AuthModal";
+import PlanesModal from "@/components/PlanesModal";
+import HistorialRenders from "@/components/HistorialRenders";
 import {
   caos,
   coloresDominantes,
@@ -54,6 +57,19 @@ const extraerMensajeErrorAnalisis = async (error: unknown) => {
   }
 
   return mensajeErrorAnalisis;
+};
+
+const mensajeErrorRender = "No se pudo generar el render, intenta de nuevo";
+
+const extraerErrorRender = async (error: unknown) => {
+  if (error && typeof error === "object" && "context" in error) {
+    const respuesta = (error as { context?: Response }).context;
+    if (respuesta instanceof Response) {
+      const data = await respuesta.clone().json().catch(() => null) as { error?: string } | null;
+      if (data?.error) return data.error;
+    }
+  }
+  return mensajeErrorRender;
 };
 
 const estadoInicial = (tabId: TabId): ValoresFormulario => {
@@ -165,11 +181,58 @@ const GeneradorPromptsArquitectonicos = () => {
   const [descripcionIA, setDescripcionIA] = useState<Record<TabId, boolean>>({ nueva: false, remodelacion: false, planta: false, sketch: false });
   const [errorAnalisis, setErrorAnalisis] = useState("");
   const [acordeones, setAcordeones] = useState<Record<string, boolean>>({ materiales: false, estilo: false, iluminacion: false });
+  const [generando, setGenerando] = useState(false);
+  const [imagenRender, setImagenRender] = useState("");
+  const [errorRender, setErrorRender] = useState("");
+  const [comparacion, setComparacion] = useState<"antes" | "despues">("despues");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [creditos, setCreditos] = useState<number | null>(null);
+  const [mostrarAuth, setMostrarAuth] = useState(false);
+  const [generarTrasLogin, setGenerarTrasLogin] = useState(false);
+  const [sinCreditos, setSinCreditos] = useState(false);
+  const [mostrarPlanes, setMostrarPlanes] = useState(false);
+  const [vista, setVista] = useState<"generar" | "historial">("generar");
+  const [refrescarHistorial, setRefrescarHistorial] = useState(0);
 
   const tab = useMemo(() => tabsPrompt.find((item) => item.id === tabActiva)!, [tabActiva]);
   const valores = valoresPorTab[tabActiva];
   const campoPorId = (id: string) => tab.campos.find((campo) => campo.id === id);
   const toggleAcordeon = (clave: string) => setAcordeones((actual) => ({ ...actual, [clave]: !actual[clave] }));
+
+  const cargarCreditos = async (uid: string): Promise<number | null> => {
+    const { data, error } = await (supabase as any)
+      .from("profiles")
+      .select("creditos")
+      .eq("id", uid)
+      .single();
+    const valor = error || !data ? null : (data.creditos ?? null);
+    setCreditos(valor);
+    return valor;
+  };
+
+  const refrescarSesion = async (): Promise<{ userId: string | null; creditos: number | null }> => {
+    const { data } = await supabase.auth.getSession();
+    const usuario = data.session?.user ?? null;
+    setUserId(usuario?.id ?? null);
+    if (!usuario) {
+      setCreditos(null);
+      return { userId: null, creditos: null };
+    }
+    const c = await cargarCreditos(usuario.id);
+    return { userId: usuario.id, creditos: c };
+  };
+
+  useEffect(() => {
+    void refrescarSesion();
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      const usuario = session?.user ?? null;
+      setUserId(usuario?.id ?? null);
+      if (usuario) void cargarCreditos(usuario.id);
+      else setCreditos(null);
+    });
+    return () => sub.subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const actualizarCampo = (campo: CampoPrompt, valor: string) => {
     setValoresPorTab((actual) => {
@@ -235,15 +298,103 @@ const GeneradorPromptsArquitectonicos = () => {
     lector.readAsDataURL(archivo);
   };
 
-  const generarPrompt = () => {
+  const ejecutarGeneracion = async (uidActivo: string | null) => {
+    const fuente = tiposImagen.find((item) => item.id === tipoImagen)?.descriptor || "";
+    const promptFinal = construirPrompt(tabActiva, valores, fuente);
+    setPrompt(promptFinal);
+
+    setErrorRender("");
+    setImagenRender("");
+    setGenerando(true);
+
+    try {
+      const imageBase64 = vistasPrevias[tabActiva]?.imagen?.url;
+      const { data, error: functionError } = await supabase.functions.invoke("generate-render", {
+        body: { prompt: promptFinal, imageBase64, estilo: valorTexto(valores.estiloDiseno).trim() || undefined },
+      });
+
+      if (functionError) {
+        const status = (functionError as any)?.context?.status;
+        // 401: sesión inválida/ausente → abrir login y reintentar tras autenticarse
+        if (status === 401) {
+          setGenerarTrasLogin(true);
+          setMostrarAuth(true);
+          return;
+        }
+        // 402: sin créditos → mostrar planes y refrescar contador
+        if (status === 402) {
+          setSinCreditos(true);
+          setMostrarPlanes(true);
+          if (uidActivo) await cargarCreditos(uidActivo);
+          return;
+        }
+        setErrorRender(await extraerErrorRender(functionError));
+        return;
+      }
+
+      if (!data?.success || !data?.imageBase64) {
+        setErrorRender(data?.error || mensajeErrorRender);
+        return;
+      }
+
+      setComparacion("despues");
+      setImagenRender(`data:image/png;base64,${data.imageBase64}`);
+
+      // El crédito ya lo descontó la Edge Function; recargamos el valor real desde profiles
+      if (uidActivo) await cargarCreditos(uidActivo);
+
+      // Refrescar el historial para que aparezca el render recién generado
+      setRefrescarHistorial((n) => n + 1);
+    } catch (error) {
+      console.error("generarRender error", error);
+      setErrorRender(mensajeErrorRender);
+    } finally {
+      setGenerando(false);
+    }
+  };
+
+  const generarRender = async () => {
+    if (generando) return;
+
     const faltante = tab.campos.find((campo) => campo.requerido && !valorTexto(valores[campo.id]).trim());
     if (faltante) {
       setError(`Completa el campo: ${faltante.etiqueta}`);
       return;
     }
     setError("");
-    const fuente = tiposImagen.find((item) => item.id === tipoImagen)?.descriptor || "";
-    setPrompt(construirPrompt(tabActiva, valores, fuente));
+    setSinCreditos(false);
+
+    // Sin sesión → abrir modal y continuar tras autenticarse
+    if (!userId) {
+      setGenerarTrasLogin(true);
+      setMostrarAuth(true);
+      return;
+    }
+
+    // Con sesión pero sin créditos → mostrar planes
+    if (typeof creditos === "number" && creditos <= 0) {
+      setSinCreditos(true);
+      setMostrarPlanes(true);
+      return;
+    }
+
+    await ejecutarGeneracion(userId);
+  };
+
+  const handleAuthSuccess = async () => {
+    setMostrarAuth(false);
+    const { userId: uid, creditos: c } = await refrescarSesion();
+
+    if (!generarTrasLogin) return;
+    setGenerarTrasLogin(false);
+
+    if (!uid) return;
+    if (typeof c === "number" && c <= 0) {
+      setSinCreditos(true);
+      setMostrarPlanes(true);
+      return;
+    }
+    await ejecutarGeneracion(uid);
   };
 
   const copiarTexto = async (texto: string, tipo: "prompt" | string) => {
@@ -267,6 +418,10 @@ const GeneradorPromptsArquitectonicos = () => {
     setError("");
     setErrorAnalisis("");
     setCopiado(false);
+    setImagenRender("");
+    setErrorRender("");
+    setGenerando(false);
+    setComparacion("despues");
   };
 
   const renderPills = (campo: CampoPrompt, opciones = campo.opciones || []) => (
@@ -367,7 +522,29 @@ const GeneradorPromptsArquitectonicos = () => {
           </label>
           <p className="text-xs font-bold text-muted-foreground">La imagen no se envía a ningún servidor — solo se usa como referencia visual local.</p>
           {nombreArchivo && <p className="text-xs font-bold text-foreground">Archivo seleccionado: {nombreArchivo}</p>}
-          {vistaPrevia && (
+          {vistaPrevia && (imagenRender && campo.id === "imagen" ? (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                {(["antes", "despues"] as const).map((modo) => {
+                  const activo = comparacion === modo;
+                  return (
+                    <button key={modo} type="button" onClick={() => setComparacion(modo)} className={`rounded-full border px-4 py-2 text-xs font-bold transition ${activo ? "border-[#EA580C] bg-[#EA580C] text-white" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-brand-gold"}`}>
+                      {modo === "antes" ? "Antes" : "Después"}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="relative">
+                <img src={comparacion === "antes" ? vistaPrevia.url : imagenRender} alt={comparacion === "antes" ? "Imagen original" : "Render generado por IA"} className="h-auto max-h-none w-full rounded-[8px] border border-brand-gold object-contain" />
+                <span className="absolute left-3 top-3 rounded-full bg-black/70 px-2 py-1 text-[11px] font-bold text-white">{comparacion === "antes" ? "Original" : "Render"}</span>
+              </div>
+              <button type="button" onClick={() => setComparacion(comparacion === "antes" ? "despues" : "antes")} className="flex w-full items-center gap-3 rounded-md border border-brand-border p-2 text-left transition hover:border-brand-gold">
+                <img src={comparacion === "antes" ? imagenRender : vistaPrevia.url} alt="Miniatura" className="h-14 w-14 shrink-0 rounded border border-brand-border object-cover" />
+                <span className="text-xs font-bold text-muted-foreground">{comparacion === "antes" ? "Render" : "Original"}</span>
+              </button>
+              <a href={imagenRender} download="arquirender.png" className="block rounded-md bg-[#EA580C] px-4 py-3 text-center text-sm font-extrabold text-white transition hover:bg-[#c2470a]">Descargar</a>
+            </div>
+          ) : (
             <div className="space-y-3">
               <img src={vistaPrevia.url} alt={`Vista previa local de ${vistaPrevia.nombre}`} className="h-auto max-h-none w-full rounded-[8px] border border-brand-gold object-contain" />
               <div className="border-l-4 border-brand-gold bg-brand-gold-surface p-4 text-sm font-bold leading-relaxed text-foreground">
@@ -382,7 +559,7 @@ const GeneradorPromptsArquitectonicos = () => {
               {descripcionIA[tabActiva] && <p className="text-xs font-bold text-brand-gold">Descripción generada por IA — puedes editarla</p>}
               {errorAnalisis && <p className="text-xs font-bold text-destructive">{errorAnalisis}</p>}
             </div>
-          )}
+          ))}
         </div>
       );
     }
@@ -427,21 +604,41 @@ const GeneradorPromptsArquitectonicos = () => {
               <div className="mb-3 text-xs font-extrabold uppercase tracking-[0.2em] text-brand-gold">ArquiRender · Arquitectura</div>
               <h1 className="m-0 text-[clamp(28px,4vw,48px)] font-black leading-tight tracking-normal text-foreground">Generador de Prompts Arquitectónicos</h1>
             </div>
-            <div className="flex shrink-0 items-center gap-2 rounded-md border border-brand-gold bg-transparent px-3 py-2 text-xs font-extrabold text-brand-gold" aria-label="Estado del análisis con IA">
-              <Settings className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Análisis IA: Activo ✓</span>
+            <div className="flex shrink-0 items-center gap-2">
+              {userId && (
+                <div className="inline-flex gap-1 rounded-md border border-brand-border bg-input p-1">
+                  <button type="button" onClick={() => setVista("generar")} className={`rounded px-3 py-1.5 text-xs font-bold transition ${vista === "generar" ? "bg-[#EA580C] text-white" : "bg-transparent text-muted-foreground hover:text-foreground"}`}>Generar</button>
+                  <button type="button" onClick={() => setVista("historial")} className={`rounded px-3 py-1.5 text-xs font-bold transition ${vista === "historial" ? "bg-[#EA580C] text-white" : "bg-transparent text-muted-foreground hover:text-foreground"}`}>Mi historial</button>
+                </div>
+              )}
+              {userId && creditos !== null && (
+                <span className="rounded-md border border-[#EA580C] bg-[#EA580C]/10 px-3 py-2 text-xs font-extrabold text-[#EA580C]">
+                  {creditos} {creditos === 1 ? "render disponible" : "renders disponibles"}
+                </span>
+              )}
+              <div className="flex items-center gap-2 rounded-md border border-brand-gold bg-transparent px-3 py-2 text-xs font-extrabold text-brand-gold" aria-label="Estado del análisis con IA">
+                <Settings className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Análisis IA: Activo ✓</span>
+              </div>
             </div>
           </div>
-          <nav className="mt-6 flex gap-6 overflow-x-auto border-b border-brand-border" aria-label="Tipos de prompt">
-            {tabsVisibles.map((item) => (
-              <button key={item.id} type="button" className={`whitespace-nowrap border-b-[3px] px-0 py-4 text-sm transition ${item.id === tabActiva ? "border-brand-gold font-bold text-foreground" : "border-transparent font-semibold text-muted-foreground hover:text-foreground"}`} onClick={() => { setTabActiva(item.id); setPrompt(""); setError(""); }}>
-                {item.etiqueta}
-              </button>
-            ))}
-          </nav>
+          {vista === "generar" && (
+            <nav className="mt-6 flex gap-6 overflow-x-auto border-b border-brand-border" aria-label="Tipos de prompt">
+              {tabsVisibles.map((item) => (
+                <button key={item.id} type="button" className={`whitespace-nowrap border-b-[3px] px-0 py-4 text-sm transition ${item.id === tabActiva ? "border-brand-gold font-bold text-foreground" : "border-transparent font-semibold text-muted-foreground hover:text-foreground"}`} onClick={() => { setTabActiva(item.id); setPrompt(""); setError(""); }}>
+                  {item.etiqueta}
+                </button>
+              ))}
+            </nav>
+          )}
         </div>
       </header>
 
+      {vista === "historial" && userId ? (
+        <main className="mx-auto w-[min(1180px,calc(100%-32px))] py-7">
+          <HistorialRenders userId={userId} refreshSignal={refrescarHistorial} />
+        </main>
+      ) : (
       <main className="mx-auto grid w-[min(1180px,calc(100%-32px))] gap-8 py-7 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start">
         <section className="overflow-hidden rounded-md border border-brand-border bg-card">
           <div className="px-5 py-5 sm:px-6">
@@ -520,7 +717,13 @@ const GeneradorPromptsArquitectonicos = () => {
 
           <div className="px-5 pb-6 sm:px-6">
             {error && <div className="mb-3 text-sm font-bold text-destructive">{error}</div>}
-            <button className="w-full rounded-md border-0 bg-[#EA580C] px-4 py-4 text-base font-bold text-white transition hover:bg-[#c2470a]" onClick={generarPrompt}>Generar Render</button>
+            {sinCreditos && (
+              <div className="mb-3 rounded-md border border-[#EA580C] bg-[#EA580C]/10 p-4 text-sm">
+                <p className="font-bold text-foreground">Ya usaste tus 3 renders gratis.</p>
+                <button type="button" className="mt-3 rounded-full bg-[#EA580C] px-4 py-2 text-xs font-extrabold text-white transition hover:bg-[#c2470a]" onClick={() => setMostrarPlanes(true)}>Ver planes</button>
+              </div>
+            )}
+            <button disabled={generando} className="w-full rounded-md border-0 bg-[#EA580C] px-4 py-4 text-base font-bold text-white transition hover:bg-[#c2470a] disabled:cursor-not-allowed disabled:opacity-60" onClick={generarRender}>{generando ? "Generando render..." : "Generar Render"}</button>
           </div>
         </section>
 
@@ -529,15 +732,46 @@ const GeneradorPromptsArquitectonicos = () => {
             <h2 className="m-0 text-xl font-black tracking-normal text-foreground">Tu render</h2>
             <span className="text-xs font-bold text-muted-foreground">{prompt.length} caracteres</span>
           </div>
-          <div className="min-h-72 overflow-wrap-anywhere whitespace-pre-wrap rounded-md border border-brand-gold bg-input p-4 text-sm leading-relaxed text-foreground">{prompt || "Completa las opciones y genera un prompt optimizado para herramientas de imagen IA."}</div>
+          <div className="flex min-h-72 flex-col overflow-wrap-anywhere rounded-md border border-brand-gold bg-input p-4 text-sm leading-relaxed text-foreground">
+            {generando ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+                <span className="h-8 w-8 animate-spin rounded-full border-2 border-brand-gold border-t-transparent" aria-hidden="true" />
+                <span className="font-bold text-brand-gold">Generando render...</span>
+              </div>
+            ) : errorRender ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+                <p className="font-bold text-destructive">{errorRender}</p>
+                <button className="rounded-md border border-brand-gold bg-transparent px-4 py-2 text-sm font-extrabold text-brand-gold transition hover:bg-brand-gold hover:text-brand-gold-foreground" onClick={generarRender}>Reintentar</button>
+              </div>
+            ) : imagenRender && !vistasPrevias[tabActiva]?.imagen ? (
+              <div className="flex flex-1 flex-col gap-3">
+                <img src={imagenRender} alt="Render generado por IA" className="h-auto w-full rounded-md border border-brand-gold object-contain" />
+                <a href={imagenRender} download="arquirender.png" className="rounded-md bg-[#EA580C] px-4 py-3 text-center text-sm font-extrabold text-white transition hover:bg-[#c2470a]">Descargar</a>
+              </div>
+            ) : (
+              <div className="whitespace-pre-wrap">{prompt || "Completa las opciones y genera tu render con IA."}</div>
+            )}
+          </div>
           <div className="mt-3 grid grid-cols-2 gap-3">
             <button className="rounded-md border border-brand-gold bg-transparent px-3 py-3 text-sm font-extrabold text-brand-gold transition hover:bg-brand-gold hover:text-brand-gold-foreground" onClick={() => copiarTexto(prompt, "prompt")}>{copiado ? "¡Copiado! ✓" : "Copiar prompt"}</button>
             <button className="rounded-md border border-brand-border bg-input px-3 py-3 text-sm font-extrabold text-foreground transition hover:border-brand-gold hover:text-brand-gold" onClick={nuevoPrompt}>Nuevo prompt</button>
           </div>
         </aside>
       </main>
+      )}
 
       <footer className="border-t border-brand-border py-7 text-center text-sm text-muted-foreground">Desarrollado por ArquiRender.lat · arquirender.lat</footer>
+
+      {mostrarAuth && (
+        <AuthModal
+          onClose={() => { setMostrarAuth(false); setGenerarTrasLogin(false); }}
+          onSuccess={handleAuthSuccess}
+        />
+      )}
+
+      {mostrarPlanes && userId && (
+        <PlanesModal userId={userId} onClose={() => setMostrarPlanes(false)} />
+      )}
     </div>
   );
 };
