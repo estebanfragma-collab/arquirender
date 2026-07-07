@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Settings } from "lucide-react";
+import { Settings, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/AuthModal";
 import PlanesModal from "@/components/PlanesModal";
@@ -186,6 +186,8 @@ const GeneradorPromptsArquitectonicos = () => {
   const [errorRender, setErrorRender] = useState("");
   const [comparacion, setComparacion] = useState<"antes" | "despues">("despues");
   const [userId, setUserId] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [menuUsuario, setMenuUsuario] = useState(false);
   const [creditos, setCreditos] = useState<number | null>(null);
   const [mostrarAuth, setMostrarAuth] = useState(false);
   const [generarTrasLogin, setGenerarTrasLogin] = useState(false);
@@ -214,6 +216,7 @@ const GeneradorPromptsArquitectonicos = () => {
     const { data } = await supabase.auth.getSession();
     const usuario = data.session?.user ?? null;
     setUserId(usuario?.id ?? null);
+    setEmail(usuario?.email ?? null);
     if (!usuario) {
       setCreditos(null);
       return { userId: null, creditos: null };
@@ -222,11 +225,26 @@ const GeneradorPromptsArquitectonicos = () => {
     return { userId: usuario.id, creditos: c };
   };
 
+  const cerrarSesion = async () => {
+    setMenuUsuario(false);
+    await supabase.auth.signOut();
+    // Volver al estado no logueado; la herramienta sigue explorable, pero al
+    // generar se pedirá login de nuevo.
+    setUserId(null);
+    setEmail(null);
+    setCreditos(null);
+    setVista("generar");
+    setRefrescarHistorial(0);
+    setSinCreditos(false);
+    setMostrarPlanes(false);
+  };
+
   useEffect(() => {
     void refrescarSesion();
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       const usuario = session?.user ?? null;
       setUserId(usuario?.id ?? null);
+      setEmail(usuario?.email ?? null);
       if (usuario) void cargarCreditos(usuario.id);
       else setCreditos(null);
     });
@@ -615,6 +633,22 @@ const GeneradorPromptsArquitectonicos = () => {
                 <span className="rounded-md border border-[#EA580C] bg-[#EA580C]/10 px-3 py-2 text-xs font-extrabold text-[#EA580C]">
                   {creditos} {creditos === 1 ? "render disponible" : "renders disponibles"}
                 </span>
+              )}
+              {userId && (
+                <div className="relative">
+                  <button type="button" onClick={() => setMenuUsuario((v) => !v)} className="flex items-center gap-2 rounded-md border border-[#EA580C]/40 bg-transparent px-3 py-2 text-xs font-bold text-foreground transition hover:border-[#EA580C]" aria-haspopup="menu" aria-expanded={menuUsuario} aria-label="Menú de usuario">
+                    <User className="h-4 w-4 text-[#EA580C]" aria-hidden="true" />
+                    <span translate="no" className="notranslate hidden max-w-[160px] truncate sm:inline">{email ?? "Mi cuenta"}</span>
+                  </button>
+                  {menuUsuario && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setMenuUsuario(false)} aria-hidden="true" />
+                      <div className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-md border border-brand-border bg-card shadow-xl" role="menu">
+                        <button type="button" onClick={cerrarSesion} className="block w-full px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Cerrar sesión</button>
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
               <div className="flex items-center gap-2 rounded-md border border-brand-gold bg-transparent px-3 py-2 text-xs font-extrabold text-brand-gold" aria-label="Estado del análisis con IA">
                 <Settings className="h-4 w-4" aria-hidden="true" />
