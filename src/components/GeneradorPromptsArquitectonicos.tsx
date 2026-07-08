@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/AuthModal";
 import PlanesModal from "@/components/PlanesModal";
 import HistorialRenders from "@/components/HistorialRenders";
+import VariacionesModal from "@/components/VariacionesModal";
 import {
   caos,
   coloresDominantes,
@@ -195,6 +196,7 @@ const GeneradorPromptsArquitectonicos = () => {
   const [mostrarPlanes, setMostrarPlanes] = useState(false);
   const [vista, setVista] = useState<"generar" | "historial">("generar");
   const [refrescarHistorial, setRefrescarHistorial] = useState(0);
+  const [mostrarVariaciones, setMostrarVariaciones] = useState(false);
 
   const tab = useMemo(() => tabsPrompt.find((item) => item.id === tabActiva)!, [tabActiva]);
   const valores = valoresPorTab[tabActiva];
@@ -758,6 +760,9 @@ const GeneradorPromptsArquitectonicos = () => {
               </div>
             )}
             <button disabled={generando} className="w-full rounded-md border-0 bg-[#EA580C] px-4 py-4 text-base font-bold text-white transition hover:bg-[#c2470a] disabled:cursor-not-allowed disabled:opacity-60" onClick={generarRender}>{generando ? "Generando render..." : "Generar Render"}</button>
+            {userId && vistasPrevias[tabActiva]?.imagen?.url && (
+              <button type="button" disabled={generando} className="mt-3 w-full rounded-md border border-[#EA580C] bg-transparent px-4 py-4 text-base font-bold text-[#EA580C] transition hover:bg-[#EA580C] hover:text-white disabled:cursor-not-allowed disabled:opacity-60" onClick={() => setMostrarVariaciones(true)}>Generar variaciones de estilo</button>
+            )}
           </div>
         </section>
 
@@ -805,6 +810,27 @@ const GeneradorPromptsArquitectonicos = () => {
 
       {mostrarPlanes && userId && (
         <PlanesModal userId={userId} onClose={() => setMostrarPlanes(false)} />
+      )}
+
+      {mostrarVariaciones && userId && vistasPrevias[tabActiva]?.imagen?.url && (
+        <VariacionesModal
+          estilos={estilosDiseno}
+          creditosDisponibles={creditos ?? 0}
+          imageBase64={vistasPrevias[tabActiva]!.imagen!.url}
+          construirPrompt={(estilo) =>
+            construirPrompt(
+              tabActiva,
+              { ...valores, estiloDiseno: estilo },
+              tiposImagen.find((t) => t.id === tipoImagen)?.descriptor || "",
+            )
+          }
+          onVerPlanes={() => { setMostrarVariaciones(false); setMostrarPlanes(true); }}
+          onCreditosActualizados={async () => {
+            if (userId) await cargarCreditos(userId);
+            setRefrescarHistorial((n) => n + 1);
+          }}
+          onClose={() => setMostrarVariaciones(false)}
+        />
       )}
     </div>
   );
