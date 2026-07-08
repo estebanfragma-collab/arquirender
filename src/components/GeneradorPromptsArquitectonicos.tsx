@@ -817,13 +817,7 @@ const GeneradorPromptsArquitectonicos = () => {
           estilos={estilosDiseno}
           creditosDisponibles={creditos ?? 0}
           imageBase64={vistasPrevias[tabActiva]!.imagen!.url}
-          construirPrompt={(estilo) =>
-            construirPrompt(
-              tabActiva,
-              { ...valores, estiloDiseno: estilo },
-              tiposImagen.find((t) => t.id === tipoImagen)?.descriptor || "",
-            )
-          }
+          notas={valorTexto(valores.notas)}
           onVerPlanes={() => { setMostrarVariaciones(false); setMostrarPlanes(true); }}
           onCreditosActualizados={async () => {
             if (userId) await cargarCreditos(userId);

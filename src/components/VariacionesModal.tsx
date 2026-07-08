@@ -5,7 +5,10 @@ interface VariacionesModalProps {
   estilos: string[];
   creditosDisponibles: number;
   imageBase64: string;
-  construirPrompt: (estilo: string) => string;
+  /** Notas libres del usuario (campo "Notas adicionales"). Único dato del input que se conserva. */
+  notas?: string;
+  /** @deprecated Ya no se usa: el prompt de variación se arma con construirPromptVariacion. */
+  construirPrompt?: (estilo: string) => string;
   onVerPlanes: () => void;
   onCreditosActualizados: () => void | Promise<void>;
   onClose: () => void;
@@ -16,11 +19,43 @@ type EstadoVariacion = { estado: "cargando" | "ok" | "error"; imagen?: string; e
 const MIN = 2;
 const MAX = 4;
 
+// Descripciones ricas por estilo (keywords arquitectónicas fuertes en inglés).
+// El estilo abre el prompt y domina; nada de preservación exacta ni materiales fijos.
+const ESTILOS_DESC: Record<string, string> = {
+  "Moderno": "MODERN architecture — clean horizontal lines, open flowing plan, large floor-to-ceiling glass, steel and glass, flat roofs, uncluttered functional design",
+  "Minimalista": "MINIMALIST architecture — clean uncluttered lines, pure white surfaces, hidden storage, essential forms only, serene emptiness, restrained monochrome palette",
+  "Industrial": "INDUSTRIAL architecture — exposed steel beams, raw brick walls, visible ductwork and piping, polished concrete floors, metal and concrete, warehouse aesthetic",
+  "Contemporáneo": "CONTEMPORARY architecture — sleek mixed materials, bold asymmetric forms, expansive glazing, sustainable details, refined neutral tones, cutting-edge current design",
+  "Brutalista": "BRUTALIST architecture — bold exposed raw concrete, massive monolithic forms, heavy geometric volumes, board-formed concrete textures, dramatic deep shadows",
+  "Bauhaus": "BAUHAUS architecture — functional geometric forms, primary color accents, balanced asymmetry, tubular steel, form-follows-function, clean rational composition",
+  "Art Deco": "ART DECO architecture — bold geometric ornament, symmetrical stepped forms, rich luxurious materials, brass, marble and lacquer, glamorous vertical emphasis",
+  "Orgánico": "ORGANIC architecture — flowing natural curves, seamless integration with nature, natural wood and stone, biomorphic sculptural forms, indoor-outdoor continuity",
+  "Paramétrico": "PARAMETRIC architecture — fluid organic curves, complex geometric patterns, flowing continuous surfaces, computational design, dynamic sculptural shapes",
+  "Neoclásico": "NEOCLASSICAL architecture — grand symmetrical columns, ornate cornices and moldings, marble surfaces, classical proportions, elegant timeless formal grandeur",
+  "Mediterráneo": "MEDITERRANEAN architecture — warm stucco walls, terracotta roof tiles, arched openings, natural stone, wrought iron details, earthy sun-washed tones",
+  "Rústico": "RUSTIC architecture — weathered natural wood, exposed stone walls, rough textured finishes, handcrafted details, warm earthy materials, cozy countryside charm",
+};
+
+// Prompt de variación: estilo dominante al inicio + libertad para redefinir materiales/detalles.
+// La imagen de referencia (imageBase64) ancla el encuadre/espacio; el estilo lo reinterpreta todo.
+const construirPromptVariacion = (estilo: string, notas: string): string => {
+  const desc = ESTILOS_DESC[estilo] ?? `${estilo.toUpperCase()} architectural style`;
+  const partes = [
+    `${desc}.`,
+    `Reinterpret this space entirely in the ${estilo} style.`,
+    `Keep only the general spatial composition and camera framing of the reference image so it reads as the same space, but let the ${estilo} style fully redefine the materials, textures, finishes, colors and architectural details.`,
+    `Photorealistic architectural render, high detail, realistic textures.`,
+  ];
+  const extra = notas.trim();
+  if (extra) partes.push(`Additional context: ${extra}`);
+  return partes.join(" ");
+};
+
 const VariacionesModal = ({
   estilos,
   creditosDisponibles,
   imageBase64,
-  construirPrompt,
+  notas = "",
   onVerPlanes,
   onCreditosActualizados,
   onClose,
@@ -44,7 +79,7 @@ const VariacionesModal = ({
   const generarUna = async (estilo: string) => {
     try {
       const { data, error } = await supabase.functions.invoke("generate-render", {
-        body: { prompt: construirPrompt(estilo), imageBase64, estilo },
+        body: { prompt: construirPromptVariacion(estilo, notas), imageBase64, estilo },
       });
       if (error) {
         const status = (error as any)?.context?.status;
