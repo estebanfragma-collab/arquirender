@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Settings, User } from "lucide-react";
+import { User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/AuthModal";
 import PlanesModal from "@/components/PlanesModal";
@@ -187,8 +187,6 @@ const slugRepresentacion = (valor: string): string =>
     .split(/[^a-z0-9]+/)
     .filter((token) => token && !STOPWORDS_REPRESENTACION.has(token))
     .join("_");
-
-const tabsVisibles = tabsPrompt.filter((item) => item.id === "sketch");
 
 const GeneradorPromptsArquitectonicos = () => {
   const [tabActiva, setTabActiva] = useState<TabId>("sketch");
@@ -657,7 +655,7 @@ const GeneradorPromptsArquitectonicos = () => {
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="mb-3 text-xs font-extrabold uppercase tracking-[0.2em] text-brand-gold">ArquiRender · Arquitectura</div>
-              <h1 className="m-0 text-[clamp(28px,4vw,48px)] font-black leading-tight tracking-normal text-foreground">Generador de Prompts Arquitectónicos</h1>
+              <h1 className="m-0 text-[clamp(28px,4vw,48px)] font-black leading-tight tracking-normal text-foreground">ArquiRender</h1>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               {userId && (
@@ -687,21 +685,8 @@ const GeneradorPromptsArquitectonicos = () => {
                   )}
                 </div>
               )}
-              <div className="flex items-center gap-2 rounded-md border border-brand-gold bg-transparent px-3 py-2 text-xs font-extrabold text-brand-gold" aria-label="Estado del análisis con IA">
-                <Settings className="h-4 w-4" aria-hidden="true" />
-                <span className="hidden sm:inline">Análisis IA: Activo ✓</span>
-              </div>
             </div>
           </div>
-          {vista === "generar" && (
-            <nav className="mt-6 flex gap-6 overflow-x-auto border-b border-brand-border" aria-label="Tipos de prompt">
-              {tabsVisibles.map((item) => (
-                <button key={item.id} type="button" className={`whitespace-nowrap border-b-[3px] px-0 py-4 text-sm transition ${item.id === tabActiva ? "border-brand-gold font-bold text-foreground" : "border-transparent font-semibold text-muted-foreground hover:text-foreground"}`} onClick={() => { setTabActiva(item.id); setPrompt(""); setError(""); }}>
-                  {item.etiqueta}
-                </button>
-              ))}
-            </nav>
-          )}
         </div>
       </header>
 
