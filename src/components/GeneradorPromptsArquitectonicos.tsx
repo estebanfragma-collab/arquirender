@@ -654,7 +654,7 @@ const GeneradorPromptsArquitectonicos = () => {
         <div className="mx-auto w-[min(1180px,calc(100%-32px))] py-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="mb-3 text-xs font-extrabold uppercase tracking-[0.2em] text-brand-gold">ArquiRender · Arquitectura</div>
+              <div className="mb-3 text-xs font-extrabold uppercase tracking-[0.2em] text-brand-gold">Renders arquitectónicos con IA</div>
               <h1 className="m-0 text-[clamp(28px,4vw,48px)] font-black leading-tight tracking-normal text-foreground">ArquiRender</h1>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -858,7 +858,14 @@ const GeneradorPromptsArquitectonicos = () => {
       </main>
       )}
 
-      <footer className="border-t border-brand-border py-7 text-center text-sm text-muted-foreground">Desarrollado por ArquiRender.lat · arquirender.lat</footer>
+      <footer className="border-t border-brand-border py-7 text-center text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+          <a href="mailto:ayalgoritmo@gmail.com" className="transition hover:text-[#EA580C]">ayalgoritmo@gmail.com</a>
+          <span aria-hidden="true">·</span>
+          <a href="https://instagram.com/ayalgoritmo" target="_blank" rel="noopener noreferrer" className="transition hover:text-[#EA580C]" translate="no">@ayalgoritmo</a>
+        </div>
+        <div className="mt-2">© 2026 ArquiRender</div>
+      </footer>
 
       {mostrarAuth && (
         <AuthModal
