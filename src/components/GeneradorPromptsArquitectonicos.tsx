@@ -162,6 +162,32 @@ const tiposImagen = [
 
 type TipoImagenId = typeof tiposImagen[number]["id"];
 
+// Modo "Tipo de Representación": 7 categorías con sus variantes.
+const categoriasRepresentacion = [
+  { categoria: "Atmósfera", icono: "🌙", opciones: ["Nocturno", "Día lluvioso"] },
+  { categoria: "Cámara", icono: "📷", opciones: ["Vista lateral", "Vista aérea de dron"] },
+  { categoria: "Detalles", icono: "🔍", opciones: ["Close up", "Macro close up", "Actividad close up"] },
+  { categoria: "Documentación", icono: "📐", opciones: ["Axonométrico"] },
+  { categoria: "Portfolio", icono: "🗂️", opciones: ["Lámina de presentación"] },
+  { categoria: "Materiales", icono: "🪨", opciones: ["Moodboard", "Maqueta"] },
+  { categoria: "Transformaciones", icono: "⚡", opciones: ["Lugar abandonado", "Remodelación"] },
+  { categoria: "Realismo", icono: "📸", opciones: ["Fotografía real"] },
+] as const;
+
+// Normaliza la etiqueta a clave (minúsculas, sin tildes, sin conectores, underscore).
+// Espeja slugRepresentacion de la Edge Function para que todas las opciones —no solo
+// las nuevas— viajen ya como clave: "Corte arquitectónico" → "corte_arquitectonico".
+const STOPWORDS_REPRESENTACION = new Set(["de", "del", "la", "el", "los", "las", "y"]);
+const slugRepresentacion = (valor: string): string =>
+  valor
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token && !STOPWORDS_REPRESENTACION.has(token))
+    .join("_");
+
 const tabsVisibles = tabsPrompt.filter((item) => item.id === "sketch");
 
 const GeneradorPromptsArquitectonicos = () => {
@@ -197,6 +223,8 @@ const GeneradorPromptsArquitectonicos = () => {
   const [vista, setVista] = useState<"generar" | "historial">("generar");
   const [refrescarHistorial, setRefrescarHistorial] = useState(0);
   const [mostrarVariaciones, setMostrarVariaciones] = useState(false);
+  const [modoRender, setModoRender] = useState<"estilo" | "representacion">("estilo");
+  const [selectedRepresentacion, setSelectedRepresentacion] = useState("");
 
   const tab = useMemo(() => tabsPrompt.find((item) => item.id === tabActiva)!, [tabActiva]);
   const valores = valoresPorTab[tabActiva];
@@ -329,8 +357,15 @@ const GeneradorPromptsArquitectonicos = () => {
 
     try {
       const imageBase64 = vistasPrevias[tabActiva]?.imagen?.url;
+      const representacion = modoRender === "representacion" && selectedRepresentacion ? slugRepresentacion(selectedRepresentacion) : undefined;
+      console.log("representacion enviada:", representacion);
       const { data, error: functionError } = await supabase.functions.invoke("generate-render", {
-        body: { prompt: promptFinal, imageBase64, estilo: valorTexto(valores.estiloDiseno).trim() || undefined },
+        body: {
+          prompt: promptFinal,
+          imageBase64,
+          estilo: valorTexto(valores.estiloDiseno).trim() || undefined,
+          representacion,
+        },
       });
 
       if (functionError) {
@@ -682,6 +717,16 @@ const GeneradorPromptsArquitectonicos = () => {
           </div>
 
           <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+            <div className="inline-flex w-full gap-1 rounded-md border border-brand-border bg-input p-1 sm:w-auto">
+              {([["estilo", "Render de Estilo"], ["representacion", "Tipo de Representación"]] as const).map(([modo, etiqueta]) => (
+                <button key={modo} type="button" onClick={() => setModoRender(modo)} className={`flex-1 whitespace-nowrap rounded px-4 py-2 text-xs font-bold transition sm:flex-none ${modoRender === modo ? "bg-[#EA580C] text-white" : "bg-transparent text-muted-foreground hover:text-foreground"}`}>
+                  {etiqueta}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="border-t border-brand-border px-5 py-5 sm:px-6">
             <label className="mb-3 flex text-sm font-semibold text-brand-gold">
               <span>Tipo de imagen de origen</span>
             </label>
@@ -712,6 +757,8 @@ const GeneradorPromptsArquitectonicos = () => {
             </div>
           )}
 
+          {modoRender === "estilo" && (
+          <>
           {renderAcordeon("materiales", "Materiales a aplicar", (
             <div className="space-y-5">
               {campoPorId("materiales") && renderCampo(campoPorId("materiales")!)}
@@ -750,6 +797,33 @@ const GeneradorPromptsArquitectonicos = () => {
             </label>
             <input className={clasesControl} placeholder="Ej: personas, texto, marcas de agua, desenfoque" value={valorTexto(valores.negativePrompt)} onChange={(e) => actualizarCampo({ id: "negativePrompt", etiqueta: "Qué evitar", tipo: "textarea" }, e.target.value)} />
           </div>
+          </>
+          )}
+
+          {modoRender === "representacion" && (
+            <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                {categoriasRepresentacion.map((cat) => (
+                  <div key={cat.categoria} className="rounded-xl border border-brand-border bg-input p-4">
+                    <div className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
+                      <span aria-hidden="true">{cat.icono}</span>
+                      <span>{cat.categoria}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {cat.opciones.map((op) => {
+                        const activo = selectedRepresentacion === op;
+                        return (
+                          <button key={op} type="button" onClick={() => setSelectedRepresentacion(activo ? "" : op)} className={`rounded-full border px-3 py-2 text-xs font-bold transition ${activo ? "border-[#EA580C] bg-[#EA580C] text-white" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-[#EA580C]"}`}>
+                            {op}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="px-5 pb-6 sm:px-6">
             {error && <div className="mb-3 text-sm font-bold text-destructive">{error}</div>}
