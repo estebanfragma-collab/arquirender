@@ -830,6 +830,7 @@ const GeneradorPromptsArquitectonicos = () => {
             <h2 className="m-0 text-xl font-black tracking-normal text-foreground">Tu render</h2>
             <span className="text-xs font-bold text-muted-foreground">{prompt.length} caracteres</span>
           </div>
+          <button type="button" onClick={nuevoPrompt} className="mb-3 w-full rounded-md bg-[#EA580C] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#c2470a]">+ Nuevo render</button>
           <div className="flex min-h-72 flex-col overflow-wrap-anywhere rounded-md border border-brand-gold bg-input p-4 text-sm leading-relaxed text-foreground">
             {generando ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
