@@ -3,77 +3,99 @@ import { Link } from "react-router-dom";
 const PASOS = [
   {
     num: "01",
-    title: "Sube tu imagen",
-    desc: "Boceto a mano, captura de SketchUp o foto. ArquiRender acepta cualquier punto de partida.",
-    img: "/renders/paso1.png",
+    img: "/screenshots/paso1.png",
+    title: "Sube tu diseño",
+    desc: "SketchUp, Revit, boceto o cualquier imagen. La IA lo reconoce automáticamente.",
   },
   {
     num: "02",
-    title: "La IA describe tu espacio",
-    desc: "ArquiRender analiza tu imagen automáticamente y genera una descripción técnica lista para renderizar.",
-    img: "/renders/paso2.png",
+    img: "/screenshots/paso2.png",
+    title: "La IA analiza tu espacio",
+    desc: "Describimos cada detalle de tu diseño: materiales, geometría, iluminación.",
   },
   {
     num: "03",
-    title: "Elige el estilo",
-    desc: "Fotografía real, nocturno, lámina, moodboard, dron... Selecciona materiales, atmósfera y cámara.",
-    img: "/renders/paso3.png",
-  },
-  {
-    num: "04",
-    title: "Descarga tu render",
-    desc: "En segundos tienes una imagen fotorrealista lista para presentar a tu cliente o subir a tu portafolio.",
-    img: "/renders/paso4render.png",
+    img: "/screenshots/paso3.png",
+    title: "Ajusta estilo e iluminación",
+    desc: "Elige materiales, estilo arquitectónico y tipo de iluminación con un clic.",
   },
 ];
 
 export default function Solucion() {
   return (
-    <section id="solucion" className="bg-[#F9FAFB] py-[100px]">
-      <div className="max-w-[1200px] mx-auto px-6">
-        {/* Header */}
-        <div className="text-center">
-          <p className="text-[11px] uppercase tracking-[4px] text-[#EA580C] font-semibold">
-            CÓMO FUNCIONA
-          </p>
-          <h2 className="mt-4 text-[30px] md:text-[48px] font-black text-[#111] leading-none">
-            De tu boceto a render profesional en 4 pasos
-          </h2>
-        </div>
+    <section id="solucion">
+      {/* Parte superior — 3 pasos */}
+      <div className="bg-white py-[100px]">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <div className="text-center">
+            <h2 className="text-[32px] md:text-[44px] font-black text-[#111] leading-tight">
+              Así funciona ArquiRender
+            </h2>
+            <p className="mt-4 text-lg text-[#6B7280]">
+              De tu boceto al render fotorrealista en menos de 2 minutos
+            </p>
+          </div>
 
-        {/* Grid de pasos */}
-        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {PASOS.map((paso) => (
-            <div key={paso.num}>
-              <div className="text-[64px] font-black text-[#EA580C] leading-none mb-3">
-                {paso.num}
-              </div>
-              <h3 className="text-lg font-bold text-[#111] mb-2">{paso.title}</h3>
-              <p className="text-sm text-[#666] leading-[1.6] mb-5">
-                {paso.desc}
-              </p>
-              <div className="rounded-xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.1)]">
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+            {PASOS.map((paso) => (
+              <div
+                key={paso.num}
+                className="border border-[#EBEBEB] rounded-xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.06)]"
+              >
+                <div className="text-[48px] font-extrabold text-[#EA580C] leading-none">
+                  {paso.num}
+                </div>
                 <img
                   src={paso.img}
                   alt={paso.title}
-                  className="w-full h-[200px] object-cover"
+                  className="mt-4 w-full rounded-lg"
                 />
+                <h3 className="mt-5 text-lg font-bold text-[#111]">
+                  {paso.title}
+                </h3>
+                <p className="mt-2 text-sm text-[#6B7280] leading-[1.6]">
+                  {paso.desc}
+                </p>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
+      </div>
 
-        {/* Remate */}
-        <div className="mt-16 text-center">
-          <p className="text-xl font-bold text-[#111]">
-            Sin curva de aprendizaje. Sin software. Sin esperas.
-          </p>
-          <Link
-            to="/app"
-            className="inline-block mt-6 bg-[#EA580C] text-white rounded-[10px] px-9 py-4 text-base font-bold hover:bg-[#c2410c] transition-colors"
-          >
-            Probarlo gratis ahora →
-          </Link>
+      {/* Parte inferior — Paso 04 ancho completo */}
+      <div className="bg-[#111111] py-20">
+        <div className="max-w-[1200px] mx-auto px-6 flex flex-col-reverse gap-10 md:grid md:grid-cols-[40%_60%] md:gap-12 md:items-center">
+          {/* Texto */}
+          <div>
+            <span className="inline-block bg-[#EA580C] text-white text-[11px] font-semibold uppercase tracking-[2px] rounded-full px-3 py-1">
+              Resultado final
+            </span>
+            <div className="mt-4 text-[80px] font-black text-[#EA580C] leading-none">
+              04
+            </div>
+            <h3 className="mt-2 text-[36px] font-extrabold text-white leading-tight">
+              Tu render fotorrealista, listo para descargar
+            </h3>
+            <p className="mt-4 text-[#9CA3AF] leading-[1.6]">
+              Descarga en alta resolución y compártelo con tu cliente al
+              instante. Sin esperas, sin software especializado.
+            </p>
+            <Link
+              to="/app"
+              className="inline-block mt-7 bg-[#EA580C] text-white rounded-[10px] px-8 py-4 text-base font-bold hover:bg-[#c2410c] transition-colors"
+            >
+              Generar mi render gratis →
+            </Link>
+          </div>
+
+          {/* Imagen */}
+          <div>
+            <img
+              src="/renders/arquirender_24.png"
+              alt="Render fotorrealista final"
+              className="w-full rounded-xl shadow-[0_0_40px_rgba(234,88,12,0.3)]"
+            />
+          </div>
         </div>
       </div>
     </section>
