@@ -1,0 +1,89 @@
+const CARDS = [
+  {
+    num: "01",
+    icon: "😩",
+    text: "Invertí días enteros haciendo renders... y el cliente igual dijo: 'No es lo que imaginaba'.",
+  },
+  {
+    num: "02",
+    icon: "⏰",
+    text: "La entrega es mañana y sigo esperando horas para que el render termine de procesarse.",
+  },
+  {
+    num: "03",
+    icon: "😤",
+    text: "He perdido proyectos porque otros arquitectos presentan imágenes espectaculares desde la primera reunión.",
+  },
+  {
+    num: "04",
+    icon: "🤝",
+    text: "Mis clientes no logran imaginar el resultado viendo solo planos o modelos 3D.",
+  },
+  {
+    num: "05",
+    icon: "🔄",
+    text: "Cada cambio que pide el cliente significa volver a renderizar y perder horas de trabajo.",
+  },
+  {
+    num: "06",
+    icon: "🎯",
+    text: "Sé que podría vender mucho más si pudiera mostrar imágenes realistas sin complicarme la vida.",
+  },
+];
+
+export default function Dolores() {
+  const scrollToSolucion = (e: React.MouseEvent) => {
+    e.preventDefault();
+    document.getElementById("solucion")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  return (
+    <section className="bg-[#F9FAFB] py-[100px]">
+      <div className="max-w-[1100px] mx-auto px-6">
+        {/* Header */}
+        <div className="text-center">
+          <p className="text-[11px] uppercase tracking-[4px] text-[#EA580C] font-semibold">
+            EL PROBLEMA
+          </p>
+          <h2 className="mt-4 text-[32px] md:text-[48px] font-black text-[#111] leading-none">
+            ¿Te suena familiar?
+          </h2>
+        </div>
+
+        {/* Grid de dolores */}
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-2">
+          {CARDS.map((card, i) => (
+            <div
+              key={card.num}
+              className={`px-8 py-10 border-b border-[#EBEBEB] ${
+                i % 2 === 0 ? "md:border-r md:border-[#EBEBEB]" : ""
+              }`}
+            >
+              <div className="text-[64px] font-black text-[#EA580C] leading-none mb-4">
+                {card.num}
+              </div>
+              <div className="text-[28px] leading-none mb-2">{card.icon}</div>
+              <p className="text-[17px] italic text-[#555] leading-[1.6]">
+                {card.text}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Remate */}
+        <div className="mt-16 text-center">
+          <p className="text-[22px] font-bold text-[#111]">
+            Todos estos problemas tienen la misma solución.
+          </p>
+          <a
+            href="#solucion"
+            onClick={scrollToSolucion}
+            className="inline-block mt-6 bg-[#EA580C] text-white rounded-[10px] px-9 py-4 text-base font-bold hover:bg-[#c2410c] transition-colors"
+          >
+            Ver cómo funciona →
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
