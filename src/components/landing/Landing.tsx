@@ -6,6 +6,7 @@ import Dolores from "./Dolores";
 import MagneticBanner from "./MagneticBanner";
 import Solucion from "./Solucion";
 import Resultados from "./Resultados";
+import Proyecto from "./Proyecto";
 import Industrias from "./Industrias";
 import Objeciones from "./Objeciones";
 import Precios from "./Precios";
@@ -30,6 +31,7 @@ export default function Landing() {
       />
       <Solucion />
       <Resultados />
+      <Proyecto />
       <Industrias />
       <MagneticBanner
         bgColor="#111111"
