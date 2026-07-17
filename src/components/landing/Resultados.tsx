@@ -7,7 +7,7 @@ const GALERIA = [
   { src: "/renders/dron.png", label: "Dron" },
   { src: "/renders/closeup.png", label: "Close-up" },
   { src: "/renders/estilo.png", label: "Estilo Bauhaus" },
-  { src: "/renders/lamina.png", label: "Lámina" },
+  { src: "/renders/axonometrico.png", label: "Axonométrico" },
   { src: "/renders/lamina.png", label: "Maqueta" },
   { src: "/renders/exterior.png", label: "Exterior" },
 ];
