@@ -18,7 +18,7 @@ const PAIRS = [
   { antes: "/renders/slider-antes3.png", despues: "/renders/slider-despues3.png", label: "Exterior · Lluvia" },
   { antes: "/renders/slider-antes5.png", despues: "/renders/slider-despues5.png", label: "Exterior · Nocturno" },
   { antes: "/renders/slider-antes6.png", despues: "/renders/slider-despues6.png", label: "Exterior · Día" },
-  { antes: "/renders/slider-antes1.png", despues: "/renders/slider-despues1.png", label: "Interior · Comercial 2" },
+  { antes: "/renders/slider-antes4.png", despues: "/renders/slider-despues4.png", label: "Exterior · Atardecer" },
 ];
 
 function SliderCard({
