@@ -13,12 +13,12 @@ const GALERIA = [
 ];
 
 const PAIRS = [
-  { antes: "/renders/slider-antes1.png", despues: "/renders/slider-despues1.png", label: "Interior Comercial" },
-  { antes: "/renders/slider-antes2.png", despues: "/renders/slider-despues2.png", label: "Moodboard" },
-  { antes: "/renders/slider-antes3.png", despues: "/renders/slider-despues3.png", label: "Exterior · Lluvia" },
-  { antes: "/renders/slider-antes5.png", despues: "/renders/slider-despues5.png", label: "Exterior · Nocturno" },
-  { antes: "/renders/slider-antes6.png", despues: "/renders/slider-despues6.png", label: "Exterior · Día" },
-  { antes: "/renders/slider-antes4.png", despues: "/renders/slider-despues4.png", label: "Exterior · Atardecer" },
+  { antes: "/renders/slider-antes1.png", despues: "/renders/fotorealista.png", label: "Interior Comercial" },
+  { antes: "/renders/slider-antes2.png", despues: "/renders/exterior.png", label: "Exterior · Día" },
+  { antes: "/renders/slider-antes3.png", despues: "/renders/lluvia.png", label: "Exterior · Lluvia" },
+  { antes: "/renders/slider-antes4.png", despues: "/renders/nocturno.png", label: "Exterior · Nocturno" },
+  { antes: "/renders/slider-antes5.png", despues: "/renders/dron.png", label: "Vista Dron" },
+  { antes: "/renders/slider-antes6.png", despues: "/renders/closeup.png", label: "Close-up" },
 ];
 
 function SliderCard({
@@ -30,7 +30,10 @@ function SliderCard({
   despues: string;
   label: string;
 }) {
-  const [pos, setPos] = useState(50);
+  // pos = fracción de RENDER (después) visible. 0 = original, 100 = render.
+  const [pos, setPos] = useState(() =>
+    typeof window !== "undefined" && window.innerWidth < 768 ? 100 : 50
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
 
@@ -39,7 +42,8 @@ function SliderCard({
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const pct = ((clientX - rect.left) / rect.width) * 100;
-    setPos(Math.min(100, Math.max(0, pct)));
+    // el divisor sigue al dedo: su x = 100 - pos
+    setPos(Math.min(100, Math.max(0, 100 - pct)));
   }, []);
 
   useEffect(() => {
@@ -85,7 +89,7 @@ function SliderCard({
       {/* Después (encima, revelado a la derecha) */}
       <div
         className="absolute inset-0"
-        style={{ clipPath: `inset(0 0 0 ${pos}%)` }}
+        style={{ clipPath: `inset(0 0 0 ${100 - pos}%)` }}
       >
         <img
           src={despues}
@@ -102,10 +106,10 @@ function SliderCard({
         Después
       </span>
 
-      {/* Divisor */}
+      {/* Divisor (solo desktop, arrastrable) */}
       <div
-        className="absolute top-0 bottom-0 z-20 w-0.5 bg-white cursor-ew-resize"
-        style={{ left: `${pos}%`, transform: "translateX(-50%)" }}
+        className="hidden md:block absolute top-0 bottom-0 z-20 w-0.5 bg-white cursor-ew-resize"
+        style={{ left: `${100 - pos}%`, transform: "translateX(-50%)" }}
         onMouseDown={startDrag}
         onTouchStart={startDrag}
       >
@@ -114,9 +118,27 @@ function SliderCard({
         </div>
       </div>
 
-      {/* Etiqueta inferior */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 pt-8 pb-3 text-center text-white text-sm font-medium bg-gradient-to-t from-black/70 to-transparent">
+      {/* Etiqueta inferior (solo desktop) */}
+      <div className="hidden md:block absolute bottom-0 left-0 right-0 z-10 pt-8 pb-3 text-center text-white text-sm font-medium bg-gradient-to-t from-black/70 to-transparent">
         {label}
+      </div>
+
+      {/* Controles mobile (sin drag) */}
+      <div className="md:hidden absolute bottom-0 left-0 right-0 z-20 flex justify-center gap-2 pt-8 pb-3 bg-gradient-to-t from-black/80 to-transparent">
+        <button
+          type="button"
+          onClick={() => setPos(0)}
+          className="rounded-full bg-white/20 backdrop-blur text-white text-xs font-medium px-3 py-1.5"
+        >
+          ← Ver original
+        </button>
+        <button
+          type="button"
+          onClick={() => setPos(100)}
+          className="rounded-full bg-[#EA580C] text-white text-xs font-medium px-3 py-1.5"
+        >
+          Ver render →
+        </button>
       </div>
     </div>
   );

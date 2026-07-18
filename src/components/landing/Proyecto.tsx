@@ -7,7 +7,6 @@ const RESULTADOS = [
   { src: "/renders/proyecto-maqueta.png", label: "Maqueta" },
   { src: "/renders/proyecto-moodboard.png", label: "Moodboard" },
   { src: "/renders/proyecto-lamina.png", label: "Lámina Técnica" },
-  { src: "/renders/slider-despues4.png", label: "Atardecer" },
 ];
 
 export default function Proyecto() {
@@ -57,17 +56,6 @@ export default function Proyecto() {
                 <div className="absolute bottom-0 left-0 right-0 pt-6 pb-2 px-3 text-white text-xs font-medium bg-gradient-to-t from-black/80 to-transparent">
                   {item.label}
                 </div>
-              </div>
-            ))}
-
-            {/* 2 celdas extra */}
-            {[0, 1].map((i) => (
-              <div
-                key={`extra-${i}`}
-                className="flex flex-col items-center justify-center gap-1 rounded-[10px] aspect-square bg-[#1F2937] border border-dashed border-gray-500"
-              >
-                <span className="text-4xl text-[#EA580C] leading-none">+</span>
-                <span className="text-sm text-[#9CA3AF]">Más estilos</span>
               </div>
             ))}
           </div>
