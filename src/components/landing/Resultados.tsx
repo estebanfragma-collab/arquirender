@@ -13,12 +13,10 @@ const GALERIA = [
 ];
 
 const PAIRS = [
-  { antes: "/renders/slider-antes1.png", despues: "/renders/fotorealista.png", label: "Interior Comercial" },
-  { antes: "/renders/slider-antes2.png", despues: "/renders/exterior.png", label: "Exterior · Día" },
-  { antes: "/renders/slider-antes3.png", despues: "/renders/lluvia.png", label: "Exterior · Lluvia" },
-  { antes: "/renders/slider-antes4.png", despues: "/renders/nocturno.png", label: "Exterior · Nocturno" },
-  { antes: "/renders/slider-antes5.png", despues: "/renders/dron.png", label: "Vista Dron" },
-  { antes: "/renders/slider-antes6.png", despues: "/renders/closeup.png", label: "Close-up" },
+  { antes: "/renders/slider-antes1.png", despues: "/renders/slider-despues1.png", label: "Casa Modular" },
+  { antes: "/renders/slider-antes2.png", despues: "/renders/slider-despues2.png", label: "Dentalika · Lluvia" },
+  { antes: "/renders/slider-antes3.png", despues: "/renders/slider-despues3.png", label: "Only Natural" },
+  { antes: "/renders/slider-antes4.png", despues: "/renders/slider-despues4.png", label: "DermaPro" },
 ];
 
 function SliderCard({
@@ -181,7 +179,7 @@ export default function Resultados() {
           </p>
         </div>
 
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
           {PAIRS.map((pair, i) => (
             <SliderCard key={i} {...pair} />
           ))}
