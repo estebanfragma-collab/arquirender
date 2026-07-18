@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
 
 const RESULTADOS = [
-  { src: "/renders/proyecto-exterior-dia.png", label: "Exterior · Día" },
-  { src: "/renders/proyecto-nocturno.png", label: "Nocturno" },
-  { src: "/renders/proyecto-dron.png", label: "Vista Dron" },
-  { src: "/renders/proyecto-maqueta.png", label: "Maqueta" },
-  { src: "/renders/proyecto-moodboard.png", label: "Moodboard" },
+  { src: "/renders/proyecto-v1.jpg", label: "Interior · Original" },
+  { src: "/renders/proyecto-v2.png", label: "Fotorrealista" },
   { src: "/renders/proyecto-lamina.png", label: "Lámina Técnica" },
+  { src: "/renders/proyecto-moodboard.png", label: "Moodboard" },
+  { src: "/renders/proyecto-moderno.png", label: "Estilo Moderno" },
+  { src: "/renders/proyecto-bauhaus.png", label: "Estilo Bauhaus" },
 ];
 
 export default function Proyecto() {
@@ -31,7 +31,7 @@ export default function Proyecto() {
               Modelo original
             </span>
             <img
-              src="/renders/proyecto-original.png"
+              src="/renders/slider-antes3.png"
               alt="Modelo SketchUp original"
               className="mt-3 w-full rounded-xl"
             />
