@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+
 const CARDS = [
   {
     num: "01",
@@ -32,20 +34,52 @@ const CARDS = [
 ];
 
 export default function Dolores() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const anim = (delay: number) => ({
+    transition: "opacity 0.6s ease-out, transform 0.6s ease-out",
+    transitionDelay: `${delay}ms`,
+    opacity: visible ? 1 : 0,
+    transform: visible ? "translateY(0)" : "translateY(30px)",
+  });
+
   const scrollToSolucion = (e: React.MouseEvent) => {
     e.preventDefault();
     document.getElementById("solucion")?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
-    <section className="bg-[#F9FAFB] py-[100px]">
+    <section ref={sectionRef} className="bg-[#F9FAFB] py-[100px]">
       <div className="max-w-[1100px] mx-auto px-6">
         {/* Header */}
         <div className="text-center">
-          <p className="text-[11px] uppercase tracking-[4px] text-[#EA580C] font-semibold">
+          <p
+            className="text-[11px] uppercase tracking-[4px] text-[#EA580C] font-semibold"
+            style={anim(0)}
+          >
             EL PROBLEMA
           </p>
-          <h2 className="mt-4 text-[32px] md:text-[48px] font-black text-[#111] leading-none">
+          <h2
+            className="mt-4 text-[32px] md:text-[48px] font-black text-[#111] leading-none"
+            style={anim(100)}
+          >
             ¿Te suena familiar?
           </h2>
         </div>
@@ -55,6 +89,7 @@ export default function Dolores() {
           {CARDS.map((card, i) => (
             <div
               key={card.num}
+              style={anim(200 + i * 100)}
               className={`px-8 py-10 border-b border-[#EBEBEB] ${
                 i % 2 === 0 ? "md:border-r md:border-[#EBEBEB]" : ""
               }`}
