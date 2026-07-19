@@ -43,81 +43,77 @@ export default function Hero() {
   };
 
   return (
-    <section
-      ref={containerRef}
-      className="relative w-full h-screen overflow-hidden select-none"
-    >
-      {/* Después (base) */}
-      <img
-        src="/renders/fotorealista.png"
-        className="absolute inset-0 w-full h-full object-cover object-center"
-        alt="Render fotorrealista"
-      />
-      <span className="absolute top-5 right-5 z-20 bg-black/60 text-white text-[13px] font-semibold px-4 py-1.5 rounded-full">
-        Después
-      </span>
+    <section>
+      {/* Bloque superior */}
+      <div className="bg-[#111111] pt-[120px] pb-[60px]">
+        <div className="max-w-[1200px] mx-auto px-6 text-center">
+          <span className="inline-block bg-white/10 text-white/90 text-sm rounded-full px-4 py-1.5">
+            ✨ Renders fotorrealistas con IA
+          </span>
+          <h1 className="mt-6 text-[32px] md:text-[64px] font-black text-white leading-[1.05]">
+            Tus renders ya no tienen que tomar horas.
+          </h1>
+          <p className="mt-5 max-w-[600px] mx-auto text-lg text-[#9CA3AF]">
+            Sube un boceto, un plano o una captura de SketchUp y obtén un render
+            fotorrealista listo para presentar a tu cliente en segundos.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2 text-white text-[15px]">
+            <span>✅ 3 renders gratis</span>
+            <span className="text-white/40">·</span>
+            <span>✅ Sin instalar programas</span>
+            <span className="text-white/40">·</span>
+            <span>✅ Sin tarjeta de crédito</span>
+          </div>
+          <Link
+            to="/app"
+            className="inline-block mt-8 bg-[#EA580C] text-white rounded-[10px] px-8 py-4 text-lg font-bold hover:bg-[#c2410c] transition-colors"
+          >
+            👉 Crear mis 3 renders gratis
+          </Link>
+        </div>
+      </div>
 
-      {/* Antes (recortado) */}
+      {/* Bloque inferior — slider */}
       <div
-        className="absolute inset-0 overflow-hidden"
-        style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
+        ref={containerRef}
+        className="relative w-full h-[300px] md:h-[500px] overflow-hidden select-none"
       >
+        {/* Antes (base) */}
         <img
           src="/renders/antes.png"
-          className="w-full h-full object-cover object-center"
+          className="absolute inset-0 w-full h-full object-cover object-center"
           alt="Maqueta arquitectónica"
         />
-        <span className="absolute top-5 left-5 z-20 bg-black/60 text-white text-[13px] font-semibold px-4 py-1.5 rounded-full">
+        <span className="absolute top-4 left-4 z-10 bg-black/60 text-white text-xs rounded-md px-3 py-1">
           Antes
         </span>
-      </div>
 
-      {/* Overlay gradiente izquierda */}
-      <div
-        className="absolute inset-0 z-10 pointer-events-none"
-        style={{
-          background:
-            "linear-gradient(to right, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 60%)",
-        }}
-      />
-
-      {/* Divisor */}
-      <div
-        className="absolute top-0 bottom-0 z-20 w-0.5 bg-white cursor-ew-resize"
-        style={{ left: `${pos}%`, transform: "translateX(-50%)" }}
-        onMouseDown={startDrag}
-        onTouchStart={startDrag}
-      >
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white shadow flex items-center justify-center text-black">
-          ↔
-        </div>
-      </div>
-
-      {/* Texto */}
-      <div
-        className="absolute z-30 pointer-events-none max-w-[560px]"
-        style={{ left: "6%", bottom: "12%" }}
-      >
-        <h1 className="text-[32px] md:text-[52px] font-extrabold text-white leading-[1.1]">
-          Tus renders ya no tienen que tomar horas.
-        </h1>
-        <p className="mt-4 text-[17px] text-white/85">
-          Sube un boceto, un plano o una captura de SketchUp y obtén un render
-          fotorrealista listo para presentar a tu cliente en segundos.
-        </p>
-        <div className="mt-5 flex flex-wrap items-center gap-2 text-white text-[15px]">
-          <span>✅ 3 renders gratis</span>
-          <span>·</span>
-          <span>✅ Sin instalar programas</span>
-          <span>·</span>
-          <span>✅ Sin tarjeta de crédito</span>
-        </div>
-        <Link
-          to="/app"
-          className="pointer-events-auto inline-block mt-7 bg-[#EA580C] text-white rounded-[10px] px-8 py-4 text-lg font-bold hover:bg-[#c2410c] transition-colors"
+        {/* Después (revelado a la derecha) */}
+        <div
+          className="absolute inset-0"
+          style={{ clipPath: `inset(0 0 0 ${pos}%)` }}
         >
-          👉 Crear mis 3 renders gratis
-        </Link>
+          <img
+            src="/renders/fotorealista.png"
+            className="w-full h-full object-cover object-center"
+            alt="Render fotorrealista"
+          />
+          <span className="absolute top-4 right-4 z-10 bg-black/60 text-white text-xs rounded-md px-3 py-1">
+            Después
+          </span>
+        </div>
+
+        {/* Divisor */}
+        <div
+          className="absolute top-0 bottom-0 z-20 w-0.5 bg-white cursor-ew-resize"
+          style={{ left: `${pos}%`, transform: "translateX(-50%)" }}
+          onMouseDown={startDrag}
+          onTouchStart={startDrag}
+        >
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white shadow flex items-center justify-center text-black text-sm font-bold">
+            {"<>"}
+          </div>
+        </div>
       </div>
     </section>
   );
