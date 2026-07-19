@@ -144,7 +144,7 @@ export default function Hero() {
       {/* Sección 2 — Slider antes/después */}
       <div
         ref={containerRef}
-        className="relative w-full h-screen overflow-hidden select-none bg-black"
+        className="relative w-full h-screen overflow-hidden select-none bg-[#000] flex items-center justify-center"
       >
         {/* Antes (base) — SketchUp */}
         <img
