@@ -4,7 +4,7 @@ import VSL from "./VSL";
 import TickerBar from "./TickerBar";
 import Dolores from "./Dolores";
 import MagneticBanner from "./MagneticBanner";
-import Solucion from "./Solucion";
+// import Solucion from "./Solucion";
 import Resultados from "./Resultados";
 import Proyecto from "./Proyecto";
 import Industrias from "./Industrias";
@@ -29,7 +29,7 @@ export default function Landing() {
         ctaText="Empieza ahora →"
         ctaHref="/app"
       />
-      <Solucion />
+      {/* <Solucion /> */}
       <Resultados />
       <Proyecto />
       <Industrias />
