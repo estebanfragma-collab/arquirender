@@ -19,10 +19,10 @@ const GALERIA = [
 ];
 
 const PAIRS = [
-  { antes: "/renders/slider-antes1.png", despues: "/renders/slider-despues1.png", label: "Casa Modular" },
+  { antes: "/renders/slider-antes1.png", despues: "/renders/arquirender-40.png", label: "Casa Modular" },
   { antes: "/renders/slider-antes2.png", despues: "/renders/slider-despues2.png", label: "Dentalika · Lluvia" },
-  { antes: "/renders/slider-antes3.png", despues: "/renders/slider-despues3.png", label: "Only Natural" },
-  { antes: "/renders/slider-antes4.png", despues: "/renders/slider-despues4.png", label: "DermaPro" },
+  { antes: "/renders/slider-antes3.png", despues: "/renders/arquirender-57.png", label: "Only Natural" },
+  { antes: "/renders/slider-antes4.png", despues: "/renders/arquirender-41.png", label: "DermaPro" },
 ];
 
 function SliderCard({
