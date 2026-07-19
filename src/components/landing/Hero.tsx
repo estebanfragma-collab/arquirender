@@ -141,43 +141,52 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Sección 2 — Slider antes/después */}
+      {/* Sección 2 — Slider antes/después (tarjeta flotante) */}
       <div
-        ref={containerRef}
-        className="relative w-full h-screen overflow-hidden select-none bg-[#000] flex items-center justify-center"
+        className="relative w-full min-h-screen bg-[#0A0A0A] flex items-center justify-center p-[60px] md:p-20"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+        }}
       >
-        {/* Antes (base) — SketchUp */}
-        <img
-          src="/renders/antes.png"
-          className="absolute inset-0 w-full h-full object-contain object-center"
-          alt="Maqueta arquitectónica"
-        />
-
-        {/* Después (encima, revelado desde la derecha) — render */}
-        <img
-          src="/renders/fotorealista.png"
-          className="absolute inset-0 w-full h-full object-contain object-center"
-          style={{ clipPath: `inset(0 0 0 ${pos}%)` }}
-          alt="Render fotorrealista"
-        />
-
-        {/* Badges */}
-        <span className="absolute top-4 left-4 z-10 bg-black/60 text-white text-xs rounded-md px-3 py-1">
-          Antes
-        </span>
-        <span className="absolute top-4 right-4 z-10 bg-black/60 text-white text-xs rounded-md px-3 py-1">
-          Después
-        </span>
-
-        {/* Divisor */}
         <div
-          className="absolute top-0 bottom-0 z-20 w-0.5 bg-white cursor-ew-resize"
-          style={{ left: `${pos}%`, transform: "translateX(-50%)" }}
-          onMouseDown={startDrag}
-          onTouchStart={startDrag}
+          ref={containerRef}
+          className="relative w-full max-w-[1100px] aspect-[16/10] rounded-[20px] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.5)] select-none"
         >
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white shadow flex items-center justify-center text-black text-sm font-bold">
-            {"<>"}
+          {/* Antes (base) — SketchUp */}
+          <img
+            src="/renders/antes.png"
+            className="absolute inset-0 w-full h-full object-cover object-center"
+            alt="Maqueta arquitectónica"
+          />
+
+          {/* Después (encima, revelado desde la derecha) — render */}
+          <img
+            src="/renders/fotorealista.png"
+            className="absolute inset-0 w-full h-full object-cover object-center"
+            style={{ clipPath: `inset(0 0 0 ${pos}%)` }}
+            alt="Render fotorrealista"
+          />
+
+          {/* Badges */}
+          <span className="absolute top-4 left-4 z-10 bg-black/60 text-white text-xs rounded-md px-3 py-1">
+            Antes
+          </span>
+          <span className="absolute top-4 right-4 z-10 bg-black/60 text-white text-xs rounded-md px-3 py-1">
+            Después
+          </span>
+
+          {/* Divisor */}
+          <div
+            className="absolute top-0 bottom-0 z-20 w-0.5 bg-white cursor-ew-resize"
+            style={{ left: `${pos}%`, transform: "translateX(-50%)" }}
+            onMouseDown={startDrag}
+            onTouchStart={startDrag}
+          >
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white shadow flex items-center justify-center text-black text-sm font-bold">
+              {"<>"}
+            </div>
           </div>
         </div>
       </div>
