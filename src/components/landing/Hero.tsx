@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import { Box, Ruler, Camera, Layers } from "lucide-react";
 
 const FLOATING = [
-  { Icon: Box, pos: "top-24 left-6 md:left-16", delay: "0s" },
-  { Icon: Ruler, pos: "top-24 right-6 md:right-16", delay: "0.8s" },
-  { Icon: Camera, pos: "bottom-16 left-6 md:left-16", delay: "1.6s" },
-  { Icon: Layers, pos: "bottom-16 right-6 md:right-16", delay: "2.4s" },
+  { Icon: Box, pos: "top-24 left-6 md:left-16", anim: "heroFloat1 5s ease-in-out 0s infinite" },
+  { Icon: Ruler, pos: "top-24 right-6 md:right-16", anim: "heroFloat2 6s ease-in-out 0.7s infinite" },
+  { Icon: Camera, pos: "bottom-16 left-6 md:left-16", anim: "heroFloat3 4.5s ease-in-out 1.2s infinite" },
+  { Icon: Layers, pos: "bottom-16 right-6 md:right-16", anim: "heroFloat4 5.5s ease-in-out 0.4s infinite" },
 ];
 
 export default function Hero() {
@@ -55,10 +55,27 @@ export default function Hero() {
       {/* Sección 1 — Texto/CTA */}
       <div className="relative w-full min-h-screen bg-[#0A0A0A] px-5 flex flex-col justify-center items-center overflow-hidden">
         <style>{`
-          @keyframes heroFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+          @keyframes heroFloat1 {
+            0%,100%{transform:translate(0,0) rotate(0deg)}
+            33%{transform:translate(15px,-35px) rotate(6deg)}
+            66%{transform:translate(-12px,-15px) rotate(-4deg)}
+          }
+          @keyframes heroFloat2 {
+            0%,100%{transform:translate(0,0) rotate(0deg)}
+            50%{transform:translate(-15px,32px) rotate(-8deg)}
+          }
+          @keyframes heroFloat3 {
+            0%,100%{transform:translate(0,0) rotate(0deg)}
+            25%{transform:translate(-14px,-30px) rotate(5deg)}
+            75%{transform:translate(14px,-40px) rotate(8deg)}
+          }
+          @keyframes heroFloat4 {
+            0%,100%{transform:translate(0,0) rotate(0deg)}
+            40%{transform:translate(13px,26px) rotate(7deg)}
+            70%{transform:translate(-11px,36px) rotate(-6deg)}
+          }
           @keyframes heroFadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
           .hero-fadeup{opacity:0;animation:heroFadeUp .6s ease-out forwards}
-          .hero-float{animation:heroFloat 3.5s ease-in-out infinite}
         `}</style>
 
         {/* Grid sutil */}
@@ -82,12 +99,12 @@ export default function Hero() {
         />
 
         {/* Iconos flotantes */}
-        {FLOATING.map(({ Icon, pos, delay }, i) => (
+        {FLOATING.map(({ Icon, pos, anim }, i) => (
           <div
             key={i}
-            className={`hidden md:flex hero-float absolute ${pos} w-[60px] h-[60px] rounded-full border border-white/10 bg-white/[0.02] backdrop-blur items-center justify-center pointer-events-none`}
+            className={`hidden md:flex absolute ${pos} w-[60px] h-[60px] rounded-full border border-white/10 bg-white/[0.02] backdrop-blur items-center justify-center pointer-events-none`}
             style={{
-              animationDelay: delay,
+              animation: anim,
               boxShadow: "0 0 20px rgba(234,88,12,0.15)",
             }}
           >
