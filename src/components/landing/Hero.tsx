@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { Box, Ruler, Camera, Layers } from "lucide-react";
+
+const FLOATING = [
+  { Icon: Box, pos: "top-24 left-6 md:left-16", delay: "0s" },
+  { Icon: Ruler, pos: "top-24 right-6 md:right-16", delay: "0.8s" },
+  { Icon: Camera, pos: "bottom-16 left-6 md:left-16", delay: "1.6s" },
+  { Icon: Layers, pos: "bottom-16 right-6 md:right-16", delay: "2.4s" },
+];
 
 export default function Hero() {
   const [pos, setPos] = useState(50);
@@ -45,19 +53,61 @@ export default function Hero() {
   return (
     <section>
       {/* Sección 1 — Texto/CTA */}
-      <div className="w-full min-h-screen bg-[#111111] px-5 flex flex-col justify-center items-center">
-        <div className="max-w-[1200px] mx-auto text-center">
-          <span className="inline-block bg-white/10 text-white/90 text-sm rounded-full px-4 py-1.5">
+      <div className="relative w-full min-h-screen bg-[#0A0A0A] px-5 flex flex-col justify-center items-center overflow-hidden">
+        <style>{`
+          @keyframes heroFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+          @keyframes heroFadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+          .hero-fadeup{opacity:0;animation:heroFadeUp .6s ease-out forwards}
+          .hero-float{animation:heroFloat 3.5s ease-in-out infinite}
+        `}</style>
+
+        {/* Grid sutil */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+          }}
+        />
+
+        {/* Glow radial naranja */}
+        <div
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(234,88,12,0.15), transparent 70%)",
+            filter: "blur(40px)",
+          }}
+        />
+
+        {/* Iconos flotantes */}
+        {FLOATING.map(({ Icon, pos, delay }, i) => (
+          <div
+            key={i}
+            className={`hidden md:flex hero-float absolute ${pos} w-[60px] h-[60px] rounded-full border border-white/10 bg-white/[0.02] backdrop-blur items-center justify-center pointer-events-none`}
+            style={{
+              animationDelay: delay,
+              boxShadow: "0 0 20px rgba(234,88,12,0.15)",
+            }}
+          >
+            <Icon className="w-6 h-6 text-white/60" />
+          </div>
+        ))}
+
+        {/* Contenido */}
+        <div className="relative z-10 max-w-[1200px] mx-auto text-center">
+          <span className="hero-fadeup inline-block bg-white/10 text-white/90 text-sm rounded-full px-4 py-1.5" style={{ animationDelay: "0ms" }}>
             ✨ Renders fotorrealistas con IA
           </span>
-          <h1 className="mt-6 text-[32px] md:text-[72px] font-black text-white leading-[1.05]">
+          <h1 className="hero-fadeup mt-6 text-[32px] md:text-[72px] font-black text-white leading-[1.05]" style={{ animationDelay: "100ms" }}>
             Tus renders ya no tienen que tomar horas.
           </h1>
-          <p className="mt-5 max-w-[600px] mx-auto text-lg text-[#9CA3AF]">
+          <p className="hero-fadeup mt-5 max-w-[600px] mx-auto text-lg text-[#9CA3AF]" style={{ animationDelay: "200ms" }}>
             Sube un boceto, un plano o una captura de SketchUp y obtén un render
             fotorrealista listo para presentar a tu cliente en segundos.
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-2 text-white text-[15px]">
+          <div className="hero-fadeup mt-6 flex flex-wrap justify-center gap-2 text-white text-[15px]" style={{ animationDelay: "300ms" }}>
             <span>✅ 3 renders gratis</span>
             <span className="text-white/40">·</span>
             <span>✅ Sin instalar programas</span>
@@ -66,7 +116,8 @@ export default function Hero() {
           </div>
           <Link
             to="/app"
-            className="inline-block mt-8 bg-[#EA580C] text-white rounded-[10px] px-8 py-4 text-lg font-bold hover:bg-[#c2410c] transition-colors"
+            className="hero-fadeup inline-block mt-8 bg-[#EA580C] text-white rounded-[10px] px-8 py-4 text-lg font-bold hover:bg-[#c2410c] transition-colors"
+            style={{ animationDelay: "400ms" }}
           >
             👉 Crear mis 3 renders gratis
           </Link>
