@@ -14,7 +14,7 @@ const GALERIA = [
   { src: "/renders/arquirender-36.png", label: "Moodboard" },
   { src: "/renders/opcion_1.jpg", label: "Lluvioso" },
   { src: "/renders/opcion2.jpg", label: "Nocturno" },
-  { src: "/renders/arquirender-31.png", label: "Nocturno" },
+  { src: "/renders/fachada_colineal_2.png", label: "Nocturno" },
   { src: "/renders/arquirender-Bauhaus-6.png", label: "Bauhaus" },
 ];
 
