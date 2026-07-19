@@ -45,12 +45,12 @@ export default function Hero() {
   return (
     <section>
       {/* Sección 1 — Texto/CTA */}
-      <div className="w-full bg-[#111111] py-20 px-5">
+      <div className="w-full min-h-screen bg-[#111111] px-5 flex flex-col justify-center items-center">
         <div className="max-w-[1200px] mx-auto text-center">
           <span className="inline-block bg-white/10 text-white/90 text-sm rounded-full px-4 py-1.5">
             ✨ Renders fotorrealistas con IA
           </span>
-          <h1 className="mt-6 text-[32px] md:text-[64px] font-black text-white leading-[1.05]">
+          <h1 className="mt-6 text-[32px] md:text-[72px] font-black text-white leading-[1.05]">
             Tus renders ya no tienen que tomar horas.
           </h1>
           <p className="mt-5 max-w-[600px] mx-auto text-lg text-[#9CA3AF]">
@@ -76,7 +76,7 @@ export default function Hero() {
       {/* Sección 2 — Slider antes/después */}
       <div
         ref={containerRef}
-        className="relative w-full h-[70vh] overflow-hidden select-none"
+        className="relative w-full h-screen overflow-hidden select-none"
       >
         {/* Antes (base) — SketchUp */}
         <img
