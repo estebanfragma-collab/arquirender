@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import { Box, Ruler, Camera, Layers } from "lucide-react";
 
 const FLOATING = [
-  { Icon: Box, pos: "top-24 left-6 md:left-16", anim: "heroFloat1 5s ease-in-out 0s infinite" },
-  { Icon: Ruler, pos: "top-24 right-6 md:right-16", anim: "heroFloat2 6s ease-in-out 0.7s infinite" },
-  { Icon: Camera, pos: "bottom-16 left-6 md:left-16", anim: "heroFloat3 4.5s ease-in-out 1.2s infinite" },
-  { Icon: Layers, pos: "bottom-16 right-6 md:right-16", anim: "heroFloat4 5.5s ease-in-out 0.4s infinite" },
+  { Icon: Box, pos: "top-[20%] left-[13%]", anim: "heroFloat1 5s ease-in-out 0s infinite" },
+  { Icon: Ruler, pos: "top-[20%] right-[13%]", anim: "heroFloat2 6s ease-in-out 0.7s infinite" },
+  { Icon: Camera, pos: "bottom-[20%] left-[13%]", anim: "heroFloat3 4.5s ease-in-out 1.2s infinite" },
+  { Icon: Layers, pos: "bottom-[20%] right-[13%]", anim: "heroFloat4 5.5s ease-in-out 0.4s infinite" },
 ];
 
 export default function Hero() {
