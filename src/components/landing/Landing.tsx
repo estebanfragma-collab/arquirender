@@ -8,7 +8,7 @@ import MagneticBanner from "./MagneticBanner";
 import Resultados from "./Resultados";
 import Proyecto from "./Proyecto";
 import Industrias from "./Industrias";
-import Objeciones from "./Objeciones";
+// import Objeciones from "./Objeciones";
 import Precios from "./Precios";
 import FAQ from "./FAQ";
 import CTAFinal from "./CTAFinal";
@@ -39,7 +39,6 @@ export default function Landing() {
         ctaText="Únete gratis →"
         ctaHref="/app"
       />
-      <Objeciones />
       <Precios />
       <FAQ />
       <CTAFinal />
