@@ -144,19 +144,19 @@ export default function Hero() {
       {/* Sección 2 — Slider antes/después */}
       <div
         ref={containerRef}
-        className="relative w-full h-screen overflow-hidden select-none"
+        className="relative w-full h-screen overflow-hidden select-none bg-black"
       >
         {/* Antes (base) — SketchUp */}
         <img
           src="/renders/antes.png"
-          className="absolute inset-0 w-full h-full object-cover object-center"
+          className="absolute inset-0 w-full h-full object-contain object-center"
           alt="Maqueta arquitectónica"
         />
 
         {/* Después (encima, revelado desde la derecha) — render */}
         <img
           src="/renders/fotorealista.png"
-          className="absolute inset-0 w-full h-full object-cover object-center"
+          className="absolute inset-0 w-full h-full object-contain object-center"
           style={{ clipPath: `inset(0 0 0 ${pos}%)` }}
           alt="Render fotorrealista"
         />
