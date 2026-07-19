@@ -76,32 +76,30 @@ export default function Hero() {
       {/* Sección 2 — Slider antes/después */}
       <div
         ref={containerRef}
-        className="relative w-full h-[350px] md:h-[600px] overflow-hidden select-none"
+        className="relative w-screen h-[70vh] overflow-hidden select-none"
       >
         {/* Antes (base) */}
         <img
           src="/renders/antes.png"
-          className="absolute inset-0 w-full h-full object-cover object-center"
+          className="absolute top-0 left-0 w-full h-full object-cover"
           alt="Maqueta arquitectónica"
         />
+
+        {/* Después (encima) */}
+        <img
+          src="/renders/fotorealista.png"
+          className="absolute top-0 left-0 w-full h-full object-cover"
+          style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
+          alt="Render fotorrealista"
+        />
+
+        {/* Badges */}
         <span className="absolute top-4 left-4 z-10 bg-black/60 text-white text-xs rounded-md px-3 py-1">
           Antes
         </span>
-
-        {/* Después (revelado a la derecha) */}
-        <div
-          className="absolute inset-0"
-          style={{ clipPath: `inset(0 0 0 ${pos}%)` }}
-        >
-          <img
-            src="/renders/fotorealista.png"
-            className="w-full h-full object-cover object-center"
-            alt="Render fotorrealista"
-          />
-          <span className="absolute top-4 right-4 z-10 bg-black/60 text-white text-xs rounded-md px-3 py-1">
-            Después
-          </span>
-        </div>
+        <span className="absolute top-4 right-4 z-10 bg-black/60 text-white text-xs rounded-md px-3 py-1">
+          Después
+        </span>
 
         {/* Divisor */}
         <div
