@@ -118,11 +118,12 @@ export default function Hero() {
             ✨ Renders fotorrealistas con IA
           </span>
           <h1 className="hero-fadeup mt-6 text-[32px] md:text-[72px] font-black text-white leading-[1.05]" style={{ animationDelay: "100ms" }}>
-            Tus renders ya no tienen que tomar horas.
+            Tus ideas merecen verse como proyectos terminados.
           </h1>
           <p className="hero-fadeup mt-5 max-w-[600px] mx-auto text-lg text-[#9CA3AF]" style={{ animationDelay: "200ms" }}>
-            Sube un boceto, un plano o una captura de SketchUp y obtén un render
-            fotorrealista listo para presentar a tu cliente en segundos.
+            Convierte un boceto, un plano o una captura de SketchUp en un render
+            fotorrealista en segundos con IA. Presenta propuestas más
+            impactantes sin perder horas renderizando.
           </p>
           <div className="hero-fadeup mt-6 flex flex-wrap justify-center gap-2 text-white text-[15px]" style={{ animationDelay: "300ms" }}>
             <span>✅ 3 renders gratis</span>
