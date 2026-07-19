@@ -10,6 +10,12 @@ const GALERIA = [
   { src: "/renders/axonometrico.png", label: "Axonométrico" },
   { src: "/renders/lamina.png", label: "Maqueta" },
   { src: "/renders/exterior.png", label: "Exterior" },
+  { src: "/renders/arquirender-Moderno-5.png", label: "Estilo Moderno" },
+  { src: "/renders/arquirender-36.png", label: "Moodboard" },
+  { src: "/renders/opcion_1.jpg", label: "Lluvioso" },
+  { src: "/renders/opcion2.jpg", label: "Nocturno" },
+  { src: "/renders/arquirender-31.png", label: "Nocturno" },
+  { src: "/renders/arquirender-Bauhaus-6.png", label: "Bauhaus" },
 ];
 
 const PAIRS = [
