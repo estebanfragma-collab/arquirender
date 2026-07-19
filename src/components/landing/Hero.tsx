@@ -44,9 +44,9 @@ export default function Hero() {
 
   return (
     <section>
-      {/* Bloque superior */}
-      <div className="bg-[#111111] pt-[120px] pb-[60px]">
-        <div className="max-w-[1200px] mx-auto px-6 text-center">
+      {/* Sección 1 — Texto/CTA */}
+      <div className="w-full bg-[#111111] py-20 px-5">
+        <div className="max-w-[1200px] mx-auto text-center">
           <span className="inline-block bg-white/10 text-white/90 text-sm rounded-full px-4 py-1.5">
             ✨ Renders fotorrealistas con IA
           </span>
@@ -73,10 +73,10 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Bloque inferior — slider */}
+      {/* Sección 2 — Slider antes/después */}
       <div
         ref={containerRef}
-        className="relative w-full h-[300px] md:h-[500px] overflow-hidden select-none"
+        className="relative w-full h-[350px] md:h-[600px] overflow-hidden select-none"
       >
         {/* Antes (base) */}
         <img
