@@ -6,80 +6,113 @@ export default function Footer() {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const linkClass = "text-sm text-[#9CA3AF] hover:text-white transition-colors";
+
   return (
     <footer className="bg-[#111111] py-[60px]">
       <div className="max-w-[1200px] mx-auto px-6">
-        {/* Fila superior */}
-        <div className="flex flex-wrap justify-between gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr] gap-10">
+          {/* Columna 1 — Marca */}
           <div>
-            <div className="text-xl font-bold text-white">ArquiRender</div>
-            <p className="mt-2 text-sm text-[#999]">
-              Renders fotorrealistas con IA para arquitectos de LATAM
+            <div className="text-2xl font-bold text-white">ArquiRender</div>
+            <p className="mt-3 text-sm text-[#9CA3AF] max-w-[280px]">
+              Renders arquitectónicos fotorrealistas con IA para arquitectos y
+              diseñadores de LATAM.
             </p>
             <a
-              href="https://instagram.com/ayalgoritmo"
+              href="https://wa.me/593993548764"
               target="_blank"
               rel="noreferrer"
-              className="mt-4 inline-flex items-center gap-2 text-sm text-[#999] hover:text-white transition-colors"
+              className={`${linkClass} mt-4 block`}
             >
-              <span>📷</span>
-              <span>@ayalgoritmo</span>
+              +593 99 354 8764
             </a>
-            <p className="mt-2 text-sm text-[#999]">ayalgoritmo@gmail.com</p>
+            <a href="mailto:ayalgoritmo@gmail.com" className={`${linkClass} mt-1 block`}>
+              ayalgoritmo@gmail.com
+            </a>
+            <p className="mt-3 text-xs text-[#6B7280]">
+              Esteban Ponce · Quito, Ecuador
+            </p>
           </div>
 
-          <div className="flex flex-col gap-3">
-            <a
-              href="#caracteristicas"
-              onClick={scrollTo("caracteristicas")}
-              className="text-sm text-[#999] hover:text-white transition-colors"
-            >
-              Características
-            </a>
-            <a
-              href="#precios"
-              onClick={scrollTo("precios")}
-              className="text-sm text-[#999] hover:text-white transition-colors"
-            >
-              Precios
-            </a>
-            <Link
-              to="/app"
-              className="text-sm text-[#999] hover:text-white transition-colors"
-            >
-              Iniciar sesión
-            </Link>
+          {/* Columna 2 — Producto */}
+          <div>
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wide">
+              Producto
+            </h3>
+            <ul className="mt-4 flex flex-col gap-3">
+              <li>
+                <a href="#caracteristicas" onClick={scrollTo("caracteristicas")} className={linkClass}>
+                  Características
+                </a>
+              </li>
+              <li>
+                <a href="#precios" onClick={scrollTo("precios")} className={linkClass}>
+                  Precios
+                </a>
+              </li>
+              <li>
+                <Link to="/app" className={linkClass}>
+                  Empezar gratis
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Columna 3 — Recursos */}
+          <div>
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wide">
+              Recursos
+            </h3>
+            <ul className="mt-4 flex flex-col gap-3">
+              <li>
+                <a href="#solucion" onClick={scrollTo("solucion")} className={linkClass}>
+                  Cómo funciona
+                </a>
+              </li>
+              <li>
+                <a href="#resultados" onClick={scrollTo("resultados")} className={linkClass}>
+                  Resultados
+                </a>
+              </li>
+              <li>
+                <a href="#faq" onClick={scrollTo("faq")} className={linkClass}>
+                  Preguntas frecuentes
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Columna 4 — Legal */}
+          <div>
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wide">
+              Legal
+            </h3>
+            <ul className="mt-4 flex flex-col gap-3">
+              <li>
+                <Link to="/terminos" className={linkClass}>
+                  Términos y condiciones
+                </Link>
+              </li>
+              <li>
+                <Link to="/privacidad" className={linkClass}>
+                  Política de privacidad
+                </Link>
+              </li>
+              <li>
+                <Link to="/reembolsos" className={linkClass}>
+                  Política de reembolsos
+                </Link>
+              </li>
+            </ul>
           </div>
         </div>
 
-        {/* Divisor */}
-        <div className="mt-12 border-t border-[#333]" />
-
-        {/* Fila inferior */}
-        <div className="mt-6 flex flex-wrap justify-between gap-4">
-          <p className="text-[13px] text-[#666]">
+        {/* Abajo */}
+        <div className="mt-12 pt-6 border-t border-[#2A2A2A]">
+          <p className="text-center text-xs text-[#6B7280]">
             © 2026 ArquiRender. Todos los derechos reservados.
           </p>
-          <div className="flex gap-6">
-            <Link
-              to="/terminos"
-              className="text-[13px] text-[#666] hover:text-[#999] transition-colors"
-            >
-              Términos de uso
-            </Link>
-            <Link
-              to="/privacidad"
-              className="text-[13px] text-[#666] hover:text-[#999] transition-colors"
-            >
-              Política de privacidad
-            </Link>
-            <Link
-              to="/reembolsos"
-              className="text-[13px] text-[#666] hover:text-[#999] transition-colors"
-            >
-              Política de reembolsos
-            </Link>
-          </div>
         </div>
       </div>
     </footer>
