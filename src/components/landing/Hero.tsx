@@ -143,7 +143,7 @@ export default function Hero() {
 
       {/* Sección 2 — Slider antes/después (tarjeta flotante) */}
       <div
-        className="relative w-full min-h-screen bg-[#0A0A0A] flex items-center justify-center p-[60px] md:p-20"
+        className="relative w-full min-h-screen bg-[#0A0A0A] flex items-center justify-center p-10 md:p-[120px]"
         style={{
           backgroundImage:
             "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
@@ -152,7 +152,7 @@ export default function Hero() {
       >
         <div
           ref={containerRef}
-          className="relative w-full max-w-[1100px] aspect-[16/10] rounded-[20px] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.5)] select-none"
+          className="relative w-full max-w-[950px] aspect-[16/10] rounded-[20px] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.5)] select-none"
         >
           {/* Antes (base) — SketchUp */}
           <img
