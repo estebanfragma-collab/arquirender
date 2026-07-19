@@ -38,8 +38,14 @@ export default function Dolores() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    // Fallback: si el observer no dispara, forzar visible a los 500ms
+    const fallback = setTimeout(() => setVisible(true), 500);
+
     const el = sectionRef.current;
-    if (!el) return;
+    if (!el) {
+      return () => clearTimeout(fallback);
+    }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -47,10 +53,14 @@ export default function Dolores() {
           observer.disconnect();
         }
       },
-      { threshold: 0.15 }
+      { threshold: 0, rootMargin: "0px 0px -10% 0px" }
     );
     observer.observe(el);
-    return () => observer.disconnect();
+
+    return () => {
+      clearTimeout(fallback);
+      observer.disconnect();
+    };
   }, []);
 
   const anim = (delay: number) => ({
