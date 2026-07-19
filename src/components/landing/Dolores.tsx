@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 const CARDS = [
   {
     num: "01",
-    icon: "😩",
-    text: "Invertí días enteros haciendo renders... y el cliente igual dijo: 'No es lo que imaginaba'.",
+    icon: "😤",
+    text: "Mi laptop se congela a la mitad del render. Y el cliente espera una respuesta hoy.",
   },
   {
     num: "02",
@@ -13,8 +13,8 @@ const CARDS = [
   },
   {
     num: "03",
-    icon: "😤",
-    text: "He perdido proyectos porque otros arquitectos presentan imágenes espectaculares desde la primera reunión.",
+    icon: "💸",
+    text: "Pago $40, $100, hasta $300 por render encargado — y aun así el cliente pide cambios.",
   },
   {
     num: "04",
@@ -28,8 +28,8 @@ const CARDS = [
   },
   {
     num: "06",
-    icon: "🎯",
-    text: "Sé que podría vender mucho más si pudiera mostrar imágenes realistas sin complicarme la vida.",
+    icon: "😩",
+    text: "El arquitecto de enfrente llegó a la reunión con renders espectaculares. Tú llegaste con planos. Ya sabes cómo terminó.",
   },
 ];
 
