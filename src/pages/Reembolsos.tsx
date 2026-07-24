@@ -49,11 +49,11 @@ export default function Reembolsos() {
               2. Política de reembolso
             </h2>
             <p>
-              Ofrecemos una garantía de reembolso de <strong>7 días</strong> sobre
-              el <strong>primer pago</strong> de una suscripción. Si dentro de los
-              7 días posteriores a su primera compra no está satisfecho, puede
-              solicitar el reembolso completo de ese primer pago. Esta garantía
-              aplica una sola vez por usuario y sobre el pago inicial.
+              Usted tiene derecho a solicitar el reembolso completo de su compra
+              dentro de los primeros <strong>14 días calendario</strong> contados
+              desde la fecha de compra, <strong>sin necesidad de justificación y
+              sin excepciones ni condiciones</strong>. Le devolveremos el 100% del
+              importe pagado. Basta con enviarnos su solicitud dentro de ese plazo.
             </p>
           </section>
 
@@ -84,9 +84,9 @@ export default function Reembolsos() {
               Puede cancelar su suscripción en cualquier momento desde su cuenta o
               escribiéndonos. Al cancelar, no se generarán cobros futuros y
               conservará el acceso a las funciones de su plan hasta el final del
-              periodo ya pagado. No se realizan reembolsos proporcionales por
-              periodos parcialmente utilizados, salvo lo dispuesto en la garantía
-              de 7 días.
+              periodo ya pagado. Independientemente de la cancelación, se mantiene
+              vigente su derecho al reembolso completo dentro de los 14 días
+              calendario desde la compra descrito en el punto 2.
             </p>
           </section>
 
@@ -108,11 +108,12 @@ export default function Reembolsos() {
               6. Excepciones
             </h2>
             <p>
-              No se otorgarán reembolsos en casos de: (a) uso abusivo o
-              fraudulento del Servicio; (b) solicitudes fuera del plazo de 7 días
-              del primer pago; (c) renovaciones posteriores al primer periodo; o
-              (d) consumo sustancial de créditos o renders durante el periodo. Nos
-              reservamos el derecho de evaluar cada solicitud de buena fe.
+              El derecho al reembolso completo dentro de los 14 días calendario
+              descrito en el punto 2 aplica siempre, sin excepciones. Una vez
+              transcurrido ese plazo de 14 días, los reembolsos quedan a nuestra
+              discreción y podrán no otorgarse, por ejemplo, en renovaciones de
+              periodos posteriores o en casos de uso abusivo o fraudulento del
+              Servicio.
             </p>
           </section>
 
