@@ -378,6 +378,9 @@ const GeneradorPromptsArquitectonicos = () => {
           originalBase64: imagenOriginal || undefined,
           estilo: valorTexto(valores.estiloDiseno).trim() || undefined,
           representacion,
+          // En modo estilo las notas ya vienen dentro de promptFinal; se mandan
+          // aparte para que la Edge Function las concatene al prompt fijo de representación.
+          notas: valorTexto(valores.notas).trim() || undefined,
         },
       });
 
@@ -719,7 +722,7 @@ const GeneradorPromptsArquitectonicos = () => {
 
           <div className="border-t border-brand-border px-5 py-5 sm:px-6">
             <div className="inline-flex w-full gap-1 rounded-md border border-brand-border bg-input p-1 sm:w-auto">
-              {([["estilo", "Render de Estilo"], ["representacion", "Tipo de Representación"]] as const).map(([modo, etiqueta]) => (
+              {([["estilo", "Render de Estilo"], ["representacion", "Láminas de presentación"]] as const).map(([modo, etiqueta]) => (
                 <button key={modo} type="button" onClick={() => setModoRender(modo)} className={`flex-1 whitespace-nowrap rounded px-4 py-2 text-xs font-bold transition sm:flex-none ${modoRender === modo ? "bg-[#EA580C] text-white" : "bg-transparent text-muted-foreground hover:text-foreground"}`}>
                   {etiqueta}
                 </button>
@@ -758,6 +761,17 @@ const GeneradorPromptsArquitectonicos = () => {
             </div>
           )}
 
+          {/* Notas adicionales: compartido en ambos modos, justo debajo de la descripción */}
+          {campoPorId("notas") && (
+            <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+              <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
+                <span>{campoPorId("notas")!.etiqueta}</span>
+                <span className="font-bold text-muted-foreground">Opcional</span>
+              </label>
+              {renderCampo(campoPorId("notas")!)}
+            </div>
+          )}
+
           {modoRender === "estilo" && (
           <>
           {renderAcordeon("materiales", "Materiales a aplicar", (
@@ -780,16 +794,6 @@ const GeneradorPromptsArquitectonicos = () => {
           ))}
 
           {renderAcordeon("iluminacion", "Iluminación destino", campoPorId("iluminacion") ? renderCampo(campoPorId("iluminacion")!) : null)}
-
-          {campoPorId("notas") && (
-            <div className="border-t border-brand-border px-5 py-5 sm:px-6">
-              <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
-                <span>{campoPorId("notas")!.etiqueta}</span>
-                <span className="font-bold text-muted-foreground">Opcional</span>
-              </label>
-              {renderCampo(campoPorId("notas")!)}
-            </div>
-          )}
 
           <div className="border-t border-brand-border px-5 py-5 sm:px-6">
             <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">

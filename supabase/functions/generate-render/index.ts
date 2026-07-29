@@ -188,19 +188,22 @@ Deno.serve(async (req) => {
     userId = userData.user.id;
 
     // 2) Validación del body (antes de descontar, para no cobrar por inputs inválidos)
-    const body = await req.json().catch(() => null) as { prompt?: string; imageBase64?: string; originalBase64?: string; estilo?: string; representacion?: string } | null;
+    const body = await req.json().catch(() => null) as { prompt?: string; imageBase64?: string; originalBase64?: string; estilo?: string; representacion?: string; notas?: string } | null;
     let prompt = body?.prompt?.trim();
     const imageBase64 = body?.imageBase64?.trim();
     const originalBase64 = body?.originalBase64?.trim();
     const estilo = body?.estilo?.trim() || null;
+    const notas = body?.notas?.trim();
 
     // Si llega una representación conocida, su prompt reemplaza al prompt de estilo normal.
     const representacion = body?.representacion?.trim();
     if (representacion) {
       const promptRep = PROMPTS_REPRESENTACION[slugRepresentacion(representacion)];
       if (promptRep) {
-        prompt = promptRep;
-        console.log(`[generate-render] Usando prompt de representación: ${representacion}`);
+        // El prompt de representación reemplaza al de estilo; las notas del usuario
+        // se concatenan al final para que igual afecten el resultado.
+        prompt = notas ? `${promptRep} ${notas}` : promptRep;
+        console.log(`[generate-render] Usando prompt de representación: ${representacion}${notas ? " (+ notas)" : ""}`);
       } else {
         console.warn(`[generate-render] Representación desconocida, se ignora: ${representacion}`);
       }
