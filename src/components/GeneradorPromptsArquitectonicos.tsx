@@ -188,6 +188,21 @@ const slugRepresentacion = (valor: string): string =>
     .filter((token) => token && !STOPWORDS_REPRESENTACION.has(token))
     .join("_");
 
+// Convierte una URL de Storage a data-URL (fetch → blob → base64). El generador
+// trabaja siempre con data-URLs porque la Edge Function espera base64, no una URL.
+// Lanza si el fetch o la lectura fallan, para que el llamador muestre el error.
+const urlADataUrl = async (url: string): Promise<string> => {
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`fetch ${resp.status}`);
+  const blob = await resp.blob();
+  return await new Promise<string>((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result || ""));
+    fr.onerror = () => reject(new Error("readAsDataURL falló"));
+    fr.readAsDataURL(blob);
+  });
+};
+
 const GeneradorPromptsArquitectonicos = () => {
   const [tabActiva, setTabActiva] = useState<TabId>("sketch");
   const [tipoImagen, setTipoImagen] = useState<TipoImagenId>("sketch");
@@ -495,6 +510,25 @@ const GeneradorPromptsArquitectonicos = () => {
     setComparacion("despues");
   };
 
+  // "Continuar desde aquí" (desde el historial): carga el render como base activa y
+  // la foto original como original, en la pestaña activa, y va a la vista Generar.
+  // Convierte ambas URLs a data-URL ANTES de tocar el estado; si alguna falla, lanza
+  // (sin cambios parciales) para que el historial muestre el error.
+  const continuarDesde = async (r: { imagen_generada_url: string; imagen_original_url: string | null }) => {
+    const generadaData = await urlADataUrl(r.imagen_generada_url);
+    const originalData = r.imagen_original_url ? await urlADataUrl(r.imagen_original_url) : generadaData;
+    setImagenRenders((actual) => ({ ...actual, [tabActiva]: generadaData }));
+    setVistasPrevias((actual) => ({
+      ...actual,
+      [tabActiva]: {
+        ...actual[tabActiva],
+        imagen: { nombre: "Desde historial", url: originalData },
+      },
+    }));
+    setComparacion("despues");
+    setVista("generar");
+  };
+
   const renderPills = (campo: CampoPrompt, opciones = campo.opciones || []) => (
     <div className="flex flex-wrap gap-2">
       {opciones.map((opcion) => {
@@ -711,7 +745,7 @@ const GeneradorPromptsArquitectonicos = () => {
 
       {vista === "historial" && userId ? (
         <main className="mx-auto w-[min(1180px,calc(100%-32px))] py-7">
-          <HistorialRenders userId={userId} refreshSignal={refrescarHistorial} />
+          <HistorialRenders userId={userId} refreshSignal={refrescarHistorial} onContinuar={continuarDesde} />
         </main>
       ) : (
       <main className="mx-auto grid w-[min(1180px,calc(100%-32px))] gap-8 py-7 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start">

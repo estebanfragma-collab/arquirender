@@ -13,6 +13,8 @@ interface RenderRow {
 interface HistorialRendersProps {
   userId: string;
   refreshSignal: number;
+  /** Carga este render como base activa en el generador. Debe lanzar si falla (para mostrar error). */
+  onContinuar?: (r: RenderRow) => Promise<void>;
 }
 
 // Fecha amigable: "hace 2 horas" para lo reciente, "7 jul" para lo antiguo.
@@ -48,11 +50,26 @@ const descargar = async (url: string, nombre: string) => {
   }
 };
 
-const HistorialRenders = ({ userId, refreshSignal }: HistorialRendersProps) => {
+const HistorialRenders = ({ userId, refreshSignal, onContinuar }: HistorialRendersProps) => {
   const [renders, setRenders] = useState<RenderRow[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [verOriginal, setVerOriginal] = useState<Record<string, boolean>>({});
+  const [continuandoId, setContinuandoId] = useState<string | null>(null);
+  const [errorContinuar, setErrorContinuar] = useState<string | null>(null);
+
+  const continuar = async (r: RenderRow) => {
+    if (!onContinuar || continuandoId) return;
+    setContinuandoId(r.id);
+    setErrorContinuar(null);
+    try {
+      await onContinuar(r);
+    } catch {
+      setErrorContinuar(r.id);
+    } finally {
+      setContinuandoId(null);
+    }
+  };
 
   useEffect(() => {
     let activo = true;
@@ -145,6 +162,21 @@ const HistorialRenders = ({ userId, refreshSignal }: HistorialRendersProps) => {
               >
                 Descargar
               </button>
+              {onContinuar && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => continuar(r)}
+                    disabled={continuandoId === r.id}
+                    className="rounded-full border border-[#EA580C] bg-transparent px-3 py-2 text-xs font-extrabold text-[#EA580C] transition hover:bg-[#EA580C] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {continuandoId === r.id ? "Cargando…" : "Continuar desde aquí"}
+                  </button>
+                  {errorContinuar === r.id && (
+                    <p className="text-[11px] font-bold text-destructive">No se pudo cargar la imagen. Intenta de nuevo.</p>
+                  )}
+                </>
+              )}
             </div>
           </div>
         );
