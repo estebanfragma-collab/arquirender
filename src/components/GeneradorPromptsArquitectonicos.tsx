@@ -207,7 +207,7 @@ const GeneradorPromptsArquitectonicos = () => {
   const [errorAnalisis, setErrorAnalisis] = useState("");
   const [acordeones, setAcordeones] = useState<Record<string, boolean>>({ materiales: false, estilo: false, iluminacion: false });
   const [generando, setGenerando] = useState(false);
-  const [imagenRender, setImagenRender] = useState("");
+  const [imagenRenders, setImagenRenders] = useState<Record<TabId, string>>({ nueva: "", remodelacion: "", planta: "", sketch: "" });
   const [errorRender, setErrorRender] = useState("");
   const [comparacion, setComparacion] = useState<"antes" | "despues">("despues");
   const [userId, setUserId] = useState<string | null>(null);
@@ -226,6 +226,14 @@ const GeneradorPromptsArquitectonicos = () => {
 
   const tab = useMemo(() => tabsPrompt.find((item) => item.id === tabActiva)!, [tabActiva]);
   const valores = valoresPorTab[tabActiva];
+
+  // Fuente de verdad única de la imagen base activa (por pestaña):
+  //  - imagenRender: último render generado en esta pestaña (la iteración)
+  //  - imagenOriginal: la foto realmente subida por el usuario
+  //  - imagenBaseActiva: de dónde parte la próxima generación (el render si existe, si no la original)
+  const imagenRender = imagenRenders[tabActiva];
+  const imagenOriginal = vistasPrevias[tabActiva]?.imagen?.url || "";
+  const imagenBaseActiva = imagenRender || imagenOriginal;
   const campoPorId = (id: string) => tab.campos.find((campo) => campo.id === id);
   const toggleAcordeon = (clave: string) => setAcordeones((actual) => ({ ...actual, [clave]: !actual[clave] }));
 
@@ -339,6 +347,10 @@ const GeneradorPromptsArquitectonicos = () => {
           [campo.id]: { nombre: archivo.name, url: String(lector.result || "") },
         },
       }));
+      // Subir una imagen base nueva descarta la iteración anterior: la base vuelve a ser la original.
+      if (campo.id === "imagen") {
+        setImagenRenders((actual) => ({ ...actual, [tabActiva]: "" }));
+      }
       void analizarImagen(String(lector.result || ""));
     };
     lector.readAsDataURL(archivo);
@@ -350,17 +362,20 @@ const GeneradorPromptsArquitectonicos = () => {
     setPrompt(promptFinal);
 
     setErrorRender("");
-    setImagenRender("");
+    setImagenRenders((actual) => ({ ...actual, [tabActiva]: "" }));
     setGenerando(true);
 
     try {
-      const imageBase64 = vistasPrevias[tabActiva]?.imagen?.url;
+      // Fuente de verdad: se itera desde la base activa (último render u original),
+      // pero el original real siempre viaja aparte para el historial (antes/después).
+      const imageBase64 = imagenBaseActiva;
       const representacion = modoRender === "representacion" && selectedRepresentacion ? slugRepresentacion(selectedRepresentacion) : undefined;
       console.log("representacion enviada:", representacion);
       const { data, error: functionError } = await supabase.functions.invoke("generate-render", {
         body: {
           prompt: promptFinal,
           imageBase64,
+          originalBase64: imagenOriginal || undefined,
           estilo: valorTexto(valores.estiloDiseno).trim() || undefined,
           representacion,
         },
@@ -391,7 +406,7 @@ const GeneradorPromptsArquitectonicos = () => {
       }
 
       setComparacion("despues");
-      setImagenRender(`data:image/png;base64,${data.imageBase64}`);
+      setImagenRenders((actual) => ({ ...actual, [tabActiva]: `data:image/png;base64,${data.imageBase64}` }));
 
       // El crédito ya lo descontó la Edge Function; recargamos el valor real desde profiles
       if (uidActivo) await cargarCreditos(uidActivo);
@@ -471,7 +486,7 @@ const GeneradorPromptsArquitectonicos = () => {
     setError("");
     setErrorAnalisis("");
     setCopiado(false);
-    setImagenRender("");
+    setImagenRenders({ nueva: "", remodelacion: "", planta: "", sketch: "" });
     setErrorRender("");
     setGenerando(false);
     setComparacion("despues");
@@ -596,6 +611,7 @@ const GeneradorPromptsArquitectonicos = () => {
                 <span className="text-xs font-bold text-muted-foreground">{comparacion === "antes" ? "Render" : "Original"}</span>
               </button>
               <a href={imagenRender} download="arquirender.png" className="block rounded-md bg-[#EA580C] px-4 py-3 text-center text-sm font-extrabold text-white transition hover:bg-[#c2470a]">Descargar</a>
+              <button type="button" onClick={() => setImagenRenders((actual) => ({ ...actual, [tabActiva]: "" }))} className="block w-full rounded-md border border-brand-border bg-transparent px-4 py-2 text-center text-sm font-bold text-muted-foreground transition hover:border-[#EA580C] hover:text-[#EA580C]">↩ Volver al original</button>
             </div>
           ) : (
             <div className="space-y-3">
@@ -883,7 +899,8 @@ const GeneradorPromptsArquitectonicos = () => {
         <VariacionesModal
           estilos={estilosDiseno}
           creditosDisponibles={creditos ?? 0}
-          imageBase64={vistasPrevias[tabActiva]!.imagen!.url}
+          imageBase64={imagenBaseActiva}
+          originalBase64={imagenOriginal}
           notas={valorTexto(valores.notas)}
           onVerPlanes={() => { setMostrarVariaciones(false); setMostrarPlanes(true); }}
           onCreditosActualizados={async () => {

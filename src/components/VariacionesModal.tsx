@@ -4,7 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 interface VariacionesModalProps {
   estilos: string[];
   creditosDisponibles: number;
+  /** Imagen base desde la que se generan las variaciones (último render u original). */
   imageBase64: string;
+  /** Foto real subida por el usuario. Viaja aparte para guardarse como "antes" en el historial. */
+  originalBase64?: string;
   /** Notas libres del usuario (campo "Notas adicionales"). Único dato del input que se conserva. */
   notas?: string;
   /** @deprecated Ya no se usa: el prompt de variación se arma con construirPromptVariacion. */
@@ -55,6 +58,7 @@ const VariacionesModal = ({
   estilos,
   creditosDisponibles,
   imageBase64,
+  originalBase64,
   notas = "",
   onVerPlanes,
   onCreditosActualizados,
@@ -79,7 +83,7 @@ const VariacionesModal = ({
   const generarUna = async (estilo: string) => {
     try {
       const { data, error } = await supabase.functions.invoke("generate-render", {
-        body: { prompt: construirPromptVariacion(estilo, notas), imageBase64, estilo },
+        body: { prompt: construirPromptVariacion(estilo, notas), imageBase64, originalBase64, estilo },
       });
       if (error) {
         const status = (error as any)?.context?.status;

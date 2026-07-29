@@ -188,9 +188,10 @@ Deno.serve(async (req) => {
     userId = userData.user.id;
 
     // 2) Validación del body (antes de descontar, para no cobrar por inputs inválidos)
-    const body = await req.json().catch(() => null) as { prompt?: string; imageBase64?: string; estilo?: string; representacion?: string } | null;
+    const body = await req.json().catch(() => null) as { prompt?: string; imageBase64?: string; originalBase64?: string; estilo?: string; representacion?: string } | null;
     let prompt = body?.prompt?.trim();
     const imageBase64 = body?.imageBase64?.trim();
+    const originalBase64 = body?.originalBase64?.trim();
     const estilo = body?.estilo?.trim() || null;
 
     // Si llega una representación conocida, su prompt reemplaza al prompt de estilo normal.
@@ -213,6 +214,18 @@ Deno.serve(async (req) => {
         parsed = parsearImagen(imageBase64);
       } catch {
         return json({ success: false, error: "La imagen de referencia no es un base64 válido" }, 400);
+      }
+    }
+
+    // Original real subido por el usuario. Se usa SOLO para el historial (imagen_original_url),
+    // no para la generación, así el antes/después nunca muestra la iteración anterior como "antes".
+    // Si no llega o no es válido, el historial cae de vuelta a la imagen de edición (parsed).
+    let parsedOriginal: { bytes: Uint8Array; mime: string } | null = null;
+    if (originalBase64) {
+      try {
+        parsedOriginal = parsearImagen(originalBase64);
+      } catch {
+        console.warn("[generate-render] originalBase64 inválido, se usará la imagen de edición para el historial");
       }
     }
 
@@ -283,7 +296,8 @@ Deno.serve(async (req) => {
     }
 
     // Guardar en el historial (Storage + tabla). Secundario: no rompe el render.
-    await guardarHistorial(service, userId, imagenGenerada, parsed, prompt, estilo);
+    // Como "original" se guarda la foto real subida (parsedOriginal); si no llegó, la de edición.
+    await guardarHistorial(service, userId, imagenGenerada, parsedOriginal ?? parsed, prompt, estilo);
 
     return json({ success: true, imageBase64: imagenGenerada });
   } catch (error) {
