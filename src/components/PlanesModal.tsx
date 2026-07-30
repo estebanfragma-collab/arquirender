@@ -7,6 +7,10 @@ interface PlanesModalProps {
 
 type Ciclo = "mensual" | "anual";
 
+// Flag para reactivar la facturación anual: true muestra el toggle mensual/anual
+// y los precios anuales. Con false solo se ven los mensuales. (Espeja Precios.tsx.)
+const MOSTRAR_ANUAL = false;
+
 const PLANES = [
   { id: "starter", nombre: "Starter", precio: 7, precioAnual: 67.2, renders: 25, mensual: "pri_01kwpqaed7bev0exm7e51dg1gf", anual: "pri_01kwpqd823dz1x08cc5rm1zykc", destacado: false },
   { id: "studio", nombre: "Studio", precio: 15, precioAnual: 144, renders: 100, mensual: "pri_01kwpr1ar7dajvpb1pfv4eegdn", anual: "pri_01kwpr2sx5b5yagfqat56pj0y6", destacado: true },
@@ -89,7 +93,8 @@ const PlanesModal = ({ userId, onClose }: PlanesModalProps) => {
           <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-full px-2 text-lg font-bold text-muted-foreground transition hover:text-foreground">✕</button>
         </div>
 
-        {/* Toggle mensual / anual */}
+        {/* Toggle mensual / anual — oculto mientras MOSTRAR_ANUAL sea false */}
+        {MOSTRAR_ANUAL && (
         <div className="mb-6 flex justify-center">
           <div className="inline-flex gap-1 rounded-full border border-brand-border bg-input p-1">
             {(["mensual", "anual"] as const).map((opcion) => {
@@ -102,11 +107,12 @@ const PlanesModal = ({ userId, onClose }: PlanesModalProps) => {
             })}
           </div>
         </div>
+        )}
 
         <div className="grid gap-4 sm:grid-cols-3">
           {PLANES.map((plan) => {
-            const priceId = ciclo === "mensual" ? plan.mensual : plan.anual;
-            const esAnual = ciclo === "anual";
+            const esAnual = MOSTRAR_ANUAL && ciclo === "anual";
+            const priceId = esAnual ? plan.anual : plan.mensual;
             return (
               <div key={plan.id} className={`flex flex-col rounded-xl border p-5 ${plan.destacado ? "border-[#EA580C] bg-[#EA580C]/10" : "border-brand-border bg-input"}`}>
                 {plan.destacado && <span className="mb-2 inline-block w-fit rounded-full bg-[#EA580C] px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white">Popular</span>}
