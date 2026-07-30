@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+// Meta Pixel (fbq) inyectado por el script del pixel; opcional.
+declare global {
+  interface Window {
+    fbq?: (...args: any[]) => void;
+  }
+}
+
 interface AuthModalProps {
   onClose: () => void;
   onSuccess: () => void;
@@ -59,6 +66,11 @@ const AuthModal = ({ onClose, onSuccess }: AuthModalProps) => {
         if (authError) {
           setError(traducirError(authError.message));
           return;
+        }
+        // Registro nuevo exitoso: evento de conversión de Meta. Solo en signUp,
+        // nunca en inicios de sesión posteriores (esta rama es exclusiva de registro).
+        if (typeof window !== "undefined" && window.fbq) {
+          window.fbq("track", "CompleteRegistration");
         }
         if (!data.session) {
           setAviso("Cuenta creada. Revisa tu correo para confirmar la cuenta antes de continuar.");
