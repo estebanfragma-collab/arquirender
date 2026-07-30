@@ -94,6 +94,25 @@ Deno.serve(async (req) => {
       { auth: { persistSession: false } },
     );
 
+    // Idempotencia: registrar el event_id ANTES de procesar. Si el insert choca con la
+    // PK (evento ya registrado), significa que ya se procesó → 200 sin acreditar nada.
+    const eventId = evento?.event_id ?? null;
+    if (eventId) {
+      const { error: errorIdem } = await supabase
+        .from("webhook_events")
+        .insert({ event_id: eventId, event_type: eventType });
+      if (errorIdem) {
+        if (errorIdem.code === "23505") {
+          console.log("[paddle-webhook] Evento ya procesado, se ignora:", eventId);
+          return ok({ status: "ya procesado" });
+        }
+        // Otro error (tabla caída, etc.): loguear y continuar para no perder el pago.
+        console.error("[paddle-webhook] Error registrando webhook_event:", errorIdem.message);
+      }
+    } else {
+      console.warn("[paddle-webhook] Evento sin event_id: no se puede deduplicar");
+    }
+
     if (eventType === "subscription.created" || eventType === "transaction.completed") {
       const customUserId = data?.custom_data?.user_id ?? null;
       const email = extraerEmail(data);
@@ -150,11 +169,23 @@ Deno.serve(async (req) => {
         return ok();
       }
 
-      console.log(`[paddle-webhook] Plan detectado: ${plan.plan} (+${plan.creditos} créditos) — usuario hallado por ${metodoBusqueda}`);
+      console.log(`[paddle-webhook] Plan detectado: ${plan.plan} — usuario hallado por ${metodoBusqueda}`);
 
-      const nuevosCreditos = (perfil.creditos ?? 0) + plan.creditos;
-      const actualizacion: Record<string, unknown> = { creditos: nuevosCreditos, plan: plan.plan };
+      // Solo transaction.completed acredita créditos (única fuente de verdad).
+      // subscription.created solo persiste plan + paddle_subscription_id, sin sumar
+      // créditos, para no duplicar la acreditación del mismo pago.
+      const acreditar = eventType === "transaction.completed";
+      const actualizacion: Record<string, unknown> = { plan: plan.plan };
       if (subscriptionId) actualizacion.paddle_subscription_id = subscriptionId;
+
+      let nuevosCreditos = perfil.creditos ?? 0;
+      if (acreditar) {
+        nuevosCreditos = (perfil.creditos ?? 0) + plan.creditos;
+        actualizacion.creditos = nuevosCreditos;
+        console.log(`[paddle-webhook] Acreditando: user_id=${perfil.id} price_id=${priceId} +${plan.creditos} créditos → ${nuevosCreditos} resultantes`);
+      } else {
+        console.log(`[paddle-webhook] ${eventType}: solo se guarda plan/subscription (sin acreditar) para user_id=${perfil.id}`);
+      }
 
       const { error: errorUpdate } = await supabase
         .from("profiles")
