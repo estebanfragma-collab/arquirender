@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
+// Flag para reactivar la facturación anual: cambiar a true muestra el toggle
+// mensual/anual y los precios anuales. Con false solo se ven los mensuales.
+const MOSTRAR_ANUAL = false;
+
 const PLANS = [
   {
     name: "Free",
@@ -68,7 +72,8 @@ export default function Precios() {
           Empieza gratis. Escala cuando lo necesites.
         </h2>
 
-        {/* Toggle mensual/anual */}
+        {/* Toggle mensual/anual — oculto mientras MOSTRAR_ANUAL sea false */}
+        {MOSTRAR_ANUAL && (
         <div className="mt-8 flex items-center justify-center gap-3">
           <div className="inline-flex items-center bg-white rounded-full p-1 border border-[#F0F0F0]">
             <button
@@ -94,6 +99,7 @@ export default function Precios() {
             Ahorra 20%
           </span>
         </div>
+        )}
 
         {/* Tarjetas */}
         <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
@@ -114,7 +120,7 @@ export default function Precios() {
               <h3 className="text-[22px] font-bold text-[#111]">{plan.name}</h3>
               <div className="mt-2 flex items-end gap-1">
                 <span className="text-[48px] font-black text-[#111] leading-none">
-                  {annual ? plan.annual : plan.monthly}
+                  {MOSTRAR_ANUAL && annual ? plan.annual : plan.monthly}
                 </span>
                 <span className="text-[#555] text-sm mb-1">/ mes</span>
               </div>
