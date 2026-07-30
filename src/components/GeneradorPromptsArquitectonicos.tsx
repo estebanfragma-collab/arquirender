@@ -25,6 +25,10 @@ import {
   type TabId,
 } from "@/data/promptsArquitectonicos";
 
+// TODO: pegar aquí la URL del portal de cliente de Paddle (Customer Portal).
+// Mientras esté vacía, la opción "Gestionar suscripción" no se muestra.
+const PORTAL_PADDLE_URL: string = "";
+
 interface ValoresFormulario {
   [clave: string]: string | string[];
 }
@@ -229,6 +233,7 @@ const GeneradorPromptsArquitectonicos = () => {
   const [email, setEmail] = useState<string | null>(null);
   const [menuUsuario, setMenuUsuario] = useState(false);
   const [creditos, setCreditos] = useState<number | null>(null);
+  const [plan, setPlan] = useState<string | null>(null);
   const [mostrarAuth, setMostrarAuth] = useState(false);
   const [generarTrasLogin, setGenerarTrasLogin] = useState(false);
   const [sinCreditos, setSinCreditos] = useState(false);
@@ -255,11 +260,12 @@ const GeneradorPromptsArquitectonicos = () => {
   const cargarCreditos = async (uid: string): Promise<number | null> => {
     const { data, error } = await (supabase as any)
       .from("profiles")
-      .select("creditos")
+      .select("creditos, plan")
       .eq("id", uid)
       .single();
     const valor = error || !data ? null : (data.creditos ?? null);
     setCreditos(valor);
+    setPlan(error || !data ? null : (data.plan ?? null));
     return valor;
   };
 
@@ -270,6 +276,7 @@ const GeneradorPromptsArquitectonicos = () => {
     setEmail(usuario?.email ?? null);
     if (!usuario) {
       setCreditos(null);
+      setPlan(null);
       return { userId: null, creditos: null };
     }
     const c = await cargarCreditos(usuario.id);
@@ -284,6 +291,7 @@ const GeneradorPromptsArquitectonicos = () => {
     setUserId(null);
     setEmail(null);
     setCreditos(null);
+    setPlan(null);
     setVista("generar");
     setRefrescarHistorial(0);
     setSinCreditos(false);
@@ -297,7 +305,7 @@ const GeneradorPromptsArquitectonicos = () => {
       setUserId(usuario?.id ?? null);
       setEmail(usuario?.email ?? null);
       if (usuario) void cargarCreditos(usuario.id);
-      else setCreditos(null);
+      else { setCreditos(null); setPlan(null); }
     });
     return () => sub.subscription.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -731,8 +739,17 @@ const GeneradorPromptsArquitectonicos = () => {
                   {menuUsuario && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setMenuUsuario(false)} aria-hidden="true" />
-                      <div className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-md border border-brand-border bg-card shadow-xl" role="menu">
-                        <button type="button" onClick={cerrarSesion} className="block w-full px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Cerrar sesión</button>
+                      <div className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-md border border-brand-border bg-card shadow-xl" role="menu">
+                        <div className="border-b border-brand-border px-4 py-3">
+                          <div translate="no" className="notranslate truncate text-xs font-bold text-foreground">{email ?? "Mi cuenta"}</div>
+                          <div translate="no" className="notranslate mt-1 text-[11px] font-extrabold uppercase tracking-wide text-[#EA580C]">Plan {plan ?? "free"}</div>
+                        </div>
+                        {PORTAL_PADDLE_URL && (
+                          <a href={PORTAL_PADDLE_URL} target="_blank" rel="noopener noreferrer" onClick={() => setMenuUsuario(false)} className="block w-full px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Gestionar suscripción</a>
+                        )}
+                        <button type="button" onClick={() => { setMenuUsuario(false); setMostrarPlanes(true); }} className="block w-full px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Ver planes</button>
+                        <a href="mailto:soporte@arquirender.lat" onClick={() => setMenuUsuario(false)} className="block w-full px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Soporte</a>
+                        <button type="button" onClick={cerrarSesion} className="block w-full border-t border-brand-border px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Cerrar sesión</button>
                       </div>
                     </>
                   )}
