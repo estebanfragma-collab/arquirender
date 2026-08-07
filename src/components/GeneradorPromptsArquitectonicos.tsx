@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/AuthModal";
 import PlanesModal from "@/components/PlanesModal";
 import HistorialRenders from "@/components/HistorialRenders";
 import VariacionesModal from "@/components/VariacionesModal";
+import OnboardingModal from "@/components/OnboardingModal";
 import {
   caos,
   coloresDominantes,
@@ -241,6 +242,7 @@ const GeneradorPromptsArquitectonicos = () => {
   const [vista, setVista] = useState<"generar" | "historial">("generar");
   const [refrescarHistorial, setRefrescarHistorial] = useState(0);
   const [mostrarVariaciones, setMostrarVariaciones] = useState(false);
+  const [mostrarOnboarding, setMostrarOnboarding] = useState(false);
   const [modoRender, setModoRender] = useState<"estilo" | "representacion">("estilo");
   const [selectedRepresentacion, setSelectedRepresentacion] = useState("");
 
@@ -256,6 +258,30 @@ const GeneradorPromptsArquitectonicos = () => {
   const imagenBaseActiva = imagenRender || imagenOriginal;
   const campoPorId = (id: string) => tab.campos.find((campo) => campo.id === id);
   const toggleAcordeon = (clave: string) => setAcordeones((actual) => ({ ...actual, [clave]: !actual[clave] }));
+
+  // Evita que el onboarding se reabra solo cada vez que se recargan créditos.
+  const onboardingChequeado = useRef(false);
+
+  const chequearOnboarding = async (uid: string) => {
+    if (onboardingChequeado.current) return;
+    const { data, error } = await (supabase as any)
+      .from("profiles")
+      .select("onboarding_visto")
+      .eq("id", uid)
+      .single();
+    console.log('[onboarding]', { uid, data, error });
+    // Solo consumimos el intento si la query respondió; si falla, se reintenta.
+    if (error || !data) return;
+    onboardingChequeado.current = true;
+    // Las filas anteriores al ALTER TABLE quedaron en NULL, no en false.
+    if (data.onboarding_visto !== true) setMostrarOnboarding(true);
+  };
+
+  const cerrarOnboarding = async () => {
+    setMostrarOnboarding(false);
+    if (!userId) return;
+    await (supabase as any).from("profiles").update({ onboarding_visto: true }).eq("id", userId);
+  };
 
   const cargarCreditos = async (uid: string): Promise<number | null> => {
     const { data, error } = await (supabase as any)
@@ -280,6 +306,7 @@ const GeneradorPromptsArquitectonicos = () => {
       return { userId: null, creditos: null };
     }
     const c = await cargarCreditos(usuario.id);
+    void chequearOnboarding(usuario.id);
     return { userId: usuario.id, creditos: c };
   };
 
@@ -296,6 +323,8 @@ const GeneradorPromptsArquitectonicos = () => {
     setRefrescarHistorial(0);
     setSinCreditos(false);
     setMostrarPlanes(false);
+    setMostrarOnboarding(false);
+    onboardingChequeado.current = false;
   };
 
   useEffect(() => {
@@ -304,7 +333,7 @@ const GeneradorPromptsArquitectonicos = () => {
       const usuario = session?.user ?? null;
       setUserId(usuario?.id ?? null);
       setEmail(usuario?.email ?? null);
-      if (usuario) void cargarCreditos(usuario.id);
+      if (usuario) { void cargarCreditos(usuario.id); void chequearOnboarding(usuario.id); }
       else { setCreditos(null); setPlan(null); }
     });
     return () => sub.subscription.unsubscribe();
@@ -747,6 +776,7 @@ const GeneradorPromptsArquitectonicos = () => {
                         {PORTAL_PADDLE_URL && (
                           <a href={PORTAL_PADDLE_URL} target="_blank" rel="noopener noreferrer" onClick={() => setMenuUsuario(false)} className="block w-full px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Gestionar suscripción</a>
                         )}
+                        <button type="button" onClick={() => { setMenuUsuario(false); setMostrarOnboarding(true); }} className="block w-full px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Cómo usar tus renders</button>
                         <button type="button" onClick={() => { setMenuUsuario(false); setMostrarPlanes(true); }} className="block w-full px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Ver planes</button>
                         <a href="mailto:soporte@arquirender.lat" onClick={() => setMenuUsuario(false)} className="block w-full px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Soporte</a>
                         <button type="button" onClick={cerrarSesion} className="block w-full border-t border-brand-border px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Cerrar sesión</button>
@@ -965,6 +995,8 @@ const GeneradorPromptsArquitectonicos = () => {
           onClose={() => setMostrarVariaciones(false)}
         />
       )}
+
+      <OnboardingModal open={mostrarOnboarding} onClose={() => { void cerrarOnboarding(); }} />
     </div>
   );
 };
