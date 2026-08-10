@@ -88,7 +88,7 @@ const PlanesModal = ({ userId, onClose }: PlanesModalProps) => {
           <div>
             <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-[#EA580C]">ArquiRender</div>
             <h2 className="m-0 mt-1 text-2xl font-black text-foreground">Elige tu plan</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Renders fotorrealistas según tu plan.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Generaciones fotorrealistas según tu plan.</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-full px-2 text-lg font-bold text-muted-foreground transition hover:text-foreground">✕</button>
         </div>
@@ -122,7 +122,7 @@ const PlanesModal = ({ userId, onClose }: PlanesModalProps) => {
                   <span className="pb-1 text-xs font-bold text-muted-foreground">{esAnual ? "/año" : "/mes"}</span>
                 </div>
                 <p translate="no" className="notranslate mt-1 text-[11px] font-semibold text-muted-foreground">{esAnual ? `equivale a $${(plan.precioAnual / 12).toFixed(2)}/mes` : "facturación mensual"}</p>
-                <p className="mt-3 text-sm font-bold text-[#EA580C]">{plan.renders} renders</p>
+                <p className="mt-3 text-sm font-bold text-[#EA580C]">{plan.renders} generaciones</p>
                 <button type="button" disabled={!!abriendo} onClick={() => abrirCheckout(plan.id, priceId)} className={`mt-5 rounded-full px-4 py-3 text-sm font-extrabold transition disabled:cursor-not-allowed disabled:opacity-60 ${plan.destacado ? "bg-[#EA580C] text-white hover:bg-[#c2470a]" : "border border-[#EA580C] bg-transparent text-[#EA580C] hover:bg-[#EA580C] hover:text-white"}`}>
                   {abriendo === plan.id ? "Abriendo..." : "Elegir"}
                 </button>

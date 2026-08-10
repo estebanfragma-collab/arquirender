@@ -23,7 +23,7 @@ export default function Landing() {
       <Dolores />
       <MagneticBanner
         bgColor="#EA580C"
-        text="Genera tu primer render gratis — sin tarjeta, sin instalaciones, en segundos."
+        text="Genera tu primera generación gratis — sin tarjeta, sin instalaciones, en segundos."
         ctaText="Empieza ahora →"
         ctaHref="/app"
       />

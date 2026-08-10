@@ -14,7 +14,7 @@ const ITEMS = [
     a: "Sí. Toma una captura de pantalla de tu modelo en SketchUp y súbela directamente. También acepta bocetos a mano, fotos de maquetas y planos 2D.",
   },
   {
-    q: "¿Qué pasa cuando se me acaban los renders del plan?",
+    q: "¿Qué pasa cuando se me acaban las generaciones del plan?",
     a: "Puedes comprar el plan que necesites en cualquier momento. Los créditos no vencen y puedes usarlos a tu ritmo.",
   },
   {
@@ -26,11 +26,11 @@ const ITEMS = [
     a: "Sí, sin preguntas ni penalizaciones. Cancelas desde tu cuenta en un clic.",
   },
   {
-    q: "¿Cuánto tiempo tarda en generarse un render?",
-    a: "Entre 15 y 45 segundos dependiendo del tipo de render. Sin esperas, sin colas.",
+    q: "¿Cuánto tiempo tarda una generación?",
+    a: "Entre 15 y 45 segundos dependiendo del tipo de generación. Sin esperas, sin colas.",
   },
   {
-    q: "¿En qué formato descargo mis renders?",
+    q: "¿En qué formato descargo mis generaciones?",
     a: "En JPG de alta resolución, listo para presentaciones, láminas o redes sociales.",
   },
   {
@@ -38,8 +38,8 @@ const ITEMS = [
     a: "Sí, funciona desde cualquier navegador, en computador, tablet o celular. Sin instalaciones.",
   },
   {
-    q: "¿Los renders tienen marca de agua?",
-    a: "No. Todos los renders, incluso los del plan Free, se descargan sin marca de agua.",
+    q: "¿Las generaciones tienen marca de agua?",
+    a: "No. Todas las generaciones, incluso los del plan Free, se descargan sin marca de agua.",
   },
   {
     q: "¿Puedo cambiar de plan en cualquier momento?",

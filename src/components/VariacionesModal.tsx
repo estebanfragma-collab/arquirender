@@ -19,8 +19,9 @@ interface VariacionesModalProps {
 
 type EstadoVariacion = { estado: "cargando" | "ok" | "error"; imagen?: string; error?: string };
 
-const MIN = 2;
-const MAX = 4;
+// Costo fijo: 3 estilos = 3 generaciones (1 crédito por imagen generada).
+const MIN = 3;
+const MAX = 3;
 
 // Descripciones ricas por estilo (keywords arquitectónicas fuertes en inglés).
 // El estilo abre el prompt y domina; nada de preservación exacta ni materiales fijos.
@@ -70,6 +71,7 @@ const VariacionesModal = ({
 
   const costo = seleccion.length;
   const suficientes = costo <= creditosDisponibles;
+  const faltan = Math.max(0, costo - creditosDisponibles);
   const puedeGenerar = costo >= MIN && costo <= MAX && suficientes;
 
   const toggleEstilo = (estilo: string) => {
@@ -159,19 +161,20 @@ const VariacionesModal = ({
             {/* Costo / créditos */}
             <div className="mb-5 rounded-xl border border-brand-border bg-input p-4 text-sm">
               {costo < MIN ? (
-                <p className="font-semibold text-muted-foreground">Selecciona entre {MIN} y {MAX} estilos.</p>
+                <p className="font-semibold text-muted-foreground">Selecciona {MAX} estilos.</p>
               ) : !suficientes ? (
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="font-bold text-destructive">
-                    Necesitas <span translate="no" className="notranslate">{costo}</span> créditos, tienes{" "}
-                    <span translate="no" className="notranslate">{creditosDisponibles}</span>.
+                    Te {faltan === 1 ? "falta" : "faltan"}{" "}
+                    <span translate="no" className="notranslate">{faltan}</span>{" "}
+                    {faltan === 1 ? "generación" : "generaciones"}.
                   </p>
                   <button type="button" onClick={onVerPlanes} className="shrink-0 rounded-full bg-[#EA580C] px-4 py-2 text-xs font-extrabold text-white transition hover:bg-[#c2470a]">Ver planes</button>
                 </div>
               ) : (
                 <p className="font-semibold text-foreground">
                   Esto usará <span translate="no" className="notranslate font-black text-[#EA580C]">{costo}</span>{" "}
-                  {costo === 1 ? "crédito" : "créditos"} (tienes{" "}
+                  {costo === 1 ? "generación" : "generaciones"} (tienes{" "}
                   <span translate="no" className="notranslate">{creditosDisponibles}</span> disponibles).
                 </p>
               )}

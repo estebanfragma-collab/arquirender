@@ -2,7 +2,7 @@ const CARDS = [
   {
     icon: "🏛️",
     title: "Arquitectos independientes",
-    desc: "Cierra más proyectos mostrando renders fotorrealistas desde la primera reunión, sin esperar días ni gastar en software costoso.",
+    desc: "Cierra más proyectos mostrando generaciones fotorrealistas desde la primera reunión, sin esperar días ni gastar en software costoso.",
   },
   {
     icon: "🎓",

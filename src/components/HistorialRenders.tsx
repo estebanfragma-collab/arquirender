@@ -111,7 +111,7 @@ const HistorialRenders = ({ userId, refreshSignal, onContinuar }: HistorialRende
   if (renders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-brand-border bg-card py-20 text-center">
-        <p className="text-lg font-black text-foreground">Aún no has generado renders</p>
+        <p className="text-lg font-black text-foreground">Aún no has generado nada</p>
         <p className="text-sm text-muted-foreground">¡Crea el primero desde la pestaña Generar!</p>
       </div>
     );

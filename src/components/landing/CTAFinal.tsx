@@ -23,7 +23,7 @@ export default function CTAFinal() {
 
         <div className="mt-8 flex justify-center">
           <ul className="inline-flex flex-col gap-3 text-left">
-            <li className="text-base text-white">✓ 3 renders gratis sin tarjeta</li>
+            <li className="text-base text-white">✓ 4 generaciones gratis sin tarjeta</li>
             <li className="text-base text-white">✓ Sin instalaciones</li>
             <li className="text-base text-white">✓ Resultados en segundos</li>
           </ul>
@@ -34,7 +34,7 @@ export default function CTAFinal() {
             to="/app"
             className="bg-white text-[#EA580C] rounded-[10px] px-9 py-4 text-lg font-bold hover:bg-white/90 transition-colors"
           >
-            Crear mis renders gratis →
+            Crear mis generaciones gratis →
           </Link>
           <a
             href="#resultados"

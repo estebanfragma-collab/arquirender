@@ -37,7 +37,7 @@ export default function Reembolsos() {
             </h2>
             <p>
               ArquiRender ofrece planes de suscripción y créditos para la
-              generación de renders. Al contratar un plan, usted acepta los
+              generación de imágenes. Al contratar un plan, usted acepta los
               precios y la modalidad de facturación mostrados al momento de la
               compra. Las suscripciones se renuevan automáticamente al finalizar
               cada periodo, salvo que sean canceladas con anterioridad.

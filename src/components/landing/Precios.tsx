@@ -12,7 +12,7 @@ const PLANS = [
     annual: "$0",
     featured: false,
     features: [
-      "3 renders al mes",
+      "4 generaciones al mes",
       "Todos los estilos disponibles",
       "Sin tarjeta de crédito",
     ],
@@ -24,7 +24,7 @@ const PLANS = [
     annual: "$5.60",
     featured: false,
     features: [
-      "25 renders al mes",
+      "25 generaciones al mes",
       "Todos los estilos disponibles",
       "Descarga en alta resolución",
       "Soporte por email",
@@ -37,7 +37,7 @@ const PLANS = [
     annual: "$12",
     featured: true,
     features: [
-      "100 renders al mes",
+      "100 generaciones al mes",
       "Todos los estilos disponibles",
       "Descarga en alta resolución",
       "Soporte prioritario",
@@ -50,7 +50,7 @@ const PLANS = [
     annual: "$23.20",
     featured: false,
     features: [
-      "300 renders al mes",
+      "300 generaciones al mes",
       "Todos los estilos disponibles",
       "Descarga en alta resolución",
       "Soporte prioritario",
@@ -149,7 +149,7 @@ export default function Precios() {
         </div>
 
         <p className="mt-12 max-w-[700px] mx-auto text-center text-[15px] text-[#666]">
-          Todos los planes incluyen acceso completo a todos los tipos de render:
+          Todos los planes incluyen acceso completo a todos los tipos de generación:
           Fotografía real, Nocturno, Lámina, Moodboard, Dron, Axonométrico y más.
         </p>
       </div>

@@ -115,18 +115,18 @@ export default function Hero() {
         {/* Contenido */}
         <div className="relative z-10 max-w-[1200px] mx-auto text-center">
           <span className="hero-fadeup inline-block bg-white/10 text-white/90 text-sm rounded-full px-4 py-1.5" style={{ animationDelay: "0ms" }}>
-            ✨ Renders fotorrealistas con IA
+            ✨ Generaciones fotorrealistas con IA
           </span>
           <h1 className="hero-fadeup mt-6 text-[32px] md:text-[72px] font-black text-white leading-[1.05]" style={{ animationDelay: "100ms" }}>
             Tus ideas merecen verse como proyectos terminados.
           </h1>
           <p className="hero-fadeup mt-5 max-w-[600px] mx-auto text-lg text-[#9CA3AF]" style={{ animationDelay: "200ms" }}>
-            Convierte un boceto, un plano o una captura de SketchUp en un render
-            fotorrealista en segundos con IA. Presenta propuestas más
+            Convierte un boceto, un plano o una captura de SketchUp en una
+            generación fotorrealista en segundos con IA. Presenta propuestas más
             impactantes sin perder horas renderizando.
           </p>
           <div className="hero-fadeup mt-6 flex flex-wrap justify-center gap-2 text-white text-[15px]" style={{ animationDelay: "300ms" }}>
-            <span>✅ 3 renders gratis</span>
+            <span>✅ 4 generaciones gratis</span>
             <span className="text-white/40">·</span>
             <span>✅ Sin instalar programas</span>
             <span className="text-white/40">·</span>
@@ -137,7 +137,7 @@ export default function Hero() {
             className="hero-fadeup inline-block mt-8 bg-[#EA580C] text-white rounded-[10px] px-8 py-4 text-lg font-bold hover:bg-[#c2410c] transition-colors"
             style={{ animationDelay: "400ms" }}
           >
-            👉 Crear mis 3 renders gratis
+            👉 Crear mis 4 generaciones gratis
           </Link>
         </div>
       </div>
@@ -177,7 +177,7 @@ export default function Hero() {
             decoding="async"
             className="absolute inset-0 w-full h-full object-cover object-center"
             style={{ clipPath: `inset(0 0 0 ${pos}%)` }}
-            alt="Render fotorrealista"
+            alt="Generación fotorrealista"
           />
 
           {/* Badges */}

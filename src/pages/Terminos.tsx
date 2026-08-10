@@ -42,7 +42,7 @@ export default function Terminos() {
             </h2>
             <p>
               ArquiRender es una plataforma SaaS que utiliza inteligencia
-              artificial para generar renders arquitectónicos fotorrealistas a
+              artificial para generar generaciones arquitectónicas fotorrealistas a
               partir de bocetos, planos, capturas de modelos 3D u otras imágenes
               proporcionadas por el usuario. El Servicio se ofrece "tal cual" y
               puede evolucionar, actualizarse o modificarse en el tiempo.
@@ -84,7 +84,7 @@ export default function Terminos() {
             </h2>
             <p>
               Usted conserva todos los derechos de propiedad sobre las imágenes
-              que sube y sobre los renders generados a partir de ellas. Puede
+              que sube y sobre las generaciones creadas a partir de ellas. Puede
               utilizarlos con fines personales o comerciales sin restricción por
               parte de ArquiRender. La marca, el software, la interfaz y los
               elementos propios de la plataforma son propiedad de Esteban Ponce y
@@ -119,7 +119,7 @@ export default function Terminos() {
               Esteban Ponce no será responsable por daños indirectos, incidentales
               o consecuentes derivados del uso o la imposibilidad de uso del
               Servicio, incluyendo pérdida de datos, lucro cesante o resultados de
-              render que no cumplan las expectativas del usuario. La
+              generaciones que no cumplan las expectativas del usuario. La
               responsabilidad total, en cualquier caso, no excederá el monto
               pagado por usted en los últimos doce meses.
             </p>

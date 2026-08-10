@@ -8,6 +8,7 @@ import Landing from "./pages/Landing";
 import Terminos from "./pages/Terminos";
 import Privacidad from "./pages/Privacidad";
 import Reembolsos from "./pages/Reembolsos";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/terminos" element={<Terminos />} />
           <Route path="/privacidad" element={<Privacidad />} />
           <Route path="/reembolsos" element={<Reembolsos />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

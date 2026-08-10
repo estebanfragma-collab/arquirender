@@ -38,7 +38,7 @@ export default function Privacidad() {
             <p>
               Recopilamos: (a) su dirección de correo electrónico y datos de
               cuenta al registrarse; (b) las imágenes que usted sube para generar
-              renders; (c) datos de uso, como interacciones con la plataforma,
+              generaciones; (c) datos de uso, como interacciones con la plataforma,
               tipo de navegador y métricas de rendimiento; y (d) información de
               facturación gestionada por nuestro procesador de pagos. No
               recopilamos datos de tarjetas de crédito directamente.
@@ -51,7 +51,7 @@ export default function Privacidad() {
             </h2>
             <p>
               Utilizamos la información para prestar y mejorar el Servicio,
-              procesar sus renders, gestionar su cuenta y suscripción, brindar
+              procesar sus generaciones, gestionar su cuenta y suscripción, brindar
               soporte, enviar comunicaciones relacionadas con el servicio y
               cumplir obligaciones legales. No vendemos su información personal a
               terceros.
@@ -65,7 +65,7 @@ export default function Privacidad() {
             <p>
               Las imágenes que usted sube se procesan mediante modelos de
               inteligencia artificial de terceros, como OpenAI, con el único fin
-              de generar los renders solicitados. Sus imágenes{" "}
+              de generar las imágenes solicitadas. Sus imágenes{" "}
               <strong>no se utilizan para entrenar modelos de IA</strong>. El
               tratamiento se limita a la generación del resultado que usted
               solicita. Recomendamos no subir imágenes con información confidencial

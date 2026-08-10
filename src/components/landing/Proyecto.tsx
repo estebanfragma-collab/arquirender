@@ -70,7 +70,7 @@ export default function Proyecto() {
             to="/app"
             className="inline-block mt-5 bg-[#EA580C] text-white rounded-[10px] px-8 py-4 text-base font-bold hover:bg-[#c2410c] transition-colors"
           >
-            Generar renders gratis →
+            Generar generaciones gratis →
           </Link>
         </div>
       </div>

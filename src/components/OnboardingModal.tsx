@@ -25,7 +25,7 @@ const OnboardingModal = ({ open, onClose }: OnboardingModalProps) => {
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Cómo aprovechar tus 3 renders gratis"
+      aria-label="Cómo aprovechar tus 4 generaciones gratis"
     >
       <div
         className="relative w-[95vw] max-w-[860px] overflow-hidden rounded-lg border border-brand-border bg-[#0a0a0a] text-white shadow-2xl"
@@ -41,7 +41,7 @@ const OnboardingModal = ({ open, onClose }: OnboardingModalProps) => {
         </button>
 
         <div className="px-5 pb-4 pt-5 pr-16">
-          <h2 className="text-base font-extrabold sm:text-lg">Cómo aprovechar tus 3 renders gratis</h2>
+          <h2 className="text-base font-extrabold sm:text-lg">Cómo aprovechar tus 4 generaciones gratis</h2>
         </div>
 
         <video

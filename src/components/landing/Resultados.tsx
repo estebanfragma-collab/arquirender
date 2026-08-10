@@ -157,7 +157,7 @@ function SliderCard({
           onClick={() => setPos(100)}
           className="rounded-full bg-[#EA580C] text-white text-xs font-medium px-3 py-1.5"
         >
-          Ver render →
+          Ver generación →
         </button>
       </div>
     </div>

@@ -65,7 +65,22 @@ const extraerMensajeErrorAnalisis = async (error: unknown) => {
   return mensajeErrorAnalisis;
 };
 
-const mensajeErrorRender = "No se pudo generar el render, intenta de nuevo";
+const mensajeErrorRender = "No se pudo generar la imagen, intenta de nuevo";
+
+// Costo en generaciones de cada acción. 1 crédito = 1 imagen generada.
+const COSTO_RENDER = 1;
+const COSTO_VARIACIONES = 3;
+
+/**
+ * Cuántas generaciones le faltan al usuario para costear una acción.
+ * Devuelve 0 si no hay sesión o los créditos aún no cargaron: en ese caso el
+ * botón sigue activo y el flujo de login/planes se encarga.
+ */
+const faltanPara = (costo: number, userId: string | null, creditos: number | null) =>
+  userId && typeof creditos === "number" ? Math.max(0, costo - creditos) : 0;
+
+const textoFaltan = (faltan: number) =>
+  `Te ${faltan === 1 ? "falta" : "faltan"} ${faltan} ${faltan === 1 ? "generación" : "generaciones"}`;
 
 const extraerErrorRender = async (error: unknown) => {
   if (error && typeof error === "object" && "context" in error) {
@@ -338,6 +353,19 @@ const GeneradorPromptsArquitectonicos = () => {
     });
     return () => sub.subscription.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Entrada desde la landing con ?login=1: abre el modal de sesión al llegar.
+  // No activa generarTrasLogin — el usuario solo quiere entrar, no generar.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("login") !== "1") return;
+    setGenerarTrasLogin(false);
+    setMostrarAuth(true);
+    // Limpia el parámetro para que un refresco no reabra el modal.
+    params.delete("login");
+    const query = params.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
   }, []);
 
   const actualizarCampo = (campo: CampoPrompt, valor: string) => {
@@ -678,11 +706,11 @@ const GeneradorPromptsArquitectonicos = () => {
               </div>
               <div className="relative">
                 <img src={comparacion === "antes" ? vistaPrevia.url : imagenRender} alt={comparacion === "antes" ? "Imagen original" : "Render generado por IA"} className="h-auto max-h-none w-full rounded-[8px] border border-brand-gold object-contain" />
-                <span className="absolute left-3 top-3 rounded-full bg-black/70 px-2 py-1 text-[11px] font-bold text-white">{comparacion === "antes" ? "Original" : "Render"}</span>
+                <span className="absolute left-3 top-3 rounded-full bg-black/70 px-2 py-1 text-[11px] font-bold text-white">{comparacion === "antes" ? "Original" : "Generación"}</span>
               </div>
               <button type="button" onClick={() => setComparacion(comparacion === "antes" ? "despues" : "antes")} className="flex w-full items-center gap-3 rounded-md border border-brand-border p-2 text-left transition hover:border-brand-gold">
                 <img src={comparacion === "antes" ? imagenRender : vistaPrevia.url} alt="Miniatura" className="h-14 w-14 shrink-0 rounded border border-brand-border object-cover" />
-                <span className="text-xs font-bold text-muted-foreground">{comparacion === "antes" ? "Render" : "Original"}</span>
+                <span className="text-xs font-bold text-muted-foreground">{comparacion === "antes" ? "Generación" : "Original"}</span>
               </button>
               <a href={imagenRender} download="arquirender.png" className="block rounded-md bg-[#EA580C] px-4 py-3 text-center text-sm font-extrabold text-white transition hover:bg-[#c2470a]">Descargar</a>
               <button type="button" onClick={() => setImagenRenders((actual) => ({ ...actual, [tabActiva]: "" }))} className="block w-full rounded-md border border-brand-border bg-transparent px-4 py-2 text-center text-sm font-bold text-muted-foreground transition hover:border-[#EA580C] hover:text-[#EA580C]">↩ Volver al original</button>
@@ -691,7 +719,7 @@ const GeneradorPromptsArquitectonicos = () => {
             <div className="space-y-3">
               <img src={vistaPrevia.url} alt={`Vista previa local de ${vistaPrevia.nombre}`} className="h-auto max-h-none w-full rounded-[8px] border border-brand-gold object-contain" />
               <div className="border-l-4 border-brand-gold bg-brand-gold-surface p-4 text-sm font-bold leading-relaxed text-foreground">
-                Tu imagen está lista. La describiremos automáticamente para generar tu render.
+                Tu imagen está lista. La describiremos automáticamente para generar tu imagen.
               </div>
               {analizando[tabActiva] && (
                 <div className="flex items-center gap-3 rounded-md border border-brand-gold/50 bg-brand-gold-surface p-3 text-sm font-bold text-foreground">
@@ -744,10 +772,19 @@ const GeneradorPromptsArquitectonicos = () => {
         <div className="mx-auto w-[min(1180px,calc(100%-32px))] py-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="mb-3 text-xs font-extrabold uppercase tracking-[0.2em] text-brand-gold">Renders arquitectónicos con IA</div>
+              <div className="mb-3 text-xs font-extrabold uppercase tracking-[0.2em] text-brand-gold">Generaciones arquitectónicas con IA</div>
               <h1 className="m-0 text-[clamp(28px,4vw,48px)] font-black leading-tight tracking-normal text-foreground">ArquiRender</h1>
             </div>
             <div className="flex shrink-0 items-center gap-2">
+              {!userId && (
+                <button
+                  type="button"
+                  onClick={() => { setGenerarTrasLogin(false); setMostrarAuth(true); }}
+                  className="rounded-md border border-[#EA580C] bg-transparent px-4 py-2 text-xs font-extrabold text-[#EA580C] transition hover:bg-[#EA580C] hover:text-white"
+                >
+                  Iniciar sesión
+                </button>
+              )}
               {userId && (
                 <div className="inline-flex gap-1 rounded-md border border-brand-border bg-input p-1">
                   <button type="button" onClick={() => setVista("generar")} className={`rounded px-3 py-1.5 text-xs font-bold transition ${vista === "generar" ? "bg-[#EA580C] text-white" : "bg-transparent text-muted-foreground hover:text-foreground"}`}>Generar</button>
@@ -756,7 +793,7 @@ const GeneradorPromptsArquitectonicos = () => {
               )}
               {userId && creditos !== null && (
                 <span className="rounded-md border border-[#EA580C] bg-[#EA580C]/10 px-3 py-2 text-xs font-extrabold text-[#EA580C]">
-                  {creditos} {creditos === 1 ? "render disponible" : "renders disponibles"}
+                  {creditos} {creditos === 1 ? "generación disponible" : "generaciones disponibles"}
                 </span>
               )}
               {userId && (
@@ -776,7 +813,7 @@ const GeneradorPromptsArquitectonicos = () => {
                         {PORTAL_PADDLE_URL && (
                           <a href={PORTAL_PADDLE_URL} target="_blank" rel="noopener noreferrer" onClick={() => setMenuUsuario(false)} className="block w-full px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Gestionar suscripción</a>
                         )}
-                        <button type="button" onClick={() => { setMenuUsuario(false); setMostrarOnboarding(true); }} className="block w-full px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Cómo usar tus renders</button>
+                        <button type="button" onClick={() => { setMenuUsuario(false); setMostrarOnboarding(true); }} className="block w-full px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Cómo usar tus generaciones</button>
                         <button type="button" onClick={() => { setMenuUsuario(false); setMostrarPlanes(true); }} className="block w-full px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Ver planes</button>
                         <a href="mailto:soporte@arquirender.lat" onClick={() => setMenuUsuario(false)} className="block w-full px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Soporte</a>
                         <button type="button" onClick={cerrarSesion} className="block w-full border-t border-brand-border px-4 py-3 text-left text-xs font-bold text-foreground transition hover:bg-[#EA580C] hover:text-white" role="menuitem">Cerrar sesión</button>
@@ -803,7 +840,7 @@ const GeneradorPromptsArquitectonicos = () => {
 
           <div className="border-t border-brand-border px-5 py-5 sm:px-6">
             <div className="inline-flex w-full gap-1 rounded-md border border-brand-border bg-input p-1 sm:w-auto">
-              {([["estilo", "Render de Estilo"], ["representacion", "Láminas de presentación"]] as const).map(([modo, etiqueta]) => (
+              {([["estilo", "Generación de Estilo"], ["representacion", "Láminas de presentación"]] as const).map(([modo, etiqueta]) => (
                 <button key={modo} type="button" onClick={() => setModoRender(modo)} className={`flex-1 whitespace-nowrap rounded px-4 py-2 text-xs font-bold transition sm:flex-none ${modoRender === modo ? "bg-[#EA580C] text-white" : "bg-transparent text-muted-foreground hover:text-foreground"}`}>
                   {etiqueta}
                 </button>
@@ -878,7 +915,7 @@ const GeneradorPromptsArquitectonicos = () => {
 
           <div className="border-t border-brand-border px-5 py-5 sm:px-6">
             <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
-              <span>Qué evitar en el render</span>
+              <span>Qué evitar en la generación</span>
               <span className="font-bold text-muted-foreground">Opcional</span>
             </label>
             <input className={clasesControl} placeholder="Ej: personas, texto, marcas de agua, desenfoque" value={valorTexto(valores.negativePrompt)} onChange={(e) => actualizarCampo({ id: "negativePrompt", etiqueta: "Qué evitar", tipo: "textarea" }, e.target.value)} />
@@ -915,28 +952,40 @@ const GeneradorPromptsArquitectonicos = () => {
             {error && <div className="mb-3 text-sm font-bold text-destructive">{error}</div>}
             {sinCreditos && (
               <div className="mb-3 rounded-md border border-[#EA580C] bg-[#EA580C]/10 p-4 text-sm">
-                <p className="font-bold text-foreground">Ya usaste tus 3 renders gratis.</p>
+                <p className="font-bold text-foreground">Ya usaste tus 4 generaciones gratis.</p>
                 <button type="button" className="mt-3 rounded-full bg-[#EA580C] px-4 py-2 text-xs font-extrabold text-white transition hover:bg-[#c2470a]" onClick={() => setMostrarPlanes(true)}>Ver planes</button>
               </div>
             )}
-            <button disabled={generando} className="w-full rounded-md border-0 bg-[#EA580C] px-4 py-4 text-base font-bold text-white transition hover:bg-[#c2470a] disabled:cursor-not-allowed disabled:opacity-60" onClick={generarRender}>{generando ? "Generando render..." : "Generar Render"}</button>
-            {userId && vistasPrevias[tabActiva]?.imagen?.url && (
-              <button type="button" disabled={generando} className="mt-3 w-full rounded-md border border-[#EA580C] bg-transparent px-4 py-4 text-base font-bold text-[#EA580C] transition hover:bg-[#EA580C] hover:text-white disabled:cursor-not-allowed disabled:opacity-60" onClick={() => setMostrarVariaciones(true)}>Generar variaciones de estilo</button>
-            )}
+            {(() => {
+              const faltan = faltanPara(COSTO_RENDER, userId, creditos);
+              return (
+                <button disabled={generando || faltan > 0} className="w-full rounded-md border-0 bg-[#EA580C] px-4 py-4 text-base font-bold text-white transition hover:bg-[#c2470a] disabled:cursor-not-allowed disabled:opacity-60" onClick={generarRender}>
+                  {generando ? "Generando..." : faltan > 0 ? textoFaltan(faltan) : `Generar · ${COSTO_RENDER} generación`}
+                </button>
+              );
+            })()}
+            {userId && vistasPrevias[tabActiva]?.imagen?.url && (() => {
+              const faltan = faltanPara(COSTO_VARIACIONES, userId, creditos);
+              return (
+                <button type="button" disabled={generando || faltan > 0} className="mt-3 w-full rounded-md border border-[#EA580C] bg-transparent px-4 py-4 text-base font-bold text-[#EA580C] transition hover:bg-[#EA580C] hover:text-white disabled:cursor-not-allowed disabled:opacity-60" onClick={() => setMostrarVariaciones(true)}>
+                  {faltan > 0 ? textoFaltan(faltan) : `Generar variaciones de estilo · ${COSTO_VARIACIONES} generaciones`}
+                </button>
+              );
+            })()}
           </div>
         </section>
 
         <aside className="sticky top-5 rounded-md border border-brand-border bg-card p-5">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="m-0 text-xl font-black tracking-normal text-foreground">Tu render</h2>
+            <h2 className="m-0 text-xl font-black tracking-normal text-foreground">Tu generación</h2>
             <span className="text-xs font-bold text-muted-foreground">{prompt.length} caracteres</span>
           </div>
-          <button type="button" onClick={nuevoPrompt} className="mb-3 w-full rounded-md bg-[#EA580C] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#c2470a]">+ Nuevo render</button>
+          <button type="button" onClick={nuevoPrompt} className="mb-3 w-full rounded-md bg-[#EA580C] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#c2470a]">+ Nueva generación</button>
           <div className="flex min-h-72 flex-col overflow-wrap-anywhere rounded-md border border-brand-gold bg-input p-4 text-sm leading-relaxed text-foreground">
             {generando ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
                 <span className="h-8 w-8 animate-spin rounded-full border-2 border-brand-gold border-t-transparent" aria-hidden="true" />
-                <span className="font-bold text-brand-gold">Generando render...</span>
+                <span className="font-bold text-brand-gold">Generando...</span>
               </div>
             ) : errorRender ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
@@ -945,11 +994,11 @@ const GeneradorPromptsArquitectonicos = () => {
               </div>
             ) : imagenRender && !vistasPrevias[tabActiva]?.imagen ? (
               <div className="flex flex-1 flex-col gap-3">
-                <img src={imagenRender} alt="Render generado por IA" className="h-auto w-full rounded-md border border-brand-gold object-contain" />
+                <img src={imagenRender} alt="Generación creada con IA" className="h-auto w-full rounded-md border border-brand-gold object-contain" />
                 <a href={imagenRender} download="arquirender.png" className="rounded-md bg-[#EA580C] px-4 py-3 text-center text-sm font-extrabold text-white transition hover:bg-[#c2470a]">Descargar</a>
               </div>
             ) : (
-              <div className="whitespace-pre-wrap">{prompt || "Completa las opciones y genera tu render con IA."}</div>
+              <div className="whitespace-pre-wrap">{prompt || "Completa las opciones y genera tu generación con IA."}</div>
             )}
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3">

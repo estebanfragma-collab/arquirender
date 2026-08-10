@@ -16,7 +16,7 @@ export default function Footer() {
           <div>
             <div className="text-2xl font-bold text-white">ArquiRender</div>
             <p className="mt-3 text-sm text-[#9CA3AF] max-w-[280px]">
-              Renders arquitectónicos fotorrealistas con IA para arquitectos y
+              Generaciones arquitectónicas fotorrealistas con IA para arquitectos y
               diseñadores de LATAM.
             </p>
             <a

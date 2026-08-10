@@ -57,7 +57,7 @@ export default function Nav() {
 
         <div className="flex items-center gap-4">
           <Link
-            to="/app"
+            to="/app?login=1"
             className={`hidden md:inline transition-colors ${linkColor}`}
           >
             Iniciar sesión

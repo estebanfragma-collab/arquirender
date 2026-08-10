@@ -32,7 +32,7 @@ export default function Solucion() {
               Así funciona ArquiRender
             </h2>
             <p className="mt-4 text-lg text-[#6B7280]">
-              De tu boceto al render fotorrealista en menos de 2 minutos
+              De tu boceto a la generación fotorrealista en menos de 2 minutos
             </p>
           </div>
 
@@ -74,7 +74,7 @@ export default function Solucion() {
               04
             </div>
             <h3 className="mt-2 text-[36px] font-extrabold text-white leading-tight">
-              Tu render fotorrealista, listo para descargar
+              Tu generación fotorrealista, lista para descargar
             </h3>
             <p className="mt-4 text-[#9CA3AF] leading-[1.6]">
               Descarga en alta resolución y compártelo con tu cliente al
@@ -84,7 +84,7 @@ export default function Solucion() {
               to="/app"
               className="inline-block mt-7 bg-[#EA580C] text-white rounded-[10px] px-8 py-4 text-base font-bold hover:bg-[#c2410c] transition-colors"
             >
-              Generar mi render gratis →
+              Generar mi primera generación gratis →
             </Link>
           </div>
 
@@ -92,7 +92,7 @@ export default function Solucion() {
           <div>
             <img
               src="/renders/arquirender_24.png"
-              alt="Render fotorrealista final"
+              alt="Generación fotorrealista final"
               className="w-full rounded-xl shadow-[0_0_40px_rgba(234,88,12,0.3)]"
             />
           </div>

@@ -14,7 +14,7 @@ const ITEMS = [
     a: "Sí. Toma una captura de pantalla de tu modelo en SketchUp y súbela directamente. También acepta bocetos a mano, fotos de maquetas y planos 2D.",
   },
   {
-    q: "¿Qué pasa cuando se me acaban los renders del plan?",
+    q: "¿Qué pasa cuando se me acaban las generaciones del plan?",
     a: "Puedes comprar el plan que necesites en cualquier momento. Los créditos no vencen y puedes usarlos a tu ritmo.",
   },
   {

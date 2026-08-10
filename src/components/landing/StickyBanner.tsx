@@ -24,7 +24,7 @@ export default function StickyBanner() {
       }`}
     >
       <span className="hidden md:inline text-white text-[15px] font-medium">
-        🎁 3 renders gratis — sin tarjeta, sin instalaciones.
+        🎁 4 generaciones gratis — sin tarjeta, sin instalaciones.
       </span>
 
       <Link
