@@ -1,38 +1,46 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const GALERIA = [
-  { src: "/renders/fotorealista.png", label: "Fotografía real" },
-  { src: "/renders/nocturno.png", label: "Nocturno" },
-  { src: "/renders/lluvia.png", label: "Lluvia" },
-  { src: "/renders/dron.png", label: "Dron" },
-  { src: "/renders/closeup.png", label: "Close-up" },
-  { src: "/renders/estilo.png", label: "Estilo Bauhaus" },
-  { src: "/renders/axonometrico.png", label: "Axonométrico" },
-  { src: "/renders/lamina.png", label: "Maqueta" },
-  { src: "/renders/exterior.png", label: "Exterior" },
-  { src: "/renders/arquirender-Moderno-5.png", label: "Estilo Moderno" },
-  { src: "/renders/arquirender-36.png", label: "Moodboard" },
-  { src: "/renders/opcion_1.jpg", label: "Lluvioso" },
-  { src: "/renders/opcion2.jpg", label: "Nocturno" },
-  { src: "/renders/fachada_colineal_2.png", label: "Nocturno" },
-  { src: "/renders/arquirender-Bauhaus-6.png", label: "Bauhaus" },
+  { src: "/renders/fotorealista.webp", label: "Fotografía real", w: 1536, h: 1024 },
+  { src: "/renders/nocturno.webp", label: "Nocturno", w: 800, h: 534 },
+  { src: "/renders/lluvia.webp", label: "Lluvia", w: 800, h: 534 },
+  { src: "/renders/dron.webp", label: "Dron", w: 800, h: 534 },
+  { src: "/renders/closeup.webp", label: "Close-up", w: 800, h: 534 },
+  { src: "/renders/estilo.webp", label: "Estilo Bauhaus", w: 800, h: 534 },
+  { src: "/renders/axonometrico.webp", label: "Axonométrico", w: 800, h: 534 },
+  { src: "/renders/lamina.webp", label: "Maqueta", w: 800, h: 534 },
+  { src: "/renders/exterior.webp", label: "Exterior", w: 800, h: 534 },
+  { src: "/renders/arquirender-Moderno-5.webp", label: "Estilo Moderno", w: 800, h: 534 },
+  { src: "/renders/arquirender-36.webp", label: "Moodboard", w: 800, h: 534 },
+  { src: "/renders/opcion_1.webp", label: "Lluvioso", w: 800, h: 534 },
+  { src: "/renders/opcion2.webp", label: "Nocturno", w: 800, h: 534 },
+  { src: "/renders/fachada_colineal_2.webp", label: "Nocturno", w: 800, h: 534 },
+  { src: "/renders/arquirender-Bauhaus-6.webp", label: "Bauhaus", w: 800, h: 534 },
 ];
 
 const PAIRS = [
-  { antes: "/renders/slider-antes1.png", despues: "/renders/arquirender-40.png", label: "Casa Modular" },
-  { antes: "/renders/slider-antes2.png", despues: "/renders/slider-despues2.png", label: "Dentalika · Lluvia" },
-  { antes: "/renders/slider-antes3.png", despues: "/renders/arquirender-57.png", label: "Only Natural" },
-  { antes: "/renders/slider-antes4.png", despues: "/renders/arquirender-41.png", label: "DermaPro" },
+  { antes: "/renders/slider-antes1.webp", despues: "/renders/arquirender-40.webp", label: "Casa Modular", antesW: 1200, antesH: 757, despuesW: 1200, despuesH: 800 },
+  { antes: "/renders/slider-antes2.webp", despues: "/renders/slider-despues2.webp", label: "Dentalika · Lluvia", antesW: 1200, antesH: 747, despuesW: 1200, despuesH: 800 },
+  { antes: "/renders/slider-antes3.webp", despues: "/renders/arquirender-57.webp", label: "Only Natural", antesW: 1200, antesH: 822, despuesW: 1200, despuesH: 800 },
+  { antes: "/renders/slider-antes4.webp", despues: "/renders/arquirender-41.webp", label: "DermaPro", antesW: 1200, antesH: 752, despuesW: 1200, despuesH: 800 },
 ];
 
 function SliderCard({
   antes,
   despues,
   label,
+  antesW,
+  antesH,
+  despuesW,
+  despuesH,
 }: {
   antes: string;
   despues: string;
   label: string;
+  antesW: number;
+  antesH: number;
+  despuesW: number;
+  despuesH: number;
 }) {
   // pos = fracción de RENDER (después) visible. 0 = original, 100 = render.
   const [pos, setPos] = useState(() =>
@@ -87,6 +95,10 @@ function SliderCard({
       <img
         src={antes}
         alt="Antes"
+        width={antesW}
+        height={antesH}
+        loading="lazy"
+        decoding="async"
         className="absolute inset-0 w-full h-full object-cover object-center"
       />
 
@@ -98,6 +110,10 @@ function SliderCard({
         <img
           src={despues}
           alt="Después"
+          width={despuesW}
+          height={despuesH}
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-cover object-center"
         />
       </div>
@@ -166,6 +182,10 @@ export default function Resultados() {
               <img
                 src={item.src}
                 alt={item.label}
+                width={item.w}
+                height={item.h}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
               />
               <span className="absolute top-3 left-3 bg-black/60 text-white text-xs font-semibold rounded-full px-3 py-1">

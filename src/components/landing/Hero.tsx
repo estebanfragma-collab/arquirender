@@ -157,14 +157,24 @@ export default function Hero() {
         >
           {/* Antes (base) — SketchUp */}
           <img
-            src="/renders/antes.png"
+            src="/renders/antes.webp"
+            width={1122}
+            height={709}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
             className="absolute inset-0 w-full h-full object-cover object-center"
             alt="Maqueta arquitectónica"
           />
 
           {/* Después (encima, revelado desde la derecha) — render */}
           <img
-            src="/renders/fotorealista.png"
+            src="/renders/fotorealista.webp"
+            width={1536}
+            height={1024}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
             className="absolute inset-0 w-full h-full object-cover object-center"
             style={{ clipPath: `inset(0 0 0 ${pos}%)` }}
             alt="Render fotorrealista"
