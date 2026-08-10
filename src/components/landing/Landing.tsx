@@ -1,6 +1,5 @@
 import Nav from "./Nav";
 import Hero from "./Hero";
-import VSL from "./VSL";
 import TickerBar from "./TickerBar";
 import Dolores from "./Dolores";
 import MagneticBanner from "./MagneticBanner";
@@ -20,7 +19,6 @@ export default function Landing() {
     <div>
       <Nav />
       <Hero />
-      <VSL />
       <TickerBar />
       <Dolores />
       <MagneticBanner
