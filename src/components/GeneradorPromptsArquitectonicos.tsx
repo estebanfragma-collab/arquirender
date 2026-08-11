@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/AuthModal";
@@ -6,6 +6,7 @@ import PlanesModal from "@/components/PlanesModal";
 import HistorialRenders from "@/components/HistorialRenders";
 import VariacionesModal from "@/components/VariacionesModal";
 import OnboardingModal from "@/components/OnboardingModal";
+import { PRESETS, CLAVES_PRESET, type Preset } from "@/lib/presets";
 import {
   caos,
   coloresDominantes,
@@ -81,6 +82,128 @@ const faltanPara = (costo: number, userId: string | null, creditos: number | nul
 
 const textoFaltan = (faltan: number) =>
   `Te ${faltan === 1 ? "falta" : "faltan"} ${faltan} ${faltan === 1 ? "generación" : "generaciones"}`;
+
+/**
+ * Fila horizontal de presets de transformación. Scrollea en pantallas estrechas.
+ *
+ * Estados del card: hover cambia solo el borde; seleccionado cambia borde Y título.
+ * El color del título es lo único que los distingue.
+ */
+const PresetsRow = ({
+  activo,
+  onSeleccionar,
+  transformacion,
+  preservar,
+  negativePrompt,
+  avisarBase,
+  onVolverAlOriginal,
+}: {
+  activo: string | null;
+  onSeleccionar: (preset: Preset) => void;
+  transformacion: string;
+  preservar: string[];
+  negativePrompt: string;
+  /** El preset activo parte de la foto original pero hay un render encima. */
+  avisarBase: boolean;
+  onVolverAlOriginal: () => void;
+}) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [fade, setFade] = useState({ izquierda: false, derecha: false });
+
+  // Cada extremo solo se difumina si de ese lado queda contenido cortado.
+  const actualizarFade = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setFade({
+      izquierda: scrollLeft > 1,
+      derecha: scrollLeft + clientWidth < scrollWidth - 1,
+    });
+  }, []);
+
+  useEffect(() => {
+    actualizarFade();
+    const el = scrollRef.current;
+    if (!el) return;
+    // El ancho disponible cambia con el viewport y con el layout del panel.
+    const observer = new ResizeObserver(actualizarFade);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [actualizarFade]);
+
+  return (
+    <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+      <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
+        <span>Presets de transformación</span>
+        <span className="font-bold text-muted-foreground">Opcional</span>
+      </label>
+
+      <div className="relative -mx-1">
+        <div ref={scrollRef} onScroll={actualizarFade} className="flex gap-3 overflow-x-auto px-1 pb-2">
+          {PRESETS.map((preset) => {
+            const seleccionado = activo === preset.id;
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => onSeleccionar(preset)}
+                aria-pressed={seleccionado}
+                className={`flex w-[210px] shrink-0 flex-col gap-1 rounded-md border bg-transparent p-3 text-left transition ${
+                  seleccionado ? "border-[#EA580C]" : "border-brand-border hover:border-[#EA580C]"
+                }`}
+              >
+                <span className={`text-xs font-extrabold ${seleccionado ? "text-[#EA580C]" : "text-foreground"}`}>
+                  {preset.nombre}
+                </span>
+                <span className="text-[11px] leading-snug text-muted-foreground">{preset.descripcion}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-y-0 left-0 w-10 transition-opacity duration-200 ${fade.izquierda ? "opacity-100" : "opacity-0"}`}
+          style={{ background: "linear-gradient(to right, hsl(var(--card)), transparent)" }}
+        />
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-y-0 right-0 w-10 transition-opacity duration-200 ${fade.derecha ? "opacity-100" : "opacity-0"}`}
+          style={{ background: "linear-gradient(to left, hsl(var(--card)), transparent)" }}
+        />
+      </div>
+
+      {/* Qué dejó cargado el preset. Solo lectura: los campos no tienen UI propia. */}
+      {activo && (
+        <div className="mt-3 space-y-1.5 rounded-md border border-brand-border bg-input/40 p-3 text-[11px] leading-snug text-muted-foreground">
+          {transformacion && (
+            <p>
+              <span className="font-bold">Transformación:</span> {transformacion}
+            </p>
+          )}
+          {preservar.length > 0 && (
+            <p>
+              <span className="font-bold">Preservar:</span> {preservar.join(" · ")}
+            </p>
+          )}
+          {negativePrompt && (
+            <p>
+              <span className="font-bold">Evitar:</span> {negativePrompt}
+            </p>
+          )}
+          {avisarBase && (
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-[#EA580C]">
+              <span className="font-bold">Este preset trabaja mejor desde tu foto original.</span>
+              <button type="button" onClick={onVolverAlOriginal} className="font-extrabold underline transition hover:opacity-80">
+                Volver al original
+              </button>
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const extraerErrorRender = async (error: unknown) => {
   if (error && typeof error === "object" && "context" in error) {
@@ -260,6 +383,7 @@ const GeneradorPromptsArquitectonicos = () => {
   const [mostrarOnboarding, setMostrarOnboarding] = useState(false);
   const [modoRender, setModoRender] = useState<"estilo" | "representacion">("estilo");
   const [selectedRepresentacion, setSelectedRepresentacion] = useState("");
+  const [presetActivo, setPresetActivo] = useState<string | null>(null);
 
   const tab = useMemo(() => tabsPrompt.find((item) => item.id === tabActiva)!, [tabActiva]);
   const valores = valoresPorTab[tabActiva];
@@ -273,6 +397,50 @@ const GeneradorPromptsArquitectonicos = () => {
   const imagenBaseActiva = imagenRender || imagenOriginal;
   const campoPorId = (id: string) => tab.campos.find((campo) => campo.id === id);
   const toggleAcordeon = (clave: string) => setAcordeones((actual) => ({ ...actual, [clave]: !actual[clave] }));
+
+  // Descarta el render de esta pestaña para volver a partir de la foto subida.
+  const volverAlOriginal = () => setImagenRenders((actual) => ({ ...actual, [tabActiva]: "" }));
+
+  // Valores de los campos del preset tal como estaban antes de aplicar el primero.
+  // Permite que cada preset parta del estado limpio y que deseleccionar revierta.
+  const valoresPrevios = useRef<ValoresFormulario | null>(null);
+
+  const aplicarPreset = (preset: Preset) => {
+    const deseleccionar = presetActivo === preset.id;
+    const base = valoresPrevios.current;
+
+    if (deseleccionar) {
+      setValoresPorTab((actual) => ({
+        ...actual,
+        [tabActiva]: { ...actual[tabActiva], ...(base ?? {}) },
+      }));
+      valoresPrevios.current = null;
+      setPresetActivo(null);
+      return;
+    }
+
+    // Primer preset de la tanda: guarda el estado original de esos campos.
+    if (!base) {
+      const snapshot: ValoresFormulario = {};
+      CLAVES_PRESET.forEach((clave) => { snapshot[clave] = valores[clave] ?? ""; });
+      valoresPrevios.current = snapshot;
+    }
+
+    setValoresPorTab((actual) => ({
+      ...actual,
+      [tabActiva]: {
+        ...actual[tabActiva],
+        // Parte siempre del original, para que cambiar de preset no arrastre
+        // la iluminación forzada por el anterior.
+        ...(valoresPrevios.current ?? {}),
+        transformacion: preset.transformacion,
+        preservar: preset.preservar,
+        negativePrompt: preset.negativePrompt,
+        ...(preset.iluminacion ? { iluminacion: preset.iluminacion } : {}),
+      },
+    }));
+    setPresetActivo(preset.id);
+  };
 
   // Evita que el onboarding se reabra solo cada vez que se recargan créditos.
   const onboardingChequeado = useRef(false);
@@ -713,7 +881,7 @@ const GeneradorPromptsArquitectonicos = () => {
                 <span className="text-xs font-bold text-muted-foreground">{comparacion === "antes" ? "Generación" : "Original"}</span>
               </button>
               <a href={imagenRender} download="arquirender.png" className="block rounded-md bg-[#EA580C] px-4 py-3 text-center text-sm font-extrabold text-white transition hover:bg-[#c2470a]">Descargar</a>
-              <button type="button" onClick={() => setImagenRenders((actual) => ({ ...actual, [tabActiva]: "" }))} className="block w-full rounded-md border border-brand-border bg-transparent px-4 py-2 text-center text-sm font-bold text-muted-foreground transition hover:border-[#EA580C] hover:text-[#EA580C]">↩ Volver al original</button>
+              <button type="button" onClick={volverAlOriginal} className="block w-full rounded-md border border-brand-border bg-transparent px-4 py-2 text-center text-sm font-bold text-muted-foreground transition hover:border-[#EA580C] hover:text-[#EA580C]">↩ Volver al original</button>
             </div>
           ) : (
             <div className="space-y-3">
@@ -892,6 +1060,16 @@ const GeneradorPromptsArquitectonicos = () => {
 
           {modoRender === "estilo" && (
           <>
+          <PresetsRow
+            activo={presetActivo}
+            onSeleccionar={aplicarPreset}
+            transformacion={valorTexto(valores.transformacion)}
+            preservar={Array.isArray(valores.preservar) ? valores.preservar : []}
+            negativePrompt={valorTexto(valores.negativePrompt)}
+            avisarBase={PRESETS.find((p) => p.id === presetActivo)?.base === "original" && !!imagenRender}
+            onVolverAlOriginal={volverAlOriginal}
+          />
+
           {renderAcordeon("materiales", "Materiales a aplicar", (
             <div className="space-y-5">
               {campoPorId("materiales") && renderCampo(campoPorId("materiales")!)}
