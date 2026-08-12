@@ -84,6 +84,20 @@ const textoFaltan = (faltan: number) =>
   `Te ${faltan === 1 ? "falta" : "faltan"} ${faltan} ${faltan === 1 ? "generación" : "generaciones"}`;
 
 /**
+ * Piezas que se encadenan tras la primera generación de un usuario, cobrando
+ * un solo crédito en total. Van en cadena (secuencial), no en paralelo, y todas
+ * parten de la imagen de la pieza 1. El slug debe existir en PROMPTS_REPRESENTACION
+ * de la Edge Function o esta ignora la representación y genera un render normal.
+ */
+const PIEZAS_CADENA = [
+  { representacion: "fotografia_real", etiqueta: "Fotografía real" },
+  { representacion: "nocturno", etiqueta: "Nocturno" },
+  { representacion: "moodboard", etiqueta: "Moodboard" },
+] as const;
+
+type EstadoPieza = { estado: "cargando" | "ok" | "error"; imagen?: string; error?: string };
+
+/**
  * Fila horizontal de presets de transformación. Scrollea en pantallas estrechas.
  *
  * Estados del card: hover cambia solo el borde; seleccionado cambia borde Y título.
@@ -393,6 +407,8 @@ const GeneradorPromptsArquitectonicos = () => {
   const [modoRender, setModoRender] = useState<"estilo" | "representacion">("estilo");
   const [selectedRepresentacion, setSelectedRepresentacion] = useState("");
   const [presetActivo, setPresetActivo] = useState<string | null>(null);
+  const [piezas, setPiezas] = useState<Record<string, EstadoPieza>>({});
+  const [cadenaActiva, setCadenaActiva] = useState(false);
 
   const tab = useMemo(() => tabsPrompt.find((item) => item.id === tabActiva)!, [tabActiva]);
   const valores = valoresPorTab[tabActiva];
@@ -613,6 +629,71 @@ const GeneradorPromptsArquitectonicos = () => {
     lector.readAsDataURL(archivo);
   };
 
+  /** true si el usuario todavía no tiene ninguna generación guardada. */
+  const esPrimeraGeneracion = async (uid: string): Promise<boolean> => {
+    const { count, error } = await supabase
+      .from("renders")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", uid);
+    // Ante un fallo de conteo, se asume que NO es la primera: sin cadena y sin regalar piezas.
+    if (error) {
+      console.warn("[cadena] No se pudo contar renders, se omite la cadena:", error.message);
+      return false;
+    }
+    return (count ?? 0) === 0;
+  };
+
+  /**
+   * Tras la pieza 1, genera las tres piezas restantes en cadena (secuencial).
+   * Cada una viaja con piezaAdicional: true; la Edge Function revalida contra la
+   * base antes de saltarse el cobro, así que el flag por sí solo no regala nada.
+   * Un fallo se muestra en su celda y no corta las siguientes.
+   */
+  const ejecutarCadena = async (promptFinal: string, imagenPieza1: string, original: string, uidActivo: string | null) => {
+    setCadenaActiva(true);
+    setPiezas(Object.fromEntries(PIEZAS_CADENA.map((p) => [p.etiqueta, { estado: "cargando" } as EstadoPieza])));
+
+    for (const pieza of PIEZAS_CADENA) {
+      try {
+        const { data, error: functionError } = await supabase.functions.invoke("generate-render", {
+          body: {
+            prompt: promptFinal,
+            imageBase64: imagenPieza1,
+            originalBase64: original || undefined,
+            representacion: pieza.representacion,
+            piezaAdicional: true,
+          },
+        });
+
+        if (functionError) {
+          const status = (functionError as any)?.context?.status;
+          setPiezas((actual) => ({
+            ...actual,
+            [pieza.etiqueta]: { estado: "error", error: status === 402 ? "Sin créditos" : "No se pudo generar" },
+          }));
+          continue;
+        }
+        if (!data?.success || !data?.imageBase64) {
+          setPiezas((actual) => ({
+            ...actual,
+            [pieza.etiqueta]: { estado: "error", error: data?.error || "No se pudo generar" },
+          }));
+          continue;
+        }
+        setPiezas((actual) => ({
+          ...actual,
+          [pieza.etiqueta]: { estado: "ok", imagen: `data:image/png;base64,${data.imageBase64}` },
+        }));
+      } catch {
+        setPiezas((actual) => ({ ...actual, [pieza.etiqueta]: { estado: "error", error: "Error inesperado" } }));
+      }
+    }
+
+    setCadenaActiva(false);
+    if (uidActivo) await cargarCreditos(uidActivo);
+    setRefrescarHistorial((n) => n + 1);
+  };
+
   const ejecutarGeneracion = async (uidActivo: string | null) => {
     const fuente = tiposImagen.find((item) => item.id === tipoImagen)?.descriptor || "";
     const promptFinal = construirPrompt(tabActiva, valores, fuente);
@@ -620,7 +701,11 @@ const GeneradorPromptsArquitectonicos = () => {
 
     setErrorRender("");
     setImagenRenders((actual) => ({ ...actual, [tabActiva]: "" }));
+    setPiezas({});
     setGenerando(true);
+
+    // Se consulta ANTES de generar: después de la pieza 1 el conteo ya sería 1.
+    const primera = uidActivo ? await esPrimeraGeneracion(uidActivo) : false;
 
     try {
       // Fuente de verdad: se itera desde la base activa (último render u original),
@@ -665,14 +750,21 @@ const GeneradorPromptsArquitectonicos = () => {
         return;
       }
 
+      const imagenPieza1 = `data:image/png;base64,${data.imageBase64}`;
       setComparacion("despues");
-      setImagenRenders((actual) => ({ ...actual, [tabActiva]: `data:image/png;base64,${data.imageBase64}` }));
+      setImagenRenders((actual) => ({ ...actual, [tabActiva]: imagenPieza1 }));
 
       // El crédito ya lo descontó la Edge Function; recargamos el valor real desde profiles
       if (uidActivo) await cargarCreditos(uidActivo);
 
       // Refrescar el historial para que aparezca el render recién generado
       setRefrescarHistorial((n) => n + 1);
+
+      // Primera generación: tres piezas más en cadena, sin cobro adicional.
+      // Sin await, para que la pieza 1 se vea ya y las demás lleguen progresivamente.
+      if (primera) {
+        void ejecutarCadena(promptFinal, imagenPieza1, imagenOriginal, uidActivo);
+      }
     } catch (error) {
       console.error("generarRender error", error);
       setErrorRender(mensajeErrorRender);
@@ -1146,8 +1238,8 @@ const GeneradorPromptsArquitectonicos = () => {
             {(() => {
               const faltan = faltanPara(COSTO_RENDER, userId, creditos);
               return (
-                <button disabled={generando || faltan > 0} className="w-full rounded-md border-0 bg-[#EA580C] px-4 py-4 text-base font-bold text-white transition hover:bg-[#c2470a] disabled:cursor-not-allowed disabled:opacity-60" onClick={generarRender}>
-                  {generando ? "Generando..." : faltan > 0 ? textoFaltan(faltan) : `Generar · ${COSTO_RENDER} generación`}
+                <button disabled={generando || cadenaActiva || faltan > 0} className="w-full rounded-md border-0 bg-[#EA580C] px-4 py-4 text-base font-bold text-white transition hover:bg-[#c2470a] disabled:cursor-not-allowed disabled:opacity-60" onClick={generarRender}>
+                  {generando ? "Generando..." : cadenaActiva ? "Generando piezas…" : faltan > 0 ? textoFaltan(faltan) : `Generar · ${COSTO_RENDER} generación`}
                 </button>
               );
             })()}
@@ -1188,6 +1280,32 @@ const GeneradorPromptsArquitectonicos = () => {
               <div className="whitespace-pre-wrap">{prompt || "Completa las opciones y genera tu generación con IA."}</div>
             )}
           </div>
+          {/* Primera generación: 4 piezas por un crédito. Aparecen conforme llegan. */}
+          {Object.keys(piezas).length > 0 && (
+            <div className="mt-4">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="text-xs font-extrabold uppercase tracking-wide text-brand-gold">Tu primera generación · 4 piezas</span>
+                {cadenaActiva && <span className="text-[11px] font-bold text-muted-foreground">Generando…</span>}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {[{ etiqueta: "Render", estado: { estado: "ok", imagen: imagenRender } as EstadoPieza }, ...PIEZAS_CADENA.map((p) => ({ etiqueta: p.etiqueta, estado: piezas[p.etiqueta] }))].map(({ etiqueta, estado }) => (
+                  <div key={etiqueta} className="relative aspect-square overflow-hidden rounded-md border border-brand-border bg-input">
+                    {estado?.estado === "ok" && estado.imagen ? (
+                      <img src={estado.imagen} alt={etiqueta} className="h-full w-full object-cover" />
+                    ) : estado?.estado === "error" ? (
+                      <div className="flex h-full items-center justify-center p-2 text-center text-[11px] font-bold text-destructive">{estado.error}</div>
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-brand-gold border-t-transparent" aria-hidden="true" />
+                      </div>
+                    )}
+                    <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-white">{etiqueta}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-3 grid grid-cols-2 gap-3">
             <button className="rounded-md border border-brand-gold bg-transparent px-3 py-3 text-sm font-extrabold text-brand-gold transition hover:bg-brand-gold hover:text-brand-gold-foreground" onClick={() => copiarTexto(prompt, "prompt")}>{copiado ? "¡Copiado! ✓" : "Copiar prompt"}</button>
             <button className="rounded-md border border-brand-border bg-input px-3 py-3 text-sm font-extrabold text-foreground transition hover:border-brand-gold hover:text-brand-gold" onClick={nuevoPrompt}>Nuevo prompt</button>
