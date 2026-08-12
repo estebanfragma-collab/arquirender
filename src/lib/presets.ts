@@ -87,7 +87,7 @@ export const PRESETS: Preset[] = [
     ],
     // Debe coincidir exacto con iluminacionSketch[1] de promptsArquitectonicos.ts,
     // o el select del acordeón queda sin marcar.
-    iluminacion: "Night — warm 2700K pendant lamps, cozy mood",
+    iluminacion: "Warm layered inviting light — cove glow, table lamps switched on, deep blue dusk sky through the glazing, warm 2700K interiors",
     negativePrompt:
       "black sky, daylight leaking in, changed materials, moved objects, motion blur",
     base: "ultimo",

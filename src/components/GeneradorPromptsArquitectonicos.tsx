@@ -110,16 +110,18 @@ const ESTILOS_DESTACADOS = ["Moderno", "Minimalista", "Contemporáneo", "Industr
  * hay que actualizarlo aquí o la píldora deja de marcarse.
  */
 const LUCES = [
-  { etiqueta: "Dorada", valor: "Side golden hour, long shadows, warm atmosphere" },
-  { etiqueta: "Nocturna", valor: "Night — warm 2700K pendant lamps, cozy mood" },
-  { etiqueta: "Dramática", valor: "Dramatic focal lighting, spots on the hero product" },
-  { etiqueta: "Amanecer", valor: "Dawn, soft pink side light" },
+  { etiqueta: "Dorada", valor: "Low warm directional sunlight raking from the side, long controlled shadows, warm highlights" },
+  { etiqueta: "Nocturna", valor: "Warm layered inviting light — cove glow, table lamps switched on, deep blue dusk sky through the glazing, warm 2700K interiors" },
+  { etiqueta: "Dramática", valor: "Dramatic focal lighting, strong directional key, deep shadows, illuminated interiors reading through the glass" },
+  { etiqueta: "Natural", valor: "Soft afternoon window daylight casting delicate gradients, cool neutral white balance, no yellow cast" },
 ];
 
-/** Las dos opciones restantes del array, tras "Ver todos". */
+/** Las tres opciones restantes del array, tras "Ver todos". */
 const LUCES_EXTRA = [
-  { etiqueta: "Natural", valor: "Soft natural daylight, diffused shadows, global illumination" },
-  { etiqueta: "Aro LED", valor: "Circular ring LED, signature retail style" },
+  { etiqueta: "Retail", valor: "Circular ring LED, signature retail style, even product illumination" },
+  { etiqueta: "Niebla", valor: "Soft diffused daylight filtered through mist, subtle volumetric rays, no yellow cast" },
+  { etiqueta: "Nublado", valor: "Soft overcast daylight, diffuse shadows, subdued reflections, cool neutral white balance" },
+  { etiqueta: "Amanecer", valor: "Dawn, soft pink side light, cool shadows, low sun just above the horizon" },
 ];
 
 // Mismo criterio que las píldoras de representación: el naranja solo significa
@@ -299,7 +301,7 @@ const estadoInicial = (tabId: TabId): ValoresFormulario => {
   // Se escribe literal, no por índice, para que reordenar el array no lo rompa;
   // debe coincidir exacto con su entrada en iluminacionSketch.
   if (tab.id === "sketch") {
-    base.iluminacion = "Side golden hour, long shadows, warm atmosphere";
+    base.iluminacion = "Low warm directional sunlight raking from the side, long controlled shadows, warm highlights";
   }
 
   parametrosIds.forEach((id) => {
@@ -351,6 +353,19 @@ const ESTILO_DESCRIPCION: Record<string, string> = {
   "Rústico": "rough sawn timber beams, natural fieldstone, hand-finished plaster, aged textures",
 };
 
+/** Cierre fijo de todo prompt: microtextura y sombras de contacto. */
+const BLOQUE_REALISMO =
+  "Realistic soft contact shadows and ambient occlusion under every object, visible stone pores, natural wood grain, brushed-metal micro-texture, subtle material imperfections and believable roughness variation.";
+
+/**
+ * Negativos fijos. Lo que el usuario escriba en "Qué evitar" se suma detrás.
+ * Sobre el texto: prohibir rótulos en seco borraba la señalética que ya existía
+ * en la imagen de referencia, que suele ser parte del proyecto. Se prohíbe
+ * añadir texto nuevo, no conservar el que hay.
+ */
+const BLOQUE_NEGATIVOS =
+  "Do not add any new text, logo or watermark that is not already present in the reference image, but preserve exactly any existing signage, lettering or branding visible in it. No warped furniture, distorted architecture, bad perspective. No plastic materials, excessive gloss, wet look, CGI look, cartoon, illustration.";
+
 const construirPrompt = (tabId: TabId, valores: ValoresFormulario, fuenteImagen = "") => {
   const materialOtro = valorTexto(valores.materialOtro).trim();
   // Solo lo que el usuario eligió. El fallback de marca queda para la rama
@@ -370,7 +385,9 @@ const construirPrompt = (tabId: TabId, valores: ValoresFormulario, fuenteImagen 
     const origen = fuenteImagen ? `Starting from ${fuenteImagen}. ` : "";
     const evitar = valorTexto(valores.negativePrompt).trim();
     const luz = valorTexto(valores.iluminacion).trim();
-    const cola = `${notas ? ` ${notas}` : ""}${evitar ? ` Avoid: ${evitar}.` : ""}`;
+    // Cierre común a las dos ramas: notas del usuario, realismo y, al final del
+    // todo, los negativos fijos con lo que el usuario haya añadido detrás.
+    const cola = `${notas ? ` ${notas}` : ""} ${BLOQUE_REALISMO} ${BLOQUE_NEGATIVOS}${evitar ? ` Avoid also: ${evitar}.` : ""}`;
 
     // CON ESTILO: fórmula heredada del antiguo VariacionesModal, la que sí
     // aplicaba los estilos. El estilo abre el prompt y domina; una sola
