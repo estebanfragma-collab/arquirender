@@ -330,21 +330,61 @@ const parametrosEspaciales = (valores: ValoresFormulario) => {
   return `${tamano} ${proporcion} retail space, ${techo} ceiling, ${niveles}, ${ventanas} natural light`;
 };
 
+/**
+ * Cada estilo, expresado como materiales y acabados concretos.
+ * Una etiqueta ("Bauhaus architectural style") le dice poco al modelo de imagen;
+ * una lista de superficies y aberturas sí dirige el resultado.
+ * Los estilos sin entrada aquí caen al nombre suelto, que es lo que había antes.
+ */
+const ESTILO_DESCRIPCION: Record<string, string> = {
+  Bauhaus: "smooth white rendered surfaces, steel-framed ribbon glazing, flat roof edges, primary-colour accents, zero ornament",
+  Industrial: "exposed brick, blackened steel, raw concrete, visible ductwork, factory-style glazing",
+  Minimalista: "pure white surfaces, hidden joints, uninterrupted planes, concealed lighting",
+  Moderno: "large glazed openings, horizontal lines, steel and glass, flat planes",
+  "Contemporáneo": "mixed natural stone and warm wood, deep overhangs, layered volumes",
+  Brutalista: "board-marked raw concrete, massive geometric volumes, deep shadow reveals, monolithic surfaces",
+  "Art Deco": "geometric relief patterns, polished brass inlays, black marble, symmetrical stepped forms",
+  "Orgánico": "curved flowing surfaces, natural timber, stone bedded into the landscape, no hard edges",
+  "Paramétrico": "complex curved geometry, repeating modular panels, fluid continuous surfaces",
+  "Neoclásico": "white marble, fine mouldings, symmetrical composition, slender columns",
+  "Mediterráneo": "white lime-washed walls, terracotta roof tiles, rounded arches, timber shutters",
+  "Rústico": "rough sawn timber beams, natural fieldstone, hand-finished plaster, aged textures",
+};
+
 const construirPrompt = (tabId: TabId, valores: ValoresFormulario, fuenteImagen = "") => {
   const materialOtro = valorTexto(valores.materialOtro).trim();
-  const materiales = [valorLista(valores.materiales, ""), materialOtro].filter(Boolean).join(", ") || "premium ArquiRender retail materials";
+  // Solo lo que el usuario eligió. El fallback de marca queda para la rama
+  // general: en sketch competía con el estilo en vez de sumar.
+  const materialesElegidos = [valorLista(valores.materiales, ""), materialOtro].filter(Boolean).join(", ");
+  const materiales = materialesElegidos || "premium ArquiRender retail materials";
   const color = limpiarColor(valores.color) || "warm neutral";
   const notas = valorTexto(valores.notas).trim();
 
   const estiloDiseno = valorTexto(valores.estiloDiseno).trim();
   const arquitectoRef = valorTexto(valores.arquitectoRef).trim();
-  const estiloContexto = [estiloDiseno ? `${estiloDiseno} architectural style` : "", arquitectoRef ? `inspired by the work of ${arquitectoRef}` : ""].filter(Boolean).join(", ");
+  // Materiales y acabados del estilo, no su nombre.
+  const estiloFrase = estiloDiseno ? ESTILO_DESCRIPCION[estiloDiseno] || `${estiloDiseno} architectural style` : "";
 
   if (tabId === "sketch") {
     const descripcion = valorTexto(valores.descripcion).trim();
     const origen = fuenteImagen ? `Starting from ${fuenteImagen}. ` : "";
     const evitar = valorTexto(valores.negativePrompt).trim();
-    return `${origen}${valorTexto(valores.transformacion)}.${descripcion ? ` Use this architectural image analysis as reference: ${descripcion}.` : ""} Preserve ${valorLista(valores.preservar, "the building geometry, openings and proportions")}. Preserve the exact camera angle, framing and composition of the reference image. Do not change the viewpoint. Apply ${materiales}.${estiloContexto ? ` ${estiloContexto}.` : ""}${valorTexto(valores.iluminacion).trim() ? ` Use ${valorTexto(valores.iluminacion)} creating realistic shadows, reflections and depth.` : ""} Photorealistic architectural render, high detail, realistic textures.${notas ? ` ${notas}` : ""}${evitar ? ` Avoid: ${evitar}.` : ""}`.replace(/\s+/g, " ").trim();
+    const luz = valorTexto(valores.iluminacion).trim();
+    const cola = `${notas ? ` ${notas}` : ""}${evitar ? ` Avoid: ${evitar}.` : ""}`;
+
+    // CON ESTILO: fórmula heredada del antiguo VariacionesModal, la que sí
+    // aplicaba los estilos. El estilo abre el prompt y domina; una sola
+    // instrucción de encuadre en vez de cuatro de preservación, que lo ahogaban.
+    if (estiloDiseno) {
+      return `${origen}${estiloFrase ? `${estiloFrase}. ` : ""}Reinterpret this space entirely in the ${estiloDiseno} style. Keep only the general spatial composition and camera framing of the reference image so it reads as the same space, but let the ${estiloDiseno} style fully redefine the materials, textures, finishes, colors and architectural details.${descripcion ? ` Use this architectural image analysis as reference: ${descripcion}.` : ""}${materialesElegidos ? ` Apply ${materialesElegidos}.` : ""}${luz ? ` Use ${luz} creating realistic shadows, reflections and depth.` : ""} Photorealistic architectural render, high detail, realistic textures.${cola}`.replace(/\s+/g, " ").trim();
+    }
+
+    // SIN ESTILO: transformación fiel. Aquí las preservaciones sí ayudan,
+    // porque no hay estilo con el que competir.
+    // Preservación y materiales solo aparecen si el usuario los eligió; sus
+    // antiguos fallbacks repetían transformaciones[0] o competían con el estilo.
+    const preservarElegido = valorLista(valores.preservar, "");
+    return `${origen}${valorTexto(valores.transformacion)}.${descripcion ? ` Use this architectural image analysis as reference: ${descripcion}.` : ""}${estiloFrase ? ` Render it with ${estiloFrase}.` : ""}${preservarElegido ? ` Preserve ${preservarElegido}.` : ""} Preserve the exact camera angle, framing and composition of the reference image. Do not change the viewpoint.${materialesElegidos ? ` Apply ${materialesElegidos}.` : ""}${arquitectoRef ? ` Inspired by the work of ${arquitectoRef}.` : ""}${luz ? ` Use ${luz} creating realistic shadows, reflections and depth.` : ""} Photorealistic architectural render, high detail, realistic textures.${cola}`.replace(/\s+/g, " ").trim();
   }
 
   const tipoEspacio = tabId === "nueva" ? `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}` : tabId === "remodelacion" ? `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}, ${valorTexto(valores.descripcion, "existing ArquiRender retail space")}, ${valorTexto(valores.cambio)}` : `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}, ${valorTexto(valores.visualizacion)}, ${valorTexto(valores.descripcion, "architectural plan translated into retail space")}`;
@@ -375,6 +415,31 @@ const DESCRIPTORES_ORIGEN: Record<TipoOrigen, string> = {
   render: "an existing render",
   otro: "",
 };
+
+/**
+ * Atajos de "¿Y ahora qué?": parten de la imagen del visor, no de la original.
+ * El slug debe existir en PROMPTS_REPRESENTACION de la Edge Function.
+ */
+const SEGUIMIENTOS = [
+  { etiqueta: "Vista aérea", representacion: "vista_aerea_dron" },
+  { etiqueta: "Close up del detalle", representacion: "close_up" },
+  { etiqueta: "Día lluvioso", representacion: "dia_lluvioso" },
+  { etiqueta: "Maqueta física", representacion: "maqueta" },
+] as const;
+
+/** Ejemplos que rotan en el campo libre hasta que el usuario escribe. */
+const PLACEHOLDERS_LIBRE = [
+  "Añade una familia caminando hacia la entrada",
+  "Añade clientes dentro del local",
+  "Añade vegetación madura alrededor",
+  "Añade productos en las estanterías",
+  "Cambia el piso a madera clara",
+  "Quita los autos del frente",
+  "Añade una piscina en el jardín",
+  "Pon el cielo nublado",
+];
+
+const MS_ROTACION_PLACEHOLDER = 4000;
 
 /** Tope de representaciones simultáneas. Cada una cuesta un crédito. */
 const MAX_REPRESENTACIONES = 4;
@@ -466,6 +531,9 @@ const GeneradorPromptsArquitectonicos = () => {
   // Pieza que ocupa el visor grande. Ninguna es "la principal": la primera que
   // termina lo toma, y el usuario cambia clicando otra miniatura.
   const [piezaVisor, setPiezaVisor] = useState<{ etiqueta: string; imagen: string } | null>(null);
+  const [mostrarLibre, setMostrarLibre] = useState(false);
+  const [textoLibre, setTextoLibre] = useState("");
+  const [indicePlaceholder, setIndicePlaceholder] = useState(0);
   const [presetActivo, setPresetActivo] = useState<string | null>(null);
   const [piezas, setPiezas] = useState<Record<string, EstadoPieza>>({});
   const [cadenaActiva, setCadenaActiva] = useState(false);
@@ -491,6 +559,16 @@ const GeneradorPromptsArquitectonicos = () => {
 
   // Descarta el render de esta pestaña para volver a partir de la foto subida.
   const volverAlOriginal = () => setImagenRenders((actual) => ({ ...actual, [tabActiva]: "" }));
+
+  // El placeholder del campo libre rota mientras esté vacío y visible.
+  useEffect(() => {
+    if (!mostrarLibre || textoLibre) return;
+    const t = setInterval(
+      () => setIndicePlaceholder((i) => (i + 1) % PLACEHOLDERS_LIBRE.length),
+      MS_ROTACION_PLACEHOLDER,
+    );
+    return () => clearInterval(t);
+  }, [mostrarLibre, textoLibre]);
 
   /** Multi-selección de representaciones, con tope. Un segundo clic quita. */
   const toggleRepresentacion = (opcion: string) => {
@@ -795,6 +873,64 @@ const GeneradorPromptsArquitectonicos = () => {
     }
 
     setCadenaActiva(false);
+    setRefrescarHistorial((n) => n + 1);
+  };
+
+  /**
+   * "¿Y ahora qué?": una pieza más a partir de la imagen del visor, no de la
+   * original. Cuesta 1 crédito y se suma al grid con su etiqueta.
+   * Con `representacion` la Edge Function usa su prompt fijo; con texto libre
+   * se manda el prompt de estilo con la petición concatenada.
+   */
+  const generarSeguimiento = async (etiqueta: string, opciones: { representacion?: string; peticion?: string }) => {
+    if (!imagenVisor || cadenaActiva || generando) return;
+
+    // Lo ya generado pasa al mapa de piezas para que el grid no lo pierda al
+    // cambiar de modo (la vista "cadena" arma sus celdas de forma fija).
+    if (modoGrid !== "tanda" && imagenRender) {
+      setPiezas((actual) => ({ Render: { estado: "ok", imagen: imagenRender }, ...actual }));
+    }
+    setModoGrid("tanda");
+    setPiezas((actual) => ({ ...actual, [etiqueta]: { estado: "cargando" } }));
+    setCadenaActiva(true);
+
+    // Sin representación, la Edge Function no lee `notas`: la petición tiene que
+    // viajar dentro del propio prompt para que llegue al modelo.
+    const base = prompt || construirPrompt(tabActiva, valores, DESCRIPTORES_ORIGEN[tipoOrigen]);
+    const promptFinal = opciones.peticion ? `${base} ${opciones.peticion}` : base;
+
+    try {
+      const { data, error: functionError } = await supabase.functions.invoke("generate-render", {
+        body: {
+          prompt: promptFinal,
+          imageBase64: imagenVisor,
+          originalBase64: imagenOriginal || undefined,
+          estilo: valorTexto(valores.estiloDiseno).trim() || undefined,
+          representacion: opciones.representacion,
+          notas: opciones.peticion || valorTexto(valores.notas).trim() || undefined,
+        },
+      });
+
+      if (functionError) {
+        const status = (functionError as any)?.context?.status;
+        setPiezas((actual) => ({
+          ...actual,
+          [etiqueta]: { estado: "error", error: status === 402 ? "Sin créditos" : "No se pudo generar" },
+        }));
+      } else if (!data?.success || !data?.imageBase64) {
+        setPiezas((actual) => ({ ...actual, [etiqueta]: { estado: "error", error: data?.error || "No se pudo generar" } }));
+      } else {
+        const imagen = `data:image/png;base64,${data.imageBase64}`;
+        setPiezas((actual) => ({ ...actual, [etiqueta]: { estado: "ok", imagen } }));
+        // La pieza recién pedida pasa al visor: es lo que el usuario quiso ver.
+        setPiezaVisor({ etiqueta, imagen });
+      }
+    } catch {
+      setPiezas((actual) => ({ ...actual, [etiqueta]: { estado: "error", error: "Error inesperado" } }));
+    }
+
+    setCadenaActiva(false);
+    if (userId) await cargarCreditos(userId);
     setRefrescarHistorial((n) => n + 1);
   };
 
@@ -1455,26 +1591,92 @@ const GeneradorPromptsArquitectonicos = () => {
             <span className="text-xs font-bold text-muted-foreground">{prompt.length} caracteres</span>
           </div>
           <button type="button" onClick={nuevoPrompt} className="mb-3 w-full rounded-md bg-[#EA580C] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#c2470a]">+ Nueva generación</button>
-          <div className="flex min-h-72 flex-col overflow-wrap-anywhere rounded-md border border-brand-gold bg-input p-4 text-sm leading-relaxed text-foreground">
-            {generando ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
-                <span className="h-8 w-8 animate-spin rounded-full border-2 border-brand-gold border-t-transparent" aria-hidden="true" />
-                <span className="font-bold text-brand-gold">Generando...</span>
+          {/* Estado y visor. El prompt ya no vive aquí: va más abajo, tras el
+              grid, para que "¿Y ahora qué?" siga al botón Descargar. */}
+          {(generando || errorRender || (imagenVisor && !vistasPrevias[tabActiva]?.imagen) || !prompt) && (
+            <div className="flex min-h-72 flex-col overflow-wrap-anywhere rounded-md border border-brand-gold bg-input p-4 text-sm leading-relaxed text-foreground">
+              {generando ? (
+                <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+                  <span className="h-8 w-8 animate-spin rounded-full border-2 border-brand-gold border-t-transparent" aria-hidden="true" />
+                  <span className="font-bold text-brand-gold">Generando...</span>
+                </div>
+              ) : errorRender ? (
+                <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+                  <p className="font-bold text-destructive">{errorRender}</p>
+                  <button className="rounded-md border border-brand-gold bg-transparent px-4 py-2 text-sm font-extrabold text-brand-gold transition hover:bg-brand-gold hover:text-brand-gold-foreground" onClick={generarRender}>Reintentar</button>
+                </div>
+              ) : imagenVisor && !vistasPrevias[tabActiva]?.imagen ? (
+                <div className="flex flex-1 flex-col gap-3">
+                  <img src={imagenVisor} alt={etiquetaVisor} className="h-auto w-full rounded-md border border-brand-gold object-contain" />
+                  <a href={imagenVisor} download={`arquirender-${etiquetaVisor.toLowerCase().replace(/\s+/g, "-")}.png`} className="rounded-md bg-[#EA580C] px-4 py-3 text-center text-sm font-extrabold text-white transition hover:bg-[#c2470a]">Descargar</a>
+                </div>
+              ) : (
+                <div className="whitespace-pre-wrap">Completa las opciones y genera tu generación con IA.</div>
+              )}
+            </div>
+          )}
+          {/* Siguientes pasos sobre la pieza que está en el visor. */}
+          {imagenVisor && (() => {
+            const faltan = faltanPara(COSTO_RENDER, userId, creditos);
+            const sinSaldo = faltan > 0;
+            const ocupado = cadenaActiva || generando;
+            const inactivo = sinSaldo || ocupado;
+            return (
+              <div className="mt-4 rounded-md border border-brand-border p-4">
+                <div className="mb-3 text-xs font-extrabold uppercase tracking-wide text-brand-gold">¿Y ahora qué?</div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {SEGUIMIENTOS.map((s) => (
+                    <button
+                      key={s.representacion}
+                      type="button"
+                      disabled={inactivo}
+                      onClick={() => void generarSeguimiento(s.etiqueta, { representacion: s.representacion })}
+                      className="rounded-md border border-brand-border bg-transparent px-3 py-2.5 text-xs font-bold text-foreground transition hover:border-[#EA580C] hover:text-[#EA580C] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-brand-border disabled:hover:text-foreground"
+                    >
+                      {s.etiqueta}
+                    </button>
+                  ))}
+                </div>
+
+                {sinSaldo && <p className="mt-3 text-[11px] font-bold text-destructive">{textoFaltan(faltan)}</p>}
+
+                {!mostrarLibre ? (
+                  <button
+                    type="button"
+                    onClick={() => setMostrarLibre(true)}
+                    className="mt-3 text-[11px] font-bold text-muted-foreground underline transition hover:text-[#EA580C]"
+                  >
+                    O pídeme otra cosa ▸
+                  </button>
+                ) : (
+                  <div className="mt-3 space-y-2">
+                    <input
+                      value={textoLibre}
+                      onChange={(e) => setTextoLibre(e.target.value)}
+                      disabled={inactivo}
+                      placeholder={PLACEHOLDERS_LIBRE[indicePlaceholder]}
+                      className={`${clasesControl} placeholder:text-muted-foreground/60`}
+                    />
+                    <button
+                      type="button"
+                      disabled={inactivo || !textoLibre.trim()}
+                      onClick={() => {
+                        const peticion = textoLibre.trim();
+                        if (!peticion) return;
+                        setTextoLibre("");
+                        void generarSeguimiento(peticion.slice(0, 40), { peticion });
+                      }}
+                      className="w-full rounded-md bg-[#EA580C] px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-[#c2470a] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {sinSaldo ? textoFaltan(faltan) : `Generar · ${COSTO_RENDER} generación`}
+                    </button>
+                  </div>
+                )}
               </div>
-            ) : errorRender ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-                <p className="font-bold text-destructive">{errorRender}</p>
-                <button className="rounded-md border border-brand-gold bg-transparent px-4 py-2 text-sm font-extrabold text-brand-gold transition hover:bg-brand-gold hover:text-brand-gold-foreground" onClick={generarRender}>Reintentar</button>
-              </div>
-            ) : imagenVisor && !vistasPrevias[tabActiva]?.imagen ? (
-              <div className="flex flex-1 flex-col gap-3">
-                <img src={imagenVisor} alt={etiquetaVisor} className="h-auto w-full rounded-md border border-brand-gold object-contain" />
-                <a href={imagenVisor} download={`arquirender-${etiquetaVisor.toLowerCase().replace(/\s+/g, "-")}.png`} className="rounded-md bg-[#EA580C] px-4 py-3 text-center text-sm font-extrabold text-white transition hover:bg-[#c2470a]">Descargar</a>
-              </div>
-            ) : (
-              <div className="whitespace-pre-wrap">{prompt || "Completa las opciones y genera tu generación con IA."}</div>
-            )}
-          </div>
+            );
+          })()}
+
           {/* Grid de piezas. En "cadena" abre con el render base; en "tanda"
               muestra una celda por representación seleccionada. */}
           {modoGrid && Object.keys(piezas).length > 0 && (
@@ -1518,6 +1720,13 @@ const GeneradorPromptsArquitectonicos = () => {
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Prompt generado, separado del visor para respetar el orden del panel. */}
+          {prompt && (
+            <div className="mt-3 overflow-wrap-anywhere whitespace-pre-wrap rounded-md border border-brand-gold bg-input p-4 text-sm leading-relaxed text-foreground">
+              {prompt}
             </div>
           )}
 
