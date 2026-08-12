@@ -188,12 +188,13 @@ Deno.serve(async (req) => {
     userId = userData.user.id;
 
     // 2) Validación del body (antes de descontar, para no cobrar por inputs inválidos)
-    const body = await req.json().catch(() => null) as { prompt?: string; imageBase64?: string; originalBase64?: string; estilo?: string; representacion?: string; notas?: string } | null;
+    const body = await req.json().catch(() => null) as { prompt?: string; imageBase64?: string; originalBase64?: string; estilo?: string; representacion?: string; notas?: string; piezaAdicional?: boolean } | null;
     let prompt = body?.prompt?.trim();
     const imageBase64 = body?.imageBase64?.trim();
     const originalBase64 = body?.originalBase64?.trim();
     const estilo = body?.estilo?.trim() || null;
     const notas = body?.notas?.trim();
+    const piezaAdicional = body?.piezaAdicional === true;
 
     // Si llega una representación conocida, su prompt reemplaza al prompt de estilo normal.
     const representacion = body?.representacion?.trim();
@@ -234,15 +235,49 @@ Deno.serve(async (req) => {
 
     // 3) Verificar y descontar 1 crédito de forma atómica (service role) ANTES de OpenAI
     service = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
-    const { data: rpcData, error: rpcError } = await service.rpc("descontar_credito", { user_id: userId });
-    if (rpcError) {
-      console.error("[generate-render] Error en descontar_credito:", rpcError.message);
-      return json({ success: false, error: "No se pudo verificar tus créditos" }, 500);
+
+    // Pieza adicional: una misma generación puede encadenar varias piezas cobrando
+    // un solo crédito. El flag lo manda el cliente, así que NO se puede confiar en él:
+    // se valida contra la base que el usuario sigue dentro de su primera generación.
+    // Rango aceptado: 1..3 renders previos.
+    //   0  → la pieza 1 todavía no se guardó, es imposible que esta sea adicional
+    //   4+ → la primera generación ya está completa
+    let saltarCobro = false;
+    if (piezaAdicional) {
+      const { count, error: countError } = await service
+        .from("renders")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId);
+
+      const previos = count ?? 0;
+      if (countError) {
+        console.error(`[generate-render] piezaAdicional RECHAZADA (user=${userId}): no se pudo contar renders (${countError.message}). Se cobra.`);
+      } else if (previos === 0) {
+        console.warn(`[generate-render] piezaAdicional RECHAZADA (user=${userId}): 0 renders previos, la pieza 1 aún no existe. Se cobra.`);
+      } else if (previos > 3) {
+        console.warn(`[generate-render] piezaAdicional RECHAZADA (user=${userId}): ${previos} renders previos, ya pasó su primera generación. Se cobra.`);
+      } else {
+        saltarCobro = true;
+        console.log(`[generate-render] piezaAdicional ACEPTADA (user=${userId}): ${previos} renders previos (rango 1-3). Sin cobro.`);
+      }
     }
-    if (rpcData !== true) {
-      return json({ success: false, error: "No tienes créditos disponibles" }, 402);
+
+    if (saltarCobro) {
+      // creditoDescontado se queda en false a propósito: no se cobró nada,
+      // así que si la generación falla no hay crédito que devolver.
+      console.log(`[generate-render] Camino SIN cobro (user=${userId}): no se llama a descontar_credito`);
+    } else {
+      const { data: rpcData, error: rpcError } = await service.rpc("descontar_credito", { user_id: userId });
+      if (rpcError) {
+        console.error("[generate-render] Error en descontar_credito:", rpcError.message);
+        return json({ success: false, error: "No se pudo verificar tus créditos" }, 500);
+      }
+      if (rpcData !== true) {
+        return json({ success: false, error: "No tienes créditos disponibles" }, 402);
+      }
+      creditoDescontado = true;
+      console.log(`[generate-render] Camino CON cobro (user=${userId}): 1 crédito descontado${piezaAdicional ? " (piezaAdicional rechazada)" : ""}`);
     }
-    creditoDescontado = true;
 
     // 4) Generación de imagen (lógica intacta)
     let response: Response;
