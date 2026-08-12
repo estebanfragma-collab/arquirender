@@ -182,10 +182,12 @@ export const conservar = ["Solo la estructura", "Layout actual", "Mobiliario exi
 export const cambios = ["Actualización de materiales y acabados", "Nueva distribución del espacio", "Cambio de concepto completo", "Actualización de iluminación", "Nueva fachada / imagen exterior", "Incorporar zona de experiencia / lounge"];
 export const softwareOrigen = ["AutoCAD (planta DWG/DXF exportada)", "SketchUp (captura de modelo 3D)", "Boceto a mano alzada", "Planta en imagen / foto"];
 export const visualizaciones = ["Render interior fotorrealista (perspectiva desde acceso)", "Vista perspectiva 3/4", "Axonometría explotada", "Render exterior desde calle", "Render de pasillo / recorrido", "Vista aérea del espacio", "Walkthrough / recorrido virtual"];
-// [0] es el default de `transformacion` en la pestaña sketch y abre el prompt
-// literalmente, así que va en inglés. El resto son inalcanzables hoy (el campo
-// no se renderiza) y siguen pendientes de traducir.
-export const transformaciones = ["Hand-drawn sketch to photorealistic render, preserving the exact architecture", "Render existente → cambiar atmósfera e iluminación", "Captura SketchUp → render realista (mismo layout)", "Imagen referencia → extraer moodboard y paleta", "Render diurno → convertir a nocturno", "Render nocturno → convertir a diurno", "Cambiar materiales manteniendo arquitectura exacta", "Agregar personas / ambientación al espacio"];
+// [0] es el default de `transformacion` y abre el prompt literalmente, así que
+// va en inglés. No es específico de boceto: es la transformación por defecto
+// para cualquier imagen de origen (boceto, captura SketchUp, planta o foto).
+// El resto son inalcanzables hoy (el campo no se renderiza) y siguen
+// pendientes de traducir.
+export const transformaciones = ["Transform into a real architectural photograph. Preserve ONLY geometry, camera angle, openings and proportions. Fully resolve materials, lighting, sky, vegetation and ground with real photographic textures.", "Render existente → cambiar atmósfera e iluminación", "Captura SketchUp → render realista (mismo layout)", "Imagen referencia → extraer moodboard y paleta", "Render diurno → convertir a nocturno", "Render nocturno → convertir a diurno", "Cambiar materiales manteniendo arquitectura exacta", "Agregar personas / ambientación al espacio"];
 export const preservar = ["Arquitectura exacta", "Proporciones", "Layout de mobiliario", "Posición de cámara", "Elementos decorativos", "Distribución de luz", "Composición general"];
 // El valor se concatena literal al prompt en inglés ("Use ${iluminacion} creating..."),
 // así que la lista entera va en inglés. [1] es la que fuerza el preset "Diurno / nocturno":

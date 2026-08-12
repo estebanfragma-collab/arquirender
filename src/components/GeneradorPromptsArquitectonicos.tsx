@@ -239,6 +239,15 @@ const estadoInicial = (tabId: TabId): ValoresFormulario => {
     return acumulado;
   }, {});
 
+  // El default genérico sería iluminacionSketch[0] ("Soft natural daylight..."),
+  // una luz plana que aplana el resultado cuando el usuario no toca el acordeón.
+  // La golden hour lateral da sombras y volumen desde la primera generación.
+  // Se escribe literal, no por índice, para que reordenar el array no lo rompa;
+  // debe coincidir exacto con su entrada en iluminacionSketch.
+  if (tab.id === "sketch") {
+    base.iluminacion = "Side golden hour, long shadows, warm atmosphere";
+  }
+
   parametrosIds.forEach((id) => {
     if (!(id in base)) {
       const defaults: Record<string, string> = { aspectRatio: "16:9", stylize: "750", version: "v6.1", style: "raw", chaos: "0", negativePrompt: "" };
@@ -281,7 +290,7 @@ const construirPrompt = (tabId: TabId, valores: ValoresFormulario, fuenteImagen 
     const descripcion = valorTexto(valores.descripcion).trim();
     const origen = fuenteImagen ? `Starting from ${fuenteImagen}. ` : "";
     const evitar = valorTexto(valores.negativePrompt).trim();
-    return `${origen}${valorTexto(valores.transformacion)}.${descripcion ? ` Use this architectural image analysis as reference: ${descripcion}.` : ""} Preserve ${valorLista(valores.preservar, "the exact architectural intent")}. Preserve the exact camera angle, framing and composition of the reference image. Do not change the viewpoint. Apply ${materiales}.${estiloContexto ? ` ${estiloContexto}.` : ""} Use ${valorTexto(valores.iluminacion)} creating realistic shadows, reflections and depth. Photorealistic architectural render, high detail, realistic textures, soft global illumination.${notas ? ` ${notas}` : ""}${evitar ? ` Avoid: ${evitar}.` : ""}`.replace(/\s+/g, " ").trim();
+    return `${origen}${valorTexto(valores.transformacion)}.${descripcion ? ` Use this architectural image analysis as reference: ${descripcion}.` : ""} Preserve ${valorLista(valores.preservar, "the building geometry, openings and proportions")}. Preserve the exact camera angle, framing and composition of the reference image. Do not change the viewpoint. Apply ${materiales}.${estiloContexto ? ` ${estiloContexto}.` : ""} Use ${valorTexto(valores.iluminacion)} creating realistic shadows, reflections and depth. Photorealistic architectural render, high detail, realistic textures.${notas ? ` ${notas}` : ""}${evitar ? ` Avoid: ${evitar}.` : ""}`.replace(/\s+/g, " ").trim();
   }
 
   const tipoEspacio = tabId === "nueva" ? `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}` : tabId === "remodelacion" ? `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}, ${valorTexto(valores.descripcion, "existing ArquiRender retail space")}, ${valorTexto(valores.cambio)}` : `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}, ${valorTexto(valores.visualizacion)}, ${valorTexto(valores.descripcion, "architectural plan translated into retail space")}`;
