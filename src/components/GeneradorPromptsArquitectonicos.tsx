@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/AuthModal";
 import PlanesModal from "@/components/PlanesModal";
 import HistorialRenders from "@/components/HistorialRenders";
-import VariacionesModal from "@/components/VariacionesModal";
 import OnboardingModal from "@/components/OnboardingModal";
 import { PRESETS, CLAVES_PRESET, type Preset } from "@/lib/presets";
 import {
@@ -69,7 +68,6 @@ const mensajeErrorRender = "No se pudo generar la imagen, intenta de nuevo";
 
 // Costo en generaciones de cada acción. 1 crédito = 1 imagen generada.
 const COSTO_RENDER = 1;
-const COSTO_VARIACIONES = 3;
 
 /**
  * Cuántas generaciones le faltan al usuario para costear una acción.
@@ -124,11 +122,13 @@ const LUCES_EXTRA = [
   { etiqueta: "Aro LED", valor: "Circular ring LED, signature retail style" },
 ];
 
+// Mismo criterio que las píldoras de representación: el naranja solo significa
+// "seleccionada". Hover y foco no lo usan, para que no parezcan un estado más.
 const clasePildora = (activo: boolean) =>
-  `rounded-full border px-3 py-2 text-xs font-bold transition ${
+  `rounded-full border px-3 py-2 text-xs font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-foreground/30 ${
     activo
       ? "border-[#EA580C] bg-[#EA580C] text-white"
-      : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-[#EA580C]"
+      : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-foreground/40"
   }`;
 
 const claseVerTodos = "mt-3 text-[11px] font-bold text-muted-foreground underline transition hover:text-[#EA580C]";
@@ -147,6 +147,7 @@ const PresetsRow = ({
   negativePrompt,
   avisarBase,
   onVolverAlOriginal,
+  deshabilitado,
 }: {
   activo: string | null;
   onSeleccionar: (preset: Preset) => void;
@@ -156,6 +157,8 @@ const PresetsRow = ({
   /** El preset activo parte de la foto original pero hay un render encima. */
   avisarBase: boolean;
   onVolverAlOriginal: () => void;
+  /** Hay representaciones activas: los presets no tendrían efecto. */
+  deshabilitado: boolean;
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [fade, setFade] = useState({ izquierda: false, derecha: false });
@@ -182,7 +185,7 @@ const PresetsRow = ({
   }, [actualizarFade]);
 
   return (
-    <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+    <div className={`border-t border-brand-border px-5 py-5 sm:px-6 ${deshabilitado ? "pointer-events-none opacity-40" : ""}`} aria-disabled={deshabilitado || undefined}>
       <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
         <span>Presets de transformación</span>
         <span className="font-bold text-muted-foreground">Opcional</span>
@@ -196,6 +199,7 @@ const PresetsRow = ({
               <button
                 key={preset.id}
                 type="button"
+                disabled={deshabilitado}
                 onClick={() => onSeleccionar(preset)}
                 aria-pressed={seleccionado}
                 className={`flex w-[210px] shrink-0 flex-col gap-1 rounded-md border bg-transparent p-3 text-left transition ${
@@ -340,7 +344,7 @@ const construirPrompt = (tabId: TabId, valores: ValoresFormulario, fuenteImagen 
     const descripcion = valorTexto(valores.descripcion).trim();
     const origen = fuenteImagen ? `Starting from ${fuenteImagen}. ` : "";
     const evitar = valorTexto(valores.negativePrompt).trim();
-    return `${origen}${valorTexto(valores.transformacion)}.${descripcion ? ` Use this architectural image analysis as reference: ${descripcion}.` : ""} Preserve ${valorLista(valores.preservar, "the building geometry, openings and proportions")}. Preserve the exact camera angle, framing and composition of the reference image. Do not change the viewpoint. Apply ${materiales}.${estiloContexto ? ` ${estiloContexto}.` : ""} Use ${valorTexto(valores.iluminacion)} creating realistic shadows, reflections and depth. Photorealistic architectural render, high detail, realistic textures.${notas ? ` ${notas}` : ""}${evitar ? ` Avoid: ${evitar}.` : ""}`.replace(/\s+/g, " ").trim();
+    return `${origen}${valorTexto(valores.transformacion)}.${descripcion ? ` Use this architectural image analysis as reference: ${descripcion}.` : ""} Preserve ${valorLista(valores.preservar, "the building geometry, openings and proportions")}. Preserve the exact camera angle, framing and composition of the reference image. Do not change the viewpoint. Apply ${materiales}.${estiloContexto ? ` ${estiloContexto}.` : ""}${valorTexto(valores.iluminacion).trim() ? ` Use ${valorTexto(valores.iluminacion)} creating realistic shadows, reflections and depth.` : ""} Photorealistic architectural render, high detail, realistic textures.${notas ? ` ${notas}` : ""}${evitar ? ` Avoid: ${evitar}.` : ""}`.replace(/\s+/g, " ").trim();
   }
 
   const tipoEspacio = tabId === "nueva" ? `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}` : tabId === "remodelacion" ? `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}, ${valorTexto(valores.descripcion, "existing ArquiRender retail space")}, ${valorTexto(valores.cambio)}` : `${valorTexto(valores.tipoEspacio)}, ${parametrosEspaciales(valores)}, ${valorTexto(valores.visualizacion)}, ${valorTexto(valores.descripcion, "architectural plan translated into retail space")}`;
@@ -371,6 +375,9 @@ const DESCRIPTORES_ORIGEN: Record<TipoOrigen, string> = {
   render: "an existing render",
   otro: "",
 };
+
+/** Tope de representaciones simultáneas. Cada una cuesta un crédito. */
+const MAX_REPRESENTACIONES = 4;
 
 /** Solo se acepta una de las tres clasificaciones conocidas; el resto cae a "otro". */
 const normalizarOrigen = (valor: unknown): TipoOrigen =>
@@ -451,9 +458,14 @@ const GeneradorPromptsArquitectonicos = () => {
   const [mostrarPlanes, setMostrarPlanes] = useState(false);
   const [vista, setVista] = useState<"generar" | "historial">("generar");
   const [refrescarHistorial, setRefrescarHistorial] = useState(0);
-  const [mostrarVariaciones, setMostrarVariaciones] = useState(false);
   const [mostrarOnboarding, setMostrarOnboarding] = useState(false);
-  const [selectedRepresentacion, setSelectedRepresentacion] = useState("");
+  const [selectedRepresentaciones, setSelectedRepresentaciones] = useState<string[]>([]);
+  // Qué se está pintando en el grid: la cadena de la primera generación o una
+  // tanda de representaciones. Cambia el título y las celdas.
+  const [modoGrid, setModoGrid] = useState<"cadena" | "tanda" | null>(null);
+  // Pieza que ocupa el visor grande. Ninguna es "la principal": la primera que
+  // termina lo toma, y el usuario cambia clicando otra miniatura.
+  const [piezaVisor, setPiezaVisor] = useState<{ etiqueta: string; imagen: string } | null>(null);
   const [presetActivo, setPresetActivo] = useState<string | null>(null);
   const [piezas, setPiezas] = useState<Record<string, EstadoPieza>>({});
   const [cadenaActiva, setCadenaActiva] = useState(false);
@@ -470,11 +482,33 @@ const GeneradorPromptsArquitectonicos = () => {
   const imagenRender = imagenRenders[tabActiva];
   const imagenOriginal = vistasPrevias[tabActiva]?.imagen?.url || "";
   const imagenBaseActiva = imagenRender || imagenOriginal;
+  // Lo que se ve en grande. Solo visual: la base de la próxima generación
+  // sigue siendo imagenBaseActiva, no cambia al mirar otra pieza.
+  const imagenVisor = piezaVisor?.imagen || imagenRender;
+  const etiquetaVisor = piezaVisor?.etiqueta || "Generación";
   const campoPorId = (id: string) => tab.campos.find((campo) => campo.id === id);
   const toggleAcordeon = (clave: string) => setAcordeones((actual) => ({ ...actual, [clave]: !actual[clave] }));
 
   // Descarta el render de esta pestaña para volver a partir de la foto subida.
   const volverAlOriginal = () => setImagenRenders((actual) => ({ ...actual, [tabActiva]: "" }));
+
+  /** Multi-selección de representaciones, con tope. Un segundo clic quita. */
+  const toggleRepresentacion = (opcion: string) => {
+    setSelectedRepresentaciones((actual) => {
+      if (actual.includes(opcion)) return actual.filter((o) => o !== opcion);
+      if (actual.length >= MAX_REPRESENTACIONES) return actual;
+      return [...actual, opcion];
+    });
+  };
+
+  // Sin representaciones se genera una sola pieza; con N, una por representación.
+  const costoGeneracion = selectedRepresentaciones.length || COSTO_RENDER;
+
+  // Con representaciones activas la Edge Function reemplaza el prompt entero, así
+  // que estilo, luz, materiales, presets y "qué evitar" no tendrían efecto. Se
+  // atenúan y bloquean, pero su valor se conserva: al quitar todas vuelven intactos.
+  const repsMandan = selectedRepresentaciones.length > 0;
+  const claseBloqueo = repsMandan ? "pointer-events-none opacity-40" : "";
 
   // Valores de los campos del preset tal como estaban antes de aplicar el primero.
   // Permite que cada preset parta del estado limpio y que deseleccionar revierta.
@@ -676,9 +710,14 @@ const GeneradorPromptsArquitectonicos = () => {
           [campo.id]: { nombre: archivo.name, url: String(lector.result || "") },
         },
       }));
-      // Subir una imagen base nueva descarta la iteración anterior: la base vuelve a ser la original.
+      // Subir una imagen base nueva descarta la iteración anterior: la base vuelve
+      // a ser la original y el panel de resultados queda vacío.
       if (campo.id === "imagen") {
         setImagenRenders((actual) => ({ ...actual, [tabActiva]: "" }));
+        setPiezas({});
+        setModoGrid(null);
+        setPiezaVisor(null);
+        setErrorRender("");
       }
       void analizarImagen(String(lector.result || ""));
     };
@@ -705,7 +744,64 @@ const GeneradorPromptsArquitectonicos = () => {
    * base antes de saltarse el cobro, así que el flag por sí solo no regala nada.
    * Un fallo se muestra en su celda y no corta las siguientes.
    */
+  /**
+   * Genera una pieza por representación seleccionada, en secuencia.
+   * A diferencia de la cadena de la primera generación, aquí NO va
+   * piezaAdicional: cada pieza cobra su crédito.
+   * Un fallo se muestra en su celda y no corta las siguientes.
+   */
+  const ejecutarTanda = async (promptFinal: string, uidActivo: string | null) => {
+    setModoGrid("tanda");
+    setCadenaActiva(true);
+    setPiezas(Object.fromEntries(selectedRepresentaciones.map((r) => [r, { estado: "cargando" } as EstadoPieza])));
+
+    for (const representacion of selectedRepresentaciones) {
+      try {
+        const { data, error: functionError } = await supabase.functions.invoke("generate-render", {
+          body: {
+            prompt: promptFinal,
+            imageBase64: imagenBaseActiva,
+            originalBase64: imagenOriginal || undefined,
+            estilo: valorTexto(valores.estiloDiseno).trim() || undefined,
+            representacion: slugRepresentacion(representacion),
+            notas: valorTexto(valores.notas).trim() || undefined,
+          },
+        });
+
+        if (functionError) {
+          const status = (functionError as any)?.context?.status;
+          setPiezas((actual) => ({
+            ...actual,
+            [representacion]: { estado: "error", error: status === 402 ? "Sin créditos" : "No se pudo generar" },
+          }));
+          continue;
+        }
+        if (!data?.success || !data?.imageBase64) {
+          setPiezas((actual) => ({
+            ...actual,
+            [representacion]: { estado: "error", error: data?.error || "No se pudo generar" },
+          }));
+          continue;
+        }
+        const imagen = `data:image/png;base64,${data.imageBase64}`;
+        setPiezas((actual) => ({ ...actual, [representacion]: { estado: "ok", imagen } }));
+        // La primera que termina ocupa el visor; las siguientes no lo roban.
+        setPiezaVisor((actual) => actual ?? { etiqueta: representacion, imagen });
+      } catch {
+        setPiezas((actual) => ({ ...actual, [representacion]: { estado: "error", error: "Error inesperado" } }));
+      }
+      // Cada pieza cobró: el contador se refresca sobre la marcha.
+      if (uidActivo) await cargarCreditos(uidActivo);
+    }
+
+    setCadenaActiva(false);
+    setRefrescarHistorial((n) => n + 1);
+  };
+
   const ejecutarCadena = async (promptFinal: string, imagenPieza1: string, original: string, uidActivo: string | null) => {
+    setModoGrid("cadena");
+    // La pieza 1 abre el visor; las tres siguientes solo entran al grid.
+    setPiezaVisor({ etiqueta: "Render", imagen: imagenPieza1 });
     setCadenaActiva(true);
     setPiezas(Object.fromEntries(PIEZAS_CADENA.map((p) => [p.etiqueta, { estado: "cargando" } as EstadoPieza])));
 
@@ -758,18 +854,28 @@ const GeneradorPromptsArquitectonicos = () => {
     setErrorRender("");
     setImagenRenders((actual) => ({ ...actual, [tabActiva]: "" }));
     setPiezas({});
+    setModoGrid(null);
+    setPiezaVisor(null);
     setGenerando(true);
 
     // Se consulta ANTES de generar: después de la pieza 1 el conteo ya sería 1.
     const primera = uidActivo ? await esPrimeraGeneracion(uidActivo) : false;
 
+    // La primera generación manda: corre su cadena de 4 piezas por 1 crédito e
+    // ignora las representaciones seleccionadas. Los dos modos no se mezclan.
+    if (!primera && selectedRepresentaciones.length > 0) {
+      setGenerando(false);
+      await ejecutarTanda(promptFinal, uidActivo);
+      return;
+    }
+
     try {
       // Fuente de verdad: se itera desde la base activa (último render u original),
       // pero el original real siempre viaja aparte para el historial (antes/después).
       const imageBase64 = imagenBaseActiva;
-      // Con una representación activa, su prompt fijo reemplaza al de estilo en
-      // la Edge Function. Sin ninguna, se envía el prompt de estilo normal.
-      const representacion = selectedRepresentacion ? slugRepresentacion(selectedRepresentacion) : undefined;
+      // Esta rama solo corre en la primera generación o sin representaciones
+      // seleccionadas; en ambos casos va el prompt de estilo, sin representación.
+      const representacion = undefined;
       console.log("representacion enviada:", representacion);
       const { data, error: functionError } = await supabase.functions.invoke("generate-render", {
         body: {
@@ -900,6 +1006,19 @@ const GeneradorPromptsArquitectonicos = () => {
     setErrorRender("");
     setGenerando(false);
     setComparacion("despues");
+    // Resultados: sin esto el visor seguía mostrando la generación anterior,
+    // porque imagenVisor cae en piezaVisor antes que en imagenRenders.
+    setPiezas({});
+    setModoGrid(null);
+    setPiezaVisor(null);
+    setCadenaActiva(false);
+    // Selecciones del formulario, para dejarlo como al entrar por primera vez.
+    setSelectedRepresentaciones([]);
+    setPresetActivo(null);
+    valoresPrevios.current = null;
+    setTipoOrigen("otro");
+    setVerTodosEstilos(false);
+    setVerTodasLuces(false);
   };
 
   // "Continuar desde aquí" (desde el historial): carga el render como base activa y
@@ -934,9 +1053,9 @@ const GeneradorPromptsArquitectonicos = () => {
     </div>
   );
 
-  const renderAcordeon = (clave: string, titulo: string, contenido: ReactNode) => (
-    <div className="border-t border-brand-border">
-      <button type="button" onClick={() => toggleAcordeon(clave)} className="flex w-full items-center justify-between gap-3 px-5 py-5 text-left text-sm font-semibold text-brand-gold sm:px-6">
+  const renderAcordeon = (clave: string, titulo: string, contenido: ReactNode, deshabilitado = false) => (
+    <div className={`border-t border-brand-border ${deshabilitado ? "pointer-events-none opacity-40" : ""}`} aria-disabled={deshabilitado || undefined}>
+      <button type="button" disabled={deshabilitado} onClick={() => toggleAcordeon(clave)} className="flex w-full items-center justify-between gap-3 px-5 py-5 text-left text-sm font-semibold text-brand-gold sm:px-6">
         <span>{titulo}</span>
         <span className="text-base" aria-hidden="true">{acordeones[clave] ? "▾" : "▸"}</span>
       </button>
@@ -1006,7 +1125,7 @@ const GeneradorPromptsArquitectonicos = () => {
           </label>
           <p className="text-xs font-bold text-muted-foreground">La imagen no se envía a ningún servidor — solo se usa como referencia visual local.</p>
           {nombreArchivo && <p className="text-xs font-bold text-foreground">Archivo seleccionado: {nombreArchivo}</p>}
-          {vistaPrevia && (imagenRender && campo.id === "imagen" ? (
+          {vistaPrevia && (imagenVisor && campo.id === "imagen" ? (
             <div className="space-y-3">
               <div className="flex gap-2">
                 {(["antes", "despues"] as const).map((modo) => {
@@ -1019,14 +1138,14 @@ const GeneradorPromptsArquitectonicos = () => {
                 })}
               </div>
               <div className="relative">
-                <img src={comparacion === "antes" ? vistaPrevia.url : imagenRender} alt={comparacion === "antes" ? "Imagen original" : "Render generado por IA"} className="h-auto max-h-none w-full rounded-[8px] border border-brand-gold object-contain" />
-                <span className="absolute left-3 top-3 rounded-full bg-black/70 px-2 py-1 text-[11px] font-bold text-white">{comparacion === "antes" ? "Original" : "Generación"}</span>
+                <img src={comparacion === "antes" ? vistaPrevia.url : imagenVisor} alt={comparacion === "antes" ? "Imagen original" : etiquetaVisor} className="h-auto max-h-none w-full rounded-[8px] border border-brand-gold object-contain" />
+                <span className="absolute left-3 top-3 rounded-full bg-black/70 px-2 py-1 text-[11px] font-bold text-white">{comparacion === "antes" ? "Original" : etiquetaVisor}</span>
               </div>
               <button type="button" onClick={() => setComparacion(comparacion === "antes" ? "despues" : "antes")} className="flex w-full items-center gap-3 rounded-md border border-brand-border p-2 text-left transition hover:border-brand-gold">
-                <img src={comparacion === "antes" ? imagenRender : vistaPrevia.url} alt="Miniatura" className="h-14 w-14 shrink-0 rounded border border-brand-border object-cover" />
+                <img src={comparacion === "antes" ? imagenVisor : vistaPrevia.url} alt="Miniatura" className="h-14 w-14 shrink-0 rounded border border-brand-border object-cover" />
                 <span className="text-xs font-bold text-muted-foreground">{comparacion === "antes" ? "Generación" : "Original"}</span>
               </button>
-              <a href={imagenRender} download="arquirender.png" className="block rounded-md bg-[#EA580C] px-4 py-3 text-center text-sm font-extrabold text-white transition hover:bg-[#c2470a]">Descargar</a>
+              <a href={imagenVisor} download={`arquirender-${etiquetaVisor.toLowerCase().replace(/\s+/g, "-")}.png`} className="block rounded-md bg-[#EA580C] px-4 py-3 text-center text-sm font-extrabold text-white transition hover:bg-[#c2470a]">Descargar</a>
               <button type="button" onClick={volverAlOriginal} className="block w-full rounded-md border border-brand-border bg-transparent px-4 py-2 text-center text-sm font-bold text-muted-foreground transition hover:border-[#EA580C] hover:text-[#EA580C]">↩ Volver al original</button>
             </div>
           ) : (
@@ -1186,10 +1305,11 @@ const GeneradorPromptsArquitectonicos = () => {
             negativePrompt={valorTexto(valores.negativePrompt)}
             avisarBase={PRESETS.find((p) => p.id === presetActivo)?.base === "original" && !!imagenRender}
             onVolverAlOriginal={volverAlOriginal}
+            deshabilitado={repsMandan}
           />
 
           {/* Estilo y Luz: tarjetas con el mismo formato que las de Láminas. */}
-          <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+          <div className={`border-t border-brand-border px-5 py-5 sm:px-6 ${claseBloqueo}`} aria-disabled={repsMandan || undefined}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-xl border border-brand-border bg-input p-4">
                 <div className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
@@ -1230,10 +1350,10 @@ const GeneradorPromptsArquitectonicos = () => {
                       <button
                         key={luz.valor}
                         type="button"
-                        // Sin alternar a vacío: la luz siempre debe tener un valor,
-                        // el prompt la concatena de forma incondicional.
+                        // Un segundo clic la apaga: sin luz elegida, el prompt
+                        // omite por completo la instrucción de iluminación.
                         className={clasePildora(activo)}
-                        onClick={() => actualizarCampo({ id: "iluminacion", etiqueta: "Luz", tipo: "select" }, luz.valor)}
+                        onClick={() => actualizarCampo({ id: "iluminacion", etiqueta: "Luz", tipo: "select" }, activo ? "" : luz.valor)}
                       >
                         {luz.etiqueta}
                       </button>
@@ -1249,9 +1369,20 @@ const GeneradorPromptsArquitectonicos = () => {
             </div>
           </div>
 
-          {/* Representación: si hay una activa, su prompt reemplaza al de estilo
-              en la Edge Function. Selección única, y un segundo clic la quita. */}
+          {/* Representaciones: multi-selección con tope. Cada una genera una
+              pieza y cuesta un crédito; su prompt fijo reemplaza al de estilo. */}
           <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+            <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
+              <span>Representaciones</span>
+              <span className="font-bold text-muted-foreground">
+                {repsMandan ? `${selectedRepresentaciones.length} de ${MAX_REPRESENTACIONES}` : "Opcional"}
+              </span>
+            </label>
+            {repsMandan && (
+              <p className="-mt-1 mb-3 text-xs text-muted-foreground">
+                Las representaciones usan su propia configuración.
+              </p>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               {categoriasRepresentacion.map((cat) => (
                 <div key={cat.categoria} className="rounded-xl border border-brand-border bg-input p-4">
@@ -1261,9 +1392,20 @@ const GeneradorPromptsArquitectonicos = () => {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {cat.opciones.map((op) => {
-                      const activo = selectedRepresentacion === op;
+                      const activo = selectedRepresentaciones.includes(op);
+                      // Con el tope alcanzado solo se pueden quitar, no añadir.
+                      const bloqueado = !activo && selectedRepresentaciones.length >= MAX_REPRESENTACIONES;
                       return (
-                        <button key={op} type="button" onClick={() => setSelectedRepresentacion(activo ? "" : op)} className={`rounded-full border px-3 py-2 text-xs font-bold transition ${activo ? "border-[#EA580C] bg-[#EA580C] text-white" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-[#EA580C]"}`}>
+                        <button
+                          key={op}
+                          type="button"
+                          disabled={bloqueado}
+                          aria-pressed={activo}
+                          onClick={() => toggleRepresentacion(op)}
+                          // El naranja queda reservado a "seleccionada": hover y foco
+                          // usan tonos neutros para no simular un tercer estado.
+                          className={`rounded-full border px-3 py-2 text-xs font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-foreground/30 ${activo ? "border-[#EA580C] bg-[#EA580C] text-white" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-foreground/40"} ${bloqueado ? "cursor-not-allowed opacity-40 hover:border-[hsl(var(--pill-border))]" : ""}`}
+                        >
                           {op}
                         </button>
                       );
@@ -1278,14 +1420,14 @@ const GeneradorPromptsArquitectonicos = () => {
             <div className="space-y-5">
               {campoPorId("materiales") && renderCampo(campoPorId("materiales")!)}
             </div>
-          ))}
+          ), repsMandan)}
 
-          <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+          <div className={`border-t border-brand-border px-5 py-5 sm:px-6 ${claseBloqueo}`} aria-disabled={repsMandan || undefined}>
             <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
               <span>Qué evitar en la generación</span>
               <span className="font-bold text-muted-foreground">Opcional</span>
             </label>
-            <input className={clasesControl} placeholder="Ej: personas, texto, marcas de agua, desenfoque" value={valorTexto(valores.negativePrompt)} onChange={(e) => actualizarCampo({ id: "negativePrompt", etiqueta: "Qué evitar", tipo: "textarea" }, e.target.value)} />
+            <input disabled={repsMandan} className={clasesControl} placeholder="Ej: personas, texto, marcas de agua, desenfoque" value={valorTexto(valores.negativePrompt)} onChange={(e) => actualizarCampo({ id: "negativePrompt", etiqueta: "Qué evitar", tipo: "textarea" }, e.target.value)} />
           </div>
 
           <div className="px-5 pb-6 sm:px-6">
@@ -1297,18 +1439,10 @@ const GeneradorPromptsArquitectonicos = () => {
               </div>
             )}
             {(() => {
-              const faltan = faltanPara(COSTO_RENDER, userId, creditos);
+              const faltan = faltanPara(costoGeneracion, userId, creditos);
               return (
                 <button disabled={generando || cadenaActiva || faltan > 0} className="w-full rounded-md border-0 bg-[#EA580C] px-4 py-4 text-base font-bold text-white transition hover:bg-[#c2470a] disabled:cursor-not-allowed disabled:opacity-60" onClick={generarRender}>
-                  {generando ? "Generando..." : cadenaActiva ? "Generando piezas…" : faltan > 0 ? textoFaltan(faltan) : `Generar · ${COSTO_RENDER} generación`}
-                </button>
-              );
-            })()}
-            {userId && vistasPrevias[tabActiva]?.imagen?.url && (() => {
-              const faltan = faltanPara(COSTO_VARIACIONES, userId, creditos);
-              return (
-                <button type="button" disabled={generando || faltan > 0} className="mt-3 w-full rounded-md border border-[#EA580C] bg-transparent px-4 py-4 text-base font-bold text-[#EA580C] transition hover:bg-[#EA580C] hover:text-white disabled:cursor-not-allowed disabled:opacity-60" onClick={() => setMostrarVariaciones(true)}>
-                  {faltan > 0 ? textoFaltan(faltan) : `Generar variaciones de estilo · ${COSTO_VARIACIONES} generaciones`}
+                  {generando ? "Generando..." : cadenaActiva ? "Generando piezas…" : faltan > 0 ? textoFaltan(faltan) : `Generar · ${costoGeneracion} ${costoGeneracion === 1 ? "generación" : "generaciones"}`}
                 </button>
               );
             })()}
@@ -1332,25 +1466,44 @@ const GeneradorPromptsArquitectonicos = () => {
                 <p className="font-bold text-destructive">{errorRender}</p>
                 <button className="rounded-md border border-brand-gold bg-transparent px-4 py-2 text-sm font-extrabold text-brand-gold transition hover:bg-brand-gold hover:text-brand-gold-foreground" onClick={generarRender}>Reintentar</button>
               </div>
-            ) : imagenRender && !vistasPrevias[tabActiva]?.imagen ? (
+            ) : imagenVisor && !vistasPrevias[tabActiva]?.imagen ? (
               <div className="flex flex-1 flex-col gap-3">
-                <img src={imagenRender} alt="Generación creada con IA" className="h-auto w-full rounded-md border border-brand-gold object-contain" />
-                <a href={imagenRender} download="arquirender.png" className="rounded-md bg-[#EA580C] px-4 py-3 text-center text-sm font-extrabold text-white transition hover:bg-[#c2470a]">Descargar</a>
+                <img src={imagenVisor} alt={etiquetaVisor} className="h-auto w-full rounded-md border border-brand-gold object-contain" />
+                <a href={imagenVisor} download={`arquirender-${etiquetaVisor.toLowerCase().replace(/\s+/g, "-")}.png`} className="rounded-md bg-[#EA580C] px-4 py-3 text-center text-sm font-extrabold text-white transition hover:bg-[#c2470a]">Descargar</a>
               </div>
             ) : (
               <div className="whitespace-pre-wrap">{prompt || "Completa las opciones y genera tu generación con IA."}</div>
             )}
           </div>
-          {/* Primera generación: 4 piezas por un crédito. Aparecen conforme llegan. */}
-          {Object.keys(piezas).length > 0 && (
+          {/* Grid de piezas. En "cadena" abre con el render base; en "tanda"
+              muestra una celda por representación seleccionada. */}
+          {modoGrid && Object.keys(piezas).length > 0 && (
             <div className="mt-4">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="text-xs font-extrabold uppercase tracking-wide text-brand-gold">Tu primera generación · 4 piezas</span>
+                <span className="text-xs font-extrabold uppercase tracking-wide text-brand-gold">
+                  {modoGrid === "cadena"
+                    ? "Tu primera generación · 4 piezas"
+                    : `${Object.keys(piezas).length} ${Object.keys(piezas).length === 1 ? "pieza" : "piezas"}`}
+                </span>
                 {cadenaActiva && <span className="text-[11px] font-bold text-muted-foreground">Generando…</span>}
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {[{ etiqueta: "Render", estado: { estado: "ok", imagen: imagenRender } as EstadoPieza }, ...PIEZAS_CADENA.map((p) => ({ etiqueta: p.etiqueta, estado: piezas[p.etiqueta] }))].map(({ etiqueta, estado }) => (
-                  <div key={etiqueta} className="relative aspect-square overflow-hidden rounded-md border border-brand-border bg-input">
+                {(modoGrid === "cadena"
+                  ? [{ etiqueta: "Render", estado: { estado: "ok", imagen: imagenRender } as EstadoPieza }, ...PIEZAS_CADENA.map((p) => ({ etiqueta: p.etiqueta, estado: piezas[p.etiqueta] }))]
+                  : Object.entries(piezas).map(([etiqueta, estado]) => ({ etiqueta, estado }))
+                ).map(({ etiqueta, estado }) => {
+                  const listo = estado?.estado === "ok" && !!estado.imagen;
+                  const enVisor = listo && piezaVisor?.etiqueta === etiqueta;
+                  return (
+                  <div
+                    key={etiqueta}
+                    role={listo ? "button" : undefined}
+                    tabIndex={listo ? 0 : undefined}
+                    aria-pressed={listo ? enVisor : undefined}
+                    onClick={listo ? () => setPiezaVisor({ etiqueta, imagen: estado.imagen! }) : undefined}
+                    onKeyDown={listo ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPiezaVisor({ etiqueta, imagen: estado.imagen! }); } } : undefined}
+                    className={`relative aspect-square overflow-hidden rounded-md border bg-input transition ${enVisor ? "border-[#EA580C] ring-2 ring-[#EA580C]/40" : "border-brand-border"} ${listo ? "cursor-pointer hover:border-[#EA580C]" : ""}`}
+                  >
                     {estado?.estado === "ok" && estado.imagen ? (
                       <img src={estado.imagen} alt={etiqueta} className="h-full w-full object-cover" />
                     ) : estado?.estado === "error" ? (
@@ -1362,7 +1515,8 @@ const GeneradorPromptsArquitectonicos = () => {
                     )}
                     <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-white">{etiqueta}</span>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1393,22 +1547,6 @@ const GeneradorPromptsArquitectonicos = () => {
 
       {mostrarPlanes && userId && (
         <PlanesModal userId={userId} onClose={() => setMostrarPlanes(false)} />
-      )}
-
-      {mostrarVariaciones && userId && vistasPrevias[tabActiva]?.imagen?.url && (
-        <VariacionesModal
-          estilos={estilosDiseno}
-          creditosDisponibles={creditos ?? 0}
-          imageBase64={imagenBaseActiva}
-          originalBase64={imagenOriginal}
-          notas={valorTexto(valores.notas)}
-          onVerPlanes={() => { setMostrarVariaciones(false); setMostrarPlanes(true); }}
-          onCreditosActualizados={async () => {
-            if (userId) await cargarCreditos(userId);
-            setRefrescarHistorial((n) => n + 1);
-          }}
-          onClose={() => setMostrarVariaciones(false)}
-        />
       )}
 
       <OnboardingModal open={mostrarOnboarding} onClose={() => { void cerrarOnboarding(); }} />
