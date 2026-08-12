@@ -12,6 +12,26 @@ const promptsPorTab = {
 
 type TabAnalisis = keyof typeof promptsPorTab;
 
+/** Clasificaciones válidas del origen de la imagen. Cualquier otra cosa cae a "otro". */
+const TIPOS_IMAGEN = ["sketch", "sketchup", "render", "otro"] as const;
+type TipoImagen = typeof TIPOS_IMAGEN[number];
+
+const normalizarTipoImagen = (valor: unknown): TipoImagen =>
+  typeof valor === "string" && (TIPOS_IMAGEN as readonly string[]).includes(valor)
+    ? valor as TipoImagen
+    : "otro";
+
+// Se añade al prompt de cada tab: además de describir, clasifica el origen.
+// El cliente usa esa clasificación para el prefijo del prompt de generación.
+const INSTRUCCION_JSON = ` Responde ÚNICAMENTE con un objeto JSON con dos claves:
+"descripcion": la descripción pedida arriba, en español, como string.
+"tipoImagen": una de estas cuatro palabras exactas, según qué es la imagen:
+  "sketch" si es un boceto o dibujo a mano,
+  "sketchup" si es una captura de un modelo 3D (SketchUp, Revit, Rhino, similar),
+  "render" si ya es un render o una fotografía de un espacio construido,
+  "otro" si no encaja con claridad en ninguna de las anteriores.
+Ante la duda entre dos categorías, usa "otro".`;
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -41,13 +61,15 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: "gpt-4o",
-        max_tokens: 500,
+        // Margen sobre las ~150 palabras pedidas para que el envoltorio JSON no trunque.
+        max_tokens: 700,
+        response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: promptsPorTab[tab] },
+          { role: "system", content: promptsPorTab[tab] + INSTRUCCION_JSON },
           {
             role: "user",
             content: [
-              { type: "text", text: "Analiza la imagen adjunta y devuelve únicamente la descripción solicitada." },
+              { type: "text", text: "Analiza la imagen adjunta y devuelve el JSON solicitado." },
               { type: "image_url", image_url: { url: imageDataUrl } },
             ],
           },
@@ -64,10 +86,28 @@ Deno.serve(async (req) => {
       return json({ error: mensaje }, 502);
     }
 
-    const descripcion = data?.choices?.[0]?.message?.content?.trim();
-    if (!descripcion) return json({ error: "La IA no devolvió una descripción" }, 502);
+    const contenido = data?.choices?.[0]?.message?.content?.trim();
+    if (!contenido) return json({ error: "La IA no devolvió una descripción" }, 502);
 
-    return json({ descripcion });
+    // Se espera { descripcion, tipoImagen }. Si el JSON viniera mal formado, se
+    // trata el contenido como descripción suelta: la clasificación se pierde,
+    // pero el análisis —que es lo que el usuario ve— sigue funcionando.
+    let descripcion = contenido;
+    let tipoImagen: TipoImagen = "otro";
+    try {
+      const parseado = JSON.parse(contenido) as { descripcion?: unknown; tipoImagen?: unknown };
+      if (typeof parseado?.descripcion === "string" && parseado.descripcion.trim()) {
+        descripcion = parseado.descripcion.trim();
+        tipoImagen = normalizarTipoImagen(parseado.tipoImagen);
+      } else {
+        console.warn("[analyze] JSON sin descripcion utilizable, se usa el contenido crudo");
+      }
+    } catch {
+      console.warn("[analyze] La respuesta no era JSON válido, se usa el contenido crudo y tipoImagen=otro");
+    }
+
+    console.log(`[analyze] tab=${tab} tipoImagen=${tipoImagen}`);
+    return json({ descripcion, tipoImagen });
   } catch (error) {
     console.error("analyze-architectural-image error", error);
     return json({ error: "Error inesperado al analizar la imagen" }, 500);

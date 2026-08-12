@@ -11,7 +11,6 @@ import {
   caos,
   coloresDominantes,
   alturasTecho,
-  arquitectosReferencia,
   estilosDiseno,
   estilosMidjourney,
   estilizados,
@@ -98,6 +97,43 @@ const PIEZAS_CADENA = [
 type EstadoPieza = { estado: "cargando" | "ok" | "error"; imagen?: string; error?: string };
 
 /**
+ * Presets que se muestran. "plano-render" queda fuera de la UI: su definición
+ * sigue en src/lib/presets.ts, solo no se ofrece aquí.
+ */
+const PRESETS_VISIBLES = PRESETS.filter((preset) => preset.id !== "plano-render");
+
+/** Estilos visibles de entrada en la tarjeta 🎨. El resto llega con "Ver todos". */
+const ESTILOS_DESTACADOS = ["Moderno", "Minimalista", "Contemporáneo", "Industrial", "Bauhaus"];
+
+/**
+ * Etiqueta corta en español → valor exacto de iluminacionSketch.
+ * Lo que se guarda en el estado (y viaja al prompt) es siempre `valor`, en inglés;
+ * `etiqueta` es solo lo que lee el usuario. Si cambia un string de iluminacionSketch,
+ * hay que actualizarlo aquí o la píldora deja de marcarse.
+ */
+const LUCES = [
+  { etiqueta: "Dorada", valor: "Side golden hour, long shadows, warm atmosphere" },
+  { etiqueta: "Nocturna", valor: "Night — warm 2700K pendant lamps, cozy mood" },
+  { etiqueta: "Dramática", valor: "Dramatic focal lighting, spots on the hero product" },
+  { etiqueta: "Amanecer", valor: "Dawn, soft pink side light" },
+];
+
+/** Las dos opciones restantes del array, tras "Ver todos". */
+const LUCES_EXTRA = [
+  { etiqueta: "Natural", valor: "Soft natural daylight, diffused shadows, global illumination" },
+  { etiqueta: "Aro LED", valor: "Circular ring LED, signature retail style" },
+];
+
+const clasePildora = (activo: boolean) =>
+  `rounded-full border px-3 py-2 text-xs font-bold transition ${
+    activo
+      ? "border-[#EA580C] bg-[#EA580C] text-white"
+      : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-[#EA580C]"
+  }`;
+
+const claseVerTodos = "mt-3 text-[11px] font-bold text-muted-foreground underline transition hover:text-[#EA580C]";
+
+/**
  * Fila horizontal de presets de transformación. Scrollea en pantallas estrechas.
  *
  * Estados del card: hover cambia solo el borde; seleccionado cambia borde Y título.
@@ -154,7 +190,7 @@ const PresetsRow = ({
 
       <div className="relative -mx-1">
         <div ref={scrollRef} onScroll={actualizarFade} className="flex gap-3 overflow-x-auto px-1 pb-2">
-          {PRESETS.map((preset) => {
+          {PRESETS_VISIBLES.map((preset) => {
             const seleccionado = activo === preset.id;
             return (
               <button
@@ -319,14 +355,26 @@ const construirPrompt = (tabId: TabId, valores: ValoresFormulario, fuenteImagen 
   return `Photorealistic architectural visualization, ${tipoEspacio}, ArquiRender Ecuador retail brand,${valorTexto(valores.estilo)} style, ${materiales} with ${color} color palette, ${foco}, ${valorTexto(valores.iluminacion)}, ${hora}, ${camaraReferencia}${valorTexto(valores.camara)}, ${biofilia}, ${calidad}, realistic shadows and reflections, soft global illumination${referencia}${notas ? `, ${notas}` : ""} ${parametrosMidjourney(valores)}`.replace(/\s+/g, " ").trim();
 };
 
-const tiposImagen = [
-  { id: "sketch", etiqueta: "Sketch a mano", descriptor: "a hand-drawn architectural sketch" },
-  { id: "planta", etiqueta: "Planta arquitectónica", descriptor: "an architectural floor plan" },
-  { id: "sketchup", etiqueta: "Captura SketchUp", descriptor: "a SketchUp screenshot" },
-  { id: "render", etiqueta: "Render existente", descriptor: "an existing render" },
-] as const;
+/**
+ * Origen de la imagen. Ya no lo elige el usuario: lo clasifica el análisis que
+ * corre al subir la imagen ("analyze-architectural-image").
+ */
+type TipoOrigen = "sketch" | "sketchup" | "render" | "otro";
 
-type TipoImagenId = typeof tiposImagen[number]["id"];
+/**
+ * Descriptor que construirPrompt envuelve como `Starting from ${...}. `.
+ * "otro" queda vacío a propósito: sin clasificación fiable, sin prefijo.
+ */
+const DESCRIPTORES_ORIGEN: Record<TipoOrigen, string> = {
+  sketch: "a hand-drawn architectural sketch",
+  sketchup: "a SketchUp screenshot",
+  render: "an existing render",
+  otro: "",
+};
+
+/** Solo se acepta una de las tres clasificaciones conocidas; el resto cae a "otro". */
+const normalizarOrigen = (valor: unknown): TipoOrigen =>
+  valor === "sketch" || valor === "sketchup" || valor === "render" ? valor : "otro";
 
 // Modo "Tipo de Representación": 7 categorías con sus variantes.
 const categoriasRepresentacion = [
@@ -371,7 +419,8 @@ const urlADataUrl = async (url: string): Promise<string> => {
 
 const GeneradorPromptsArquitectonicos = () => {
   const [tabActiva, setTabActiva] = useState<TabId>("sketch");
-  const [tipoImagen, setTipoImagen] = useState<TipoImagenId>("sketch");
+  // Arranca en "otro" (sin prefijo). Solo el análisis puede moverlo de ahí.
+  const [tipoOrigen, setTipoOrigen] = useState<TipoOrigen>("otro");
   const [valoresPorTab, setValoresPorTab] = useState<Record<TabId, ValoresFormulario>>({
     nueva: estadoInicial("nueva"),
     remodelacion: estadoInicial("remodelacion"),
@@ -404,11 +453,12 @@ const GeneradorPromptsArquitectonicos = () => {
   const [refrescarHistorial, setRefrescarHistorial] = useState(0);
   const [mostrarVariaciones, setMostrarVariaciones] = useState(false);
   const [mostrarOnboarding, setMostrarOnboarding] = useState(false);
-  const [modoRender, setModoRender] = useState<"estilo" | "representacion">("estilo");
   const [selectedRepresentacion, setSelectedRepresentacion] = useState("");
   const [presetActivo, setPresetActivo] = useState<string | null>(null);
   const [piezas, setPiezas] = useState<Record<string, EstadoPieza>>({});
   const [cadenaActiva, setCadenaActiva] = useState(false);
+  const [verTodosEstilos, setVerTodosEstilos] = useState(false);
+  const [verTodasLuces, setVerTodasLuces] = useState(false);
 
   const tab = useMemo(() => tabsPrompt.find((item) => item.id === tabActiva)!, [tabActiva]);
   const valores = valoresPorTab[tabActiva];
@@ -582,6 +632,8 @@ const GeneradorPromptsArquitectonicos = () => {
     setAnalizando((actual) => ({ ...actual, [tabActiva]: true }));
     setDescripcionIA((actual) => ({ ...actual, [tabActiva]: false }));
     setErrorAnalisis("");
+    // Imagen nueva: el origen anterior ya no vale hasta que llegue la clasificación.
+    setTipoOrigen("otro");
 
     try {
       const { data, error: functionError } = await supabase.functions.invoke("analyze-architectural-image", {
@@ -597,6 +649,10 @@ const GeneradorPromptsArquitectonicos = () => {
         setErrorAnalisis(mensajeErrorAnalisis);
         return;
       }
+
+      // Clasificación del origen. Si la respuesta no la trae, queda en "otro"
+      // y el prompt sale sin prefijo: nunca se asume "sketch".
+      setTipoOrigen(normalizarOrigen(data?.tipoImagen));
 
       actualizarCampo({ id: "descripcion", etiqueta: "Descripción", tipo: "textarea" }, data.descripcion);
       setDescripcionIA((actual) => ({ ...actual, [tabActiva]: true }));
@@ -695,7 +751,7 @@ const GeneradorPromptsArquitectonicos = () => {
   };
 
   const ejecutarGeneracion = async (uidActivo: string | null) => {
-    const fuente = tiposImagen.find((item) => item.id === tipoImagen)?.descriptor || "";
+    const fuente = DESCRIPTORES_ORIGEN[tipoOrigen];
     const promptFinal = construirPrompt(tabActiva, valores, fuente);
     setPrompt(promptFinal);
 
@@ -711,7 +767,9 @@ const GeneradorPromptsArquitectonicos = () => {
       // Fuente de verdad: se itera desde la base activa (último render u original),
       // pero el original real siempre viaja aparte para el historial (antes/después).
       const imageBase64 = imagenBaseActiva;
-      const representacion = modoRender === "representacion" && selectedRepresentacion ? slugRepresentacion(selectedRepresentacion) : undefined;
+      // Con una representación activa, su prompt fijo reemplaza al de estilo en
+      // la Edge Function. Sin ninguna, se envía el prompt de estilo normal.
+      const representacion = selectedRepresentacion ? slugRepresentacion(selectedRepresentacion) : undefined;
       console.log("representacion enviada:", representacion);
       const { data, error: functionError } = await supabase.functions.invoke("generate-render", {
         body: {
@@ -876,19 +934,6 @@ const GeneradorPromptsArquitectonicos = () => {
     </div>
   );
 
-  const renderChipsSimple = (campoId: string, opciones: string[]) => (
-    <div className="flex flex-wrap gap-2">
-      {opciones.map((opcion) => {
-        const seleccionado = valorTexto(valores[campoId]) === opcion;
-        return (
-          <button key={opcion} type="button" className={`rounded-full border px-4 py-2 text-xs font-bold transition ${seleccionado ? "border-[#EA580C] bg-[#EA580C] text-black" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-brand-gold"}`} onClick={() => actualizarCampo({ id: campoId, etiqueta: campoId, tipo: "select" }, seleccionado ? "" : opcion)}>
-            {opcion}
-          </button>
-        );
-      })}
-    </div>
-  );
-
   const renderAcordeon = (clave: string, titulo: string, contenido: ReactNode) => (
     <div className="border-t border-brand-border">
       <button type="button" onClick={() => toggleAcordeon(clave)} className="flex w-full items-center justify-between gap-3 px-5 py-5 text-left text-sm font-semibold text-brand-gold sm:px-6">
@@ -955,8 +1000,8 @@ const GeneradorPromptsArquitectonicos = () => {
         <div className="space-y-4">
       <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed border-brand-gold bg-background px-4 py-6 text-center transition hover:bg-brand-gold-surface">
             <span className="text-2xl" aria-hidden="true">↑</span>
-            <span className="text-sm font-bold text-foreground">{campo.etiqueta}</span>
-            <span className="text-xs text-muted-foreground">Carga local únicamente, sin enviar archivos a ningún servidor</span>
+            <span className="text-sm font-bold text-foreground">Sube tu imagen</span>
+            <span className="text-xs text-muted-foreground">Boceto, captura de SketchUp o render existente</span>
             <input type="file" accept="image/*" className="sr-only" onChange={(e) => actualizarArchivo(campo, e.target.files?.[0])} />
           </label>
           <p className="text-xs font-bold text-muted-foreground">La imagen no se envía a ningún servidor — solo se usa como referencia visual local.</p>
@@ -1107,32 +1152,6 @@ const GeneradorPromptsArquitectonicos = () => {
             <h2 className="m-0 text-2xl font-black tracking-normal text-foreground">{tab.titulo}</h2>
           </div>
 
-          <div className="border-t border-brand-border px-5 py-5 sm:px-6">
-            <div className="inline-flex w-full gap-1 rounded-md border border-brand-border bg-input p-1 sm:w-auto">
-              {([["estilo", "Generación de Estilo"], ["representacion", "Láminas de presentación"]] as const).map(([modo, etiqueta]) => (
-                <button key={modo} type="button" onClick={() => setModoRender(modo)} className={`flex-1 whitespace-nowrap rounded px-4 py-2 text-xs font-bold transition sm:flex-none ${modoRender === modo ? "bg-[#EA580C] text-white" : "bg-transparent text-muted-foreground hover:text-foreground"}`}>
-                  {etiqueta}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="border-t border-brand-border px-5 py-5 sm:px-6">
-            <label className="mb-3 flex text-sm font-semibold text-brand-gold">
-              <span>Tipo de imagen de origen</span>
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {tiposImagen.map((tipo) => {
-                const seleccionado = tipoImagen === tipo.id;
-                return (
-                  <button key={tipo.id} type="button" className={`rounded-full border px-4 py-2 text-xs font-bold transition ${seleccionado ? "border-[#EA580C] bg-[#EA580C] text-black" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-brand-gold"}`} onClick={() => setTipoImagen(tipo.id)}>
-                    {tipo.etiqueta}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           {campoPorId("imagen") && (
             <div className="border-t border-brand-border px-5 py-5 sm:px-6">
               {renderCampo(campoPorId("imagen")!)}
@@ -1148,7 +1167,7 @@ const GeneradorPromptsArquitectonicos = () => {
             </div>
           )}
 
-          {/* Notas adicionales: compartido en ambos modos, justo debajo de la descripción */}
+          {/* Notas adicionales, justo debajo de la descripción */}
           {campoPorId("notas") && (
             <div className="border-t border-brand-border px-5 py-5 sm:px-6">
               <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
@@ -1159,8 +1178,6 @@ const GeneradorPromptsArquitectonicos = () => {
             </div>
           )}
 
-          {modoRender === "estilo" && (
-          <>
           <PresetsRow
             activo={presetActivo}
             onSeleccionar={aplicarPreset}
@@ -1171,26 +1188,97 @@ const GeneradorPromptsArquitectonicos = () => {
             onVolverAlOriginal={volverAlOriginal}
           />
 
+          {/* Estilo y Luz: tarjetas con el mismo formato que las de Láminas. */}
+          <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl border border-brand-border bg-input p-4">
+                <div className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
+                  <span aria-hidden="true">🎨</span>
+                  <span>Estilo</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(verTodosEstilos ? estilosDiseno : ESTILOS_DESTACADOS).map((opcion) => {
+                    const activo = valorTexto(valores.estiloDiseno) === opcion;
+                    return (
+                      <button
+                        key={opcion}
+                        type="button"
+                        className={clasePildora(activo)}
+                        onClick={() => actualizarCampo({ id: "estiloDiseno", etiqueta: "Estilo", tipo: "select" }, activo ? "" : opcion)}
+                      >
+                        {opcion}
+                      </button>
+                    );
+                  })}
+                </div>
+                {!verTodosEstilos && (
+                  <button type="button" onClick={() => setVerTodosEstilos(true)} className={claseVerTodos}>
+                    Ver todos
+                  </button>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-brand-border bg-input p-4">
+                <div className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
+                  <span aria-hidden="true">💡</span>
+                  <span>Luz</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(verTodasLuces ? [...LUCES, ...LUCES_EXTRA] : LUCES).map((luz) => {
+                    const activo = valorTexto(valores.iluminacion) === luz.valor;
+                    return (
+                      <button
+                        key={luz.valor}
+                        type="button"
+                        // Sin alternar a vacío: la luz siempre debe tener un valor,
+                        // el prompt la concatena de forma incondicional.
+                        className={clasePildora(activo)}
+                        onClick={() => actualizarCampo({ id: "iluminacion", etiqueta: "Luz", tipo: "select" }, luz.valor)}
+                      >
+                        {luz.etiqueta}
+                      </button>
+                    );
+                  })}
+                </div>
+                {!verTodasLuces && (
+                  <button type="button" onClick={() => setVerTodasLuces(true)} className={claseVerTodos}>
+                    Ver todos
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Representación: si hay una activa, su prompt reemplaza al de estilo
+              en la Edge Function. Selección única, y un segundo clic la quita. */}
+          <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {categoriasRepresentacion.map((cat) => (
+                <div key={cat.categoria} className="rounded-xl border border-brand-border bg-input p-4">
+                  <div className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
+                    <span aria-hidden="true">{cat.icono}</span>
+                    <span>{cat.categoria}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {cat.opciones.map((op) => {
+                      const activo = selectedRepresentacion === op;
+                      return (
+                        <button key={op} type="button" onClick={() => setSelectedRepresentacion(activo ? "" : op)} className={`rounded-full border px-3 py-2 text-xs font-bold transition ${activo ? "border-[#EA580C] bg-[#EA580C] text-white" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-[#EA580C]"}`}>
+                          {op}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {renderAcordeon("materiales", "Materiales a aplicar", (
             <div className="space-y-5">
               {campoPorId("materiales") && renderCampo(campoPorId("materiales")!)}
             </div>
           ))}
-
-          {renderAcordeon("estilo", "Estilo", (
-            <div className="space-y-5">
-              <div>
-                <div className="mb-2 text-xs font-extrabold uppercase tracking-normal text-muted-foreground">Estilo de diseño</div>
-                {renderChipsSimple("estiloDiseno", estilosDiseno)}
-              </div>
-              <div>
-                <div className="mb-2 text-xs font-extrabold uppercase tracking-normal text-muted-foreground">Arquitecto de referencia</div>
-                {renderChipsSimple("arquitectoRef", arquitectosReferencia)}
-              </div>
-            </div>
-          ))}
-
-          {renderAcordeon("iluminacion", "Iluminación destino", campoPorId("iluminacion") ? renderCampo(campoPorId("iluminacion")!) : null)}
 
           <div className="border-t border-brand-border px-5 py-5 sm:px-6">
             <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
@@ -1199,33 +1287,6 @@ const GeneradorPromptsArquitectonicos = () => {
             </label>
             <input className={clasesControl} placeholder="Ej: personas, texto, marcas de agua, desenfoque" value={valorTexto(valores.negativePrompt)} onChange={(e) => actualizarCampo({ id: "negativePrompt", etiqueta: "Qué evitar", tipo: "textarea" }, e.target.value)} />
           </div>
-          </>
-          )}
-
-          {modoRender === "representacion" && (
-            <div className="border-t border-brand-border px-5 py-5 sm:px-6">
-              <div className="grid gap-4 sm:grid-cols-2">
-                {categoriasRepresentacion.map((cat) => (
-                  <div key={cat.categoria} className="rounded-xl border border-brand-border bg-input p-4">
-                    <div className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
-                      <span aria-hidden="true">{cat.icono}</span>
-                      <span>{cat.categoria}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {cat.opciones.map((op) => {
-                        const activo = selectedRepresentacion === op;
-                        return (
-                          <button key={op} type="button" onClick={() => setSelectedRepresentacion(activo ? "" : op)} className={`rounded-full border px-3 py-2 text-xs font-bold transition ${activo ? "border-[#EA580C] bg-[#EA580C] text-white" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-[#EA580C]"}`}>
-                            {op}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div className="px-5 pb-6 sm:px-6">
             {error && <div className="mb-3 text-sm font-bold text-destructive">{error}</div>}
