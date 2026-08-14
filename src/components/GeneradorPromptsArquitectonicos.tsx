@@ -1377,11 +1377,21 @@ const GeneradorPromptsArquitectonicos = () => {
                   <button type="button" onClick={() => setVista("historial")} className={`rounded px-3 py-1.5 text-xs font-bold transition ${vista === "historial" ? "bg-[#EA580C] text-white" : "bg-transparent text-muted-foreground hover:text-foreground"}`}>Mi historial</button>
                 </div>
               )}
-              {userId && creditos !== null && (
+              {/* En 0 el contador deja de ser informativo y pasa a ser un acceso a los planes. */}
+              {userId && creditos !== null && (creditos === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setMostrarPlanes(true)}
+                  title="Ver planes"
+                  className="rounded-md border border-[#EA580C] bg-[#EA580C] px-3 py-2 text-xs font-extrabold text-white transition hover:bg-[#c2470a]"
+                >
+                  0 generaciones · Ver planes
+                </button>
+              ) : (
                 <span className="rounded-md border border-[#EA580C] bg-[#EA580C]/10 px-3 py-2 text-xs font-extrabold text-[#EA580C]">
                   {creditos} {creditos === 1 ? "generación disponible" : "generaciones disponibles"}
                 </span>
-              )}
+              ))}
               {userId && (
                 <div className="relative">
                   <button type="button" onClick={() => setMenuUsuario((v) => !v)} className="flex items-center gap-2 rounded-md border border-[#EA580C]/40 bg-transparent px-3 py-2 text-xs font-bold text-foreground transition hover:border-[#EA580C]" aria-haspopup="menu" aria-expanded={menuUsuario} aria-label="Menú de usuario">
@@ -1585,17 +1595,25 @@ const GeneradorPromptsArquitectonicos = () => {
 
           <div className="px-5 pb-6 sm:px-6">
             {error && <div className="mb-3 text-sm font-bold text-destructive">{error}</div>}
-            {sinCreditos && (
-              <div className="mb-3 rounded-md border border-[#EA580C] bg-[#EA580C]/10 p-4 text-sm">
-                <p className="font-bold text-foreground">Ya usaste tus 4 generaciones gratis.</p>
-                <button type="button" className="mt-3 rounded-full bg-[#EA580C] px-4 py-2 text-xs font-extrabold text-white transition hover:bg-[#c2470a]" onClick={() => setMostrarPlanes(true)}>Ver planes</button>
+            {/* Muro de pago: sin créditos, el CTA lleva a los planes en vez de
+                quedar bloqueado. El botón de abajo es el que abre PlanesModal. */}
+            {(sinCreditos || creditos === 0) && userId && (
+              <div className="mb-3 rounded-md border border-[#EA580C] bg-[#EA580C]/10 p-4">
+                <p className="text-sm font-bold text-foreground">Ya usaste tus generaciones gratis</p>
+                <p className="mt-1 text-xs text-muted-foreground">Sigue generando desde $7 al mes. Cancela cuando quieras.</p>
               </div>
             )}
             {(() => {
               const faltan = faltanPara(costoGeneracion, userId, creditos);
+              const sinSaldo = faltan > 0;
               return (
-                <button disabled={generando || cadenaActiva || faltan > 0} className="w-full rounded-md border-0 bg-[#EA580C] px-4 py-4 text-base font-bold text-white transition hover:bg-[#c2470a] disabled:cursor-not-allowed disabled:opacity-60" onClick={generarRender}>
-                  {generando ? "Generando..." : cadenaActiva ? "Generando piezas…" : faltan > 0 ? textoFaltan(faltan) : `Generar · ${costoGeneracion} ${costoGeneracion === 1 ? "generación" : "generaciones"}`}
+                <button
+                  // Sin saldo el botón sigue activo: es la única vía visible a los planes.
+                  disabled={generando || cadenaActiva}
+                  className="w-full rounded-md border-0 bg-[#EA580C] px-4 py-4 text-base font-bold text-white transition hover:bg-[#c2470a] disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={sinSaldo ? () => setMostrarPlanes(true) : generarRender}
+                >
+                  {generando ? "Generando..." : cadenaActiva ? "Generando piezas…" : sinSaldo ? "Conseguir más generaciones" : `Generar · ${costoGeneracion} ${costoGeneracion === 1 ? "generación" : "generaciones"}`}
                 </button>
               );
             })()}
