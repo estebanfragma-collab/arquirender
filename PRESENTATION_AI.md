@@ -1,0 +1,11 @@
+# Presentation image analysis
+
+The editor sends only the current page's selected images (1–3), resized to at most 1024px and JPEG quality 0.8, plus an optional 1000-character brief. Original renders are unchanged. A user must click Analyze; results never apply automatically. The reviewer can edit/discard the proposal or apply title and description independently. Identity fields are never generated. Changing the page or image selection resets the pending suggestion.
+
+`analyze-presentation` validates the Bearer session with Supabase Auth (anonymous accounts rejected) before reserving an attempt or calling OpenAI. Gateway JWT verification is disabled because the function performs its own online token validation. The existing server-only `OPENAI_API_KEY` is reused with `gpt-4.1-mini-2025-04-14`, Chat Completions image input and strict structured JSON, store=false and 500 maximum output tokens. No key is exposed to the frontend.
+
+The service-role-only `reserve_presentation_analysis` RPC atomically enforces 30 attempts/account/UTC day and a 10-second cooldown. Attempts include provider failures; there are no automatic paid retries. This is separate from render credit accounting. Bodies are bounded to 3MB while streaming; each data URL is limited to 900KB. Arbitrary image URLs are rejected. The function logs only provider status and token counts, never images, briefs or credentials.
+
+Deployment order: apply/record `20260923180000_presentation_analysis_limits.sql`, deploy `analyze-presentation`, then deploy the frontend. To disable the feature, revert the editor's AnalysisPanel integration; existing rendering and cloud presentations do not depend on it.
+
+Validation: Deno handler tests cover auth, input limits, rate limiting, provider errors, refusals and successful structured output. SQL transaction tests verify permissions, cooldown and daily limit with rollback. Browser tests cover selective apply, discard, preserving manual copy, stale proposals after page changes, errors and mobile layout. A real signed-in request using an existing render succeeded before publication. Build passes. Full app typecheck has a pre-existing generated Supabase typing error for `renders` in GeneradorPromptsArquitectonicos.tsx:825.

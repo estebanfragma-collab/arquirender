@@ -1,1 +1,5 @@
 project_id = "tjhpsraoolhfalrenrdb"
+
+[functions.analyze-presentation]
+# Auth is validated with Supabase Auth inside the function before any paid request.
+verify_jwt = false
