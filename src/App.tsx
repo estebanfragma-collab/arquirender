@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +13,8 @@ import ResetPassword from "./pages/ResetPassword";
 import Presentaciones from "./pages/Presentaciones";
 import NotFound from "./pages/NotFound";
 
+const VideoStudio = lazy(() => import("./video-studio/Studio"));
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -23,6 +26,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/app" element={<AppPage />} />
+          <Route path="/app/videos" element={<Suspense fallback={<p>Abriendo estudio de video…</p>}><VideoStudio /></Suspense>} />
           <Route path="/app/presentaciones" element={<Presentaciones />} />
           <Route path="/terminos" element={<Terminos />} />
           <Route path="/privacidad" element={<Privacidad />} />

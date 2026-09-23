@@ -3,3 +3,7 @@ project_id = "tjhpsraoolhfalrenrdb"
 [functions.analyze-presentation]
 # Auth is validated with Supabase Auth inside the function before any paid request.
 verify_jwt = false
+
+[functions.video-scene-prompt]
+# Online Auth validation happens before image processing or OpenAI calls.
+verify_jwt = false

@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 export type Proposal = {title:string;text:string;observation:string};
-async function prepareImage(src:string):Promise<string> {
+export async function prepareImage(src:string):Promise<string> {
   const response=await fetch(src,{signal:AbortSignal.timeout(15000)});
   if(!response.ok)throw new Error('No se pudo cargar una imagen. Vuelve a abrir la presentación e inténtalo de nuevo.');
   const blob=await response.blob();
