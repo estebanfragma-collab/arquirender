@@ -13,3 +13,11 @@ Exportación mediante impresión nativa: el usuario elige Guardar como PDF y des
 Validación: recuperación tras recargar incluyendo una imagen subida; cambios de plantilla; exportación de las cuatro plantillas, dos páginas cada una, tamaños de página verificados y revisión visual; interfaz móvil sin desbordamiento; TypeScript del prototipo sin errores.
 
 Integración verificada con sesión e historial simulados: bloqueo sin sesión, filtro por usuario, imágenes del historial sin ejemplos mezclados, recuperación del borrador de cuenta y separación respecto a la demo. Falta validación con sesión real del usuario y publicación. No se han cambiado tablas, políticas, generación ni cobros.
+
+## Guardado en la nube
+
+Modo cuenta: tabla `presentations` con RLS de propietario y bucket privado `presentation-images`. El guardado manual sube solo imágenes usadas en las páginas; las referencias de historial también se copian para independizar la presentación. Archivos inmutables con hash por usuario, límite 20 MB, sin sobrescrituras. Al abrir se generan enlaces firmados de 24 horas. Las copias comparten archivos del mismo usuario: eliminar una presentación elimina el documento, no los archivos compartidos. La limpieza de archivos huérfanos queda como mantenimiento posterior.
+
+Mis presentaciones permite abrir, crear, copiar y eliminar con confirmación. Revisión optimista evita sobrescribir cambios de otro equipo. Se conserva respaldo local por cuenta; el borrador anterior puede guardarse en la nube con Guardar en mi cuenta. No se cobran créditos ni se llama a IA.
+
+Validación: migración ensayada en transacción con rollback, aislamiento SELECT/INSERT/UPDATE/DELETE entre usuarios y aumento de revisión; UI probada con API simulada en contextos separados (guardar, abrir, copiar, eliminar y conflicto de versiones). Migración aplicada de forma aditiva, sin cambiar tablas existentes.
