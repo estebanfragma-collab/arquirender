@@ -13,6 +13,11 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  build: {
+    rollupOptions: {
+      input: { app: path.resolve(__dirname, "index.html"), presentaciones: path.resolve(__dirname, "presentaciones-demo.html") },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

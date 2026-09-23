@@ -1420,6 +1420,7 @@ const GeneradorPromptsArquitectonicos = () => {
               )}
             </div>
           </div>
+          {userId && <div className="mt-4 border-t border-brand-border pt-4"><a href="/app/presentaciones" target="_blank" rel="noopener noreferrer" className="inline-flex rounded-md border border-[#EA580C]/40 px-4 py-2 text-sm font-bold text-[#EA580C] hover:bg-[#EA580C]/10">Presentaciones ↗</a><span className="ml-3 text-xs text-muted-foreground">Crea tus láminas y PDF con los renders de tu historial.</span></div>}
         </div>
       </header>
 

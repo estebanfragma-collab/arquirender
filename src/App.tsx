@@ -9,6 +9,7 @@ import Terminos from "./pages/Terminos";
 import Privacidad from "./pages/Privacidad";
 import Reembolsos from "./pages/Reembolsos";
 import ResetPassword from "./pages/ResetPassword";
+import Presentaciones from "./pages/Presentaciones";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/app" element={<AppPage />} />
+          <Route path="/app/presentaciones" element={<Presentaciones />} />
           <Route path="/terminos" element={<Terminos />} />
           <Route path="/privacidad" element={<Privacidad />} />
           <Route path="/reembolsos" element={<Reembolsos />} />
