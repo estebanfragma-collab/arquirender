@@ -7,3 +7,7 @@ verify_jwt = false
 [functions.video-scene-prompt]
 # Online Auth validation happens before image processing or OpenAI calls.
 verify_jwt = false
+
+[functions.video-provider-status]
+# Explicit online Auth validation before a cached, read-only provider check.
+verify_jwt = false
