@@ -11,3 +11,6 @@ verify_jwt = false
 [functions.video-provider-status]
 # Explicit online Auth validation before a cached, read-only provider check.
 verify_jwt = false
+
+[functions.video-clips]
+verify_jwt = false

@@ -21,7 +21,7 @@ Deno.serve(async req=>{
   const control=await probe('invalid:invalid');
   if(control!==401)return reply(200,{message:'No pudimos confirmar la autenticación del proveedor. No se generó ningún video.'});
   const status=await probe(key);
-  const message=status===404?'Higgsfield acepta la clave. La generación de clips aún está pendiente de integración; esta comprobación no genera videos ni verifica el saldo.':status===401?'Higgsfield rechazó la clave. Revisa que hayas copiado el valor completo.':'El proveedor no permitió confirmar la conexión. Reintenta más tarde; no se generó ningún video.';
+  const message=status===404?'Higgsfield acepta la clave. Puedes consultar el costo de una toma en el estudio de video. Esta comprobación no genera clips ni verifica el saldo.':status===401?'Higgsfield rechazó la clave. Revisa que hayas copiado el valor completo.':'El proveedor no permitió confirmar la conexión. Reintenta más tarde; no se generó ningún video.';
   cache={until:Date.now()+60000,message};return reply(200,{message});
  }catch{return reply(503,{error:'No se pudo comprobar la conexión. No se ha generado ningún video.'});}
 });

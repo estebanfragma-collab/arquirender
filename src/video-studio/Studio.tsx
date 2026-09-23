@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { movements, newScene, validScenes, basis, sceneError, projectScript, type Scene, type RenderAsset, type VideoProject } from './model';
 import { listProjects, saveProject, proposeScene } from './api';
 import './studio.css';
+import Clips from './Clips';
 
 type Session = {id:string;assets:RenderAsset[]};
 export default function VideoStudio(){
@@ -58,10 +59,6 @@ function Editor({session}:{session:Session}){
   const add=(copy=false)=>{if(scenes.length>=24)return;const s=copy?{...current,id:crypto.randomUUID(),name:`${current.name.slice(0,60)} · copia`}:newScene(scenes.length+1);setScenes(ss=>[...ss.slice(0,index+1),s,...ss.slice(index+1)]);setActive(s.id);};
   const remove=()=>{if(scenes.length===1)return;if(!confirm(`¿Quitar «${current.name}» de este borrador?`))return;const next=scenes.filter(s=>s.id!==current.id);setScenes(next);setActive(next[Math.min(index,next.length-1)].id);};
   const move=(direction:number)=>{const target=index+direction;if(target<0||target>=scenes.length)return;const ss=[...scenes];[ss[index],ss[target]]=[ss[target],ss[index]];setScenes(ss);};
-  async function checkProvider(){
-    setBusy('Comprobando conexión de video…');setNotice('');
-    try{const {data,error}=await supabase.functions.invoke('video-provider-status');if(error)throw error;setNotice(data?.message||'No se pudo confirmar la conexión.');}catch{setNotice('No se pudo comprobar la conexión. No se ha generado ningún video.');}finally{setBusy('');}
-  }
   async function generatePrompt(){
     if(validation){setNotice(validation);return;}setBusy('La IA está preparando tu escena…');setNotice('');setProposal(null);
     try{const result=await proposeScene(current,session.assets);setProposal({...result,basis:basis(current)});}
@@ -101,7 +98,7 @@ function Editor({session}:{session:Session}){
         {stale&&<p className="vs-warning">Cambiaste las imágenes o los ajustes. Revisa el prompt o prepara una nueva propuesta antes de generar.</p>}
         <button disabled={!current.prompt.trim()} onClick={copyPrompt}><Copy size={16}/>Copiar prompt</button>
         {current.notes&&<details><summary>Notas de la IA</summary><p>{current.notes}</p></details>}
-        <section className="vs-generation"><span className="vs-eyebrow">GENERACIÓN INTEGRADA</span><h3>El siguiente paso: el clip.</h3><p>La conexión de video está pendiente de activar. Mientras tanto, puedes llevar este prompt y tus imágenes a Kling o Magnific.</p><button disabled>Generación pendiente de activar</button><button onClick={checkProvider} style={{marginTop:8}}>Verificar conexión de video</button><small>No se han generado ni cobrado videos desde este estudio.</small></section>
+        <Clips scene={current} blocked={!!validation||stale}/>
         <small className="vs-ai-note">Preparar la escena envía copias reducidas de las imágenes seleccionadas a OpenAI. Hasta 30 propuestas diarias, sin gastar créditos de renders.</small>
       </aside>
     </section>
