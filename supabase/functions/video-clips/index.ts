@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.103.3';
 const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version','Content-Type':'application/json','Cache-Control':'no-store'};
 const reply=(status:number,body:unknown)=>new Response(JSON.stringify(body),{status,headers});
-const MODEL='kling-video/o3/first-last-frame';
+const MODELS={dop:'higgsfield-ai/dop/lite',minimax:'minimax/hailuo-2.3/standard/image-to-video'};
 const uuid=(v:unknown):v is string=>typeof v==='string'&&/^[a-f0-9-]{36}$/i.test(v);
 const fail=(message:string)=>{throw new Error(message);};
 Deno.serve(async req=>{
@@ -21,15 +21,15 @@ Deno.serve(async req=>{
   const key=(Deno.env.get('HIGGSFIELD_API_KEY')||'').trim().replace(/^Key\s+/i,'');
   if(!/^[^\s:]+:[^\s:]+$/.test(key))return reply(503,{error:'La conexión de video necesita revisión.'});
   const provider=(path:string,body?:unknown)=>fetch(`https://api.higgsfield.ai/${path}`,{method:body?'POST':'GET',headers:{Authorization:`Key ${key}`,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined,redirect:'error',signal:AbortSignal.timeout(25000)});
-  async function estimate(payload:unknown){
-   const r=await provider(`estimate/${MODEL}`,payload);if(!r.ok)fail('No se pudo consultar el precio. Revisa el saldo y la conexión de Higgsfield.');
+  async function estimate(model:string,payload:unknown){
+   const r=await provider(`estimate/${model}`,payload);if(!r.ok){const status=r.status;await r.body?.cancel();fail(`No se pudo cotizar este modelo (respuesta ${status}). No se ha generado ni cobrado ningún clip.`);}
    const result=await r.json();const cost=Number(result.usd);
    if(!Number.isFinite(cost)||cost<=0||cost>1)fail('El costo de esta toma supera el límite de USD 1 de la prueba.');return Math.ceil(cost*10000)/10000;
   }
   async function output(job:any){
    let url:string|null=null;
    if(job.storage_path){const {data}=await db.storage.from('video-clips').createSignedUrl(job.storage_path,3600);url=data?.signedUrl||null;}
-   return {id:job.id,sceneId:job.scene_id,name:job.name,state:job.state,estimatedUsd:Number(job.estimated_usd),url,createdAt:job.created_at,expiresAt:job.expires_at};
+   return {model:job.payload?.model||'kling-video/o3/first-last-frame',duration:job.payload?.model?(job.payload.input.duration||5):job.payload.duration,id:job.id,sceneId:job.scene_id,name:job.name,state:job.state,estimatedUsd:Number(job.estimated_usd),url,createdAt:job.created_at,expiresAt:job.expires_at};
   }
   async function update(id:string,changes:Record<string,unknown>){const {data,error}=await db.from('video_clip_jobs').update(changes).eq('id',id).eq('user_id',uid).select('*').single();if(error)fail('No se pudo actualizar la toma. Recupera su estado antes de intentar otra.');return data;}
   if(input.action==='list'){
@@ -44,8 +44,13 @@ Deno.serve(async req=>{
    const {data:renders,error}=await db.from('renders').select('id,imagen_generada_url').eq('user_id',uid).in('id',ids);
    if(error||renders?.length!==ids.length)fail('No se encontraron estas imágenes en tu cuenta.');
    const source=(id:string)=>{const value=renders!.find(r=>r.id===id)?.imagen_generada_url;const u=new URL(value);const base=new URL(Deno.env.get('SUPABASE_URL')!);if(u.protocol!=='https:'||u.host!==base.host||!u.pathname.startsWith('/storage/v1/object/'))fail('Esta imagen no tiene una ubicación compatible con la prueba.');return u.href;};
-   const payload={mode:'std',sound:'off',prompt:s.prompt.trim(),duration:s.duration,multi_shots:false,aspect_ratio:s.format,first_frame_url:source(s.startId),...(s.mode==='transition'?{last_frame_url:source(s.endId)}:{})};
-   const cost=await estimate(payload);
+   const engine=input.engine==='minimax'?'minimax':'dop';
+   if(engine==='minimax'&&s.mode==='transition')fail('La prueba MiniMax admite una imagen inicial. Conserva la transición como plan para otro modelo.');
+   if(engine==='dop'&&s.duration!==5)fail('La prueba DoP usa 5 segundos.');
+   const model=MODELS[engine];
+   const modelInput=engine==='dop'?{prompt:s.prompt.trim(),image_url:source(s.startId),enhance_prompt:false,...(s.mode==='transition'?{end_image_url:source(s.endId)}:{})}:{prompt:s.prompt.trim(),image_url:source(s.startId),duration:s.duration===10?10:6,prompt_optimizer:false};
+   const payload={model,input:modelInput};
+   const cost=await estimate(model,modelInput);
    const {data:job,error:err}=await db.from('video_clip_jobs').insert({user_id:uid,scene_id:s.id,name:String(s.name||'Escena').slice(0,80),payload,estimated_usd:cost}).select('*').single();
    if(err)fail('No se pudo guardar la cotización.');return reply(200,{job:await output(job)});
   }
@@ -54,14 +59,15 @@ Deno.serve(async req=>{
   if(!found)return reply(404,{error:'No se encontró esta toma.'});let job=found;
   if(input.action==='start'){
    if(job.state!=='quoted')return reply(200,{job:await output(job)});
-   if(await estimate(job.payload)>Number(job.estimated_usd))fail('El precio cambió. Consulta el costo de nuevo antes de generar.');
+   if(!Object.values(MODELS).includes(job.payload?.model))fail('Esta cotización pertenece a la prueba anterior. Consulta el costo con un modelo económico.');
+   if(await estimate(job.payload.model,job.payload.input)>Number(job.estimated_usd))fail('El precio cambió. Consulta el costo de nuevo antes de generar.');
    const {data:claim,error}=await db.rpc('claim_video_clip',{p_user_id:uid,p_job_id:job.id});
    if(error)fail('No pudimos reservar la toma. No se envió a generar.');
    if(claim==='existing'){const {data}=await db.from('video_clip_jobs').select('*').eq('id',job.id).eq('user_id',uid).single();return reply(200,{job:await output(data)});}
    if(claim!=='claimed')fail(({expired:'El precio venció. Consúltalo otra vez.',active:'Hay una toma pendiente. Espera su resultado antes de generar otra.',budget:'Alcanzaste el límite de USD 1 de esta prueba privada.'} as Record<string,string>)[claim]||'La prueba no está habilitada.');
    // Never retry a submission: a timeout can still mean the provider accepted it.
    let r:Response;
-   try{r=await provider(MODEL,job.payload);}catch{job=await update(job.id,{state:'unknown'});return reply(200,{job:await output(job)});}
+   try{r=await provider(job.payload.model,job.payload.input);}catch{job=await update(job.id,{state:'unknown'});return reply(200,{job:await output(job)});}
    if(!r.ok){job=await update(job.id,{state:r.status>=400&&r.status<500&&r.status!==408?'failed':'unknown'});await r.body?.cancel();return reply(200,{job:await output(job)});}
    let result:any;try{result=await r.json();}catch{job=await update(job.id,{state:'unknown'});return reply(200,{job:await output(job)});}
    if(!uuid(result.request_id)){job=await update(job.id,{state:'unknown'});return reply(200,{job:await output(job)});}
