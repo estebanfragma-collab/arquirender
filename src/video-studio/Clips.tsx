@@ -20,7 +20,7 @@ export default function Clips({scene,blocked}:{scene:Scene;blocked:boolean}){
  useEffect(()=>{setQuote(null);},[signature]);
  useEffect(()=>{
   if(!jobs.some(pending))return;
-  let alive=true;const timer=setTimeout(async()=>{try{for(const job of jobs.filter(pending)){const d=await request({action:'status',id:job.id});if(alive)merge(d.job);}}catch(e){if(alive){setMessage((e as Error).message);setJobs(js=>[...js]);}}},12000);
+  let alive=true;const timer=setTimeout(async()=>{try{for(const job of jobs.filter(pending)){const d=await request({action:'status',id:job.id});if(alive){merge(d.job);setMessage('');}}}catch(e){if(alive){setMessage((e as Error).message);setJobs(js=>[...js]);}}},12000);
   return()=>{alive=false;clearTimeout(timer);};
  },[jobs]);
  async function run(action:'quote'|'start'|'refresh'){
@@ -39,7 +39,7 @@ export default function Clips({scene,blocked}:{scene:Scene;blocked:boolean}){
  {quote&&quote.basis===signature&&<div className="vs-clip-quote"><p><strong>USD {quote.job.estimatedUsd.toFixed(3)}</strong> por esta toma de {quote.job.duration} segundos.</p><button className="vs-primary" disabled={busy||active} onClick={()=>run('start')}>Generar clip · USD {quote.job.estimatedUsd.toFixed(3)}</button><small>Al generar, envías las imágenes y el prompt a Higgsfield. Cotización válida durante 10 minutos.</small></div>}
  <small>Prueba limitada a USD 1 en total. Se utiliza el saldo de video; no los créditos de renders.</small>
  {message&&<p role="status" className="vs-warning">{message}</p>}
- {jobs.length>0&&<div className="vs-clips"><h4>Tus últimas tomas</h4>{jobs.map(j=><article key={j.id}><strong>{j.name}</strong><small>{j.model?.includes('minimax')?'MiniMax':j.model?.includes('dop')?'DoP Lite':'Prueba anterior · Kling'} · {j.duration}s</small><p>{labels[j.state]||j.state}</p>{j.url?<><video src={j.url} controls preload="metadata" playsInline/><a href={j.url} target="_blank" rel="noreferrer">Abrir / descargar clip</a></>:null}<small>Costo estimado: USD {j.estimatedUsd.toFixed(3)}</small></article>)}</div>}
+ {jobs.length>0&&<div className="vs-clips"><h4>Tus últimas tomas</h4>{jobs.map(j=><article key={j.id}><strong>{j.name}</strong><small>{j.model?.includes('minimax')?'MiniMax':j.model?.includes('dop')?'DoP Lite':'Prueba anterior · Kling'} · {j.duration}s</small><p>{j.state==='completed'&&!j.url?'Generado · pendiente de guardar':labels[j.state]||j.state}</p>{j.url?<><video src={j.url} controls preload="none" playsInline/><a href={j.url} target="_blank" rel="noreferrer">Abrir / descargar clip</a></>:null}<small>Costo estimado: USD {j.estimatedUsd.toFixed(3)}</small></article>)}</div>}
  <button disabled={busy} onClick={()=>run('refresh')}>Actualizar mis clips</button>
  </section>;
 }

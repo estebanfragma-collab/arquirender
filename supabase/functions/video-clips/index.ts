@@ -7,6 +7,7 @@ const fail=(message:string)=>{throw new Error(message);};
 Deno.serve(async req=>{
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers});
  if(req.method!=='POST')return reply(405,{error:'Usa POST.'});
+ let stage='solicitud';
  try{
   const db=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false,autoRefreshToken:false}});
   const bearer=req.headers.get('authorization')?.replace(/^Bearer /,'');
@@ -86,16 +87,26 @@ Deno.serve(async req=>{
     job=await update(job.id,{state:'completed',provider_url:src});
     const url=new URL(src);
     if(url.protocol!=='https:'||url.username||url.password||url.hostname==='localhost'||/^(\d|\[)/.test(url.hostname))fail('El enlace del clip requiere revisión.');
-    const video=await fetch(src,{redirect:'error',signal:AbortSignal.timeout(40000)});
+    stage='descarga';
+    const video=await fetch(src,{headers:{'User-Agent':'Mozilla/5.0',Accept:'video/mp4,*/*'},redirect:'error',signal:AbortSignal.timeout(40000)});
     if(!video.ok||Number(video.headers.get('content-length')||0)>52428800)fail('El clip está listo, pero no se pudo guardar. Reintenta consultar.');
-    const reader=video.body!.getReader();const chunks:Uint8Array[]=[];let size=0;
-    for(;;){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>52428800){await reader.cancel();fail('El clip supera el tamaño admitido.');}chunks.push(value);}
+    // Stream to private storage: buffering large clips can exhaust an edge worker.
+    if(!video.body)fail('El clip no devolvió contenido. Reintenta consultar.');
+    let size=0;
+    const bounded=video.body!.pipeThrough(new TransformStream<Uint8Array,Uint8Array>({
+     transform(chunk,controller){size+=chunk.byteLength;if(size>52428800)throw new Error('El clip supera el tamaño admitido.');controller.enqueue(chunk);}
+    }));
     const path=`${uid}/${job.id}.mp4`;
-    const {error}=await db.storage.from('video-clips').upload(path,new Blob(chunks.map(chunk=>new Uint8Array(chunk).buffer),{type:'video/mp4'}),{contentType:'video/mp4',upsert:true});
-    if(error)fail('El clip terminó, pero falta guardarlo. Reintenta consultar.');
+    stage='guardado del video';
+    const stored=await fetch(`${Deno.env.get('SUPABASE_URL')}/storage/v1/object/video-clips/${path}`,{
+     method:'POST',headers:{Authorization:`Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,apikey:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,'Content-Type':'video/mp4','x-upsert':'true'},
+     body:bounded,signal:AbortSignal.timeout(60000)
+    });
+    if(!stored.ok){await stored.body?.cancel();fail('El clip terminó, pero falta guardarlo. Reintenta consultar.');}
+    await stored.body?.cancel();
     job=await update(job.id,{storage_path:path});
    }
   }
   return reply(200,{job:await output(job)});
- }catch(e){const message=e instanceof Error?e.message:'';return reply(400,{error:/^(No |El |La |Completa |Selecciona |Esta |Toma |Hay |Alcanzaste)/.test(message)?message:'No se pudo completar la operación. Consulta tus clips antes de volver a generar.'});}
+ }catch(e){const message=e instanceof Error?e.message:'';return reply(400,{error:/^(No |El |La |Completa |Selecciona |Esta |Toma |Hay |Alcanzaste)/.test(message)?message:`No se pudo completar ${stage} (${e instanceof Error?e.name:'error'}). Consulta tus clips antes de volver a generar.`});}
 });
