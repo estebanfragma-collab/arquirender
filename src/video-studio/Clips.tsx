@@ -32,7 +32,7 @@ export default function Clips({scene,blocked}:{scene:Scene;blocked:boolean}){
   finally{lock.current=false;if(mounted.current)setBusy(false);}
  }
  const active=jobs.some(j=>['submitting','queued','in_progress','unknown'].includes(j.state));
- return <section className="vs-generation"><span className="vs-eyebrow">GENERA TU CLIP · PRUEBA PRIVADA</span><h3>Del render al movimiento.</h3><p>Kling O3 · calidad estándar · sin audio. El costo se consulta antes de generar.</p>
+ return <section className="vs-generation"><span className="vs-eyebrow">GENERA TU CLIP · PRUEBA PRIVADA</span><h3>Del render al movimiento.</h3><p>Kling O3 · calidad estándar · sin audio. El costo se consulta antes de generar.</p><small>En esta prueba, el clip puede conservar la proporción de la imagen original.</small>
  <button disabled={busy||blocked||!scene.prompt.trim()||active} onClick={()=>run('quote')}>{busy?'Consultando…':'Consultar costo de esta toma'}</button>
  {quote&&quote.basis===signature&&<div className="vs-clip-quote"><p><strong>USD {quote.job.estimatedUsd.toFixed(3)}</strong> por esta toma de {scene.duration} segundos.</p><button className="vs-primary" disabled={busy||active} onClick={()=>run('start')}>Generar clip · USD {quote.job.estimatedUsd.toFixed(3)}</button><small>Al generar, envías las imágenes y el prompt a Higgsfield. Cotización válida durante 10 minutos.</small></div>}
  <small>Prueba limitada a USD 1 en total. Se utiliza el saldo de video; no los créditos de renders.</small>
