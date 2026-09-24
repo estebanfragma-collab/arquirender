@@ -1315,7 +1315,7 @@ const GeneradorPromptsArquitectonicos = () => {
           <HistorialRenders userId={userId} refreshSignal={refrescarHistorial} onContinuar={continuarDesde} />
         </main>
       ) : (
-      <main className="mx-auto grid w-[min(1180px,calc(100%-32px))] gap-8 py-7 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start">
+      <main className="mx-auto grid w-[min(1180px,calc(100%-32px))] gap-8 pt-7 pb-36 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start">
         <section className="overflow-hidden rounded-md border border-brand-border bg-card">
           <div className="px-5 py-5 sm:px-6">
             <h2 className="m-0 text-2xl font-black tracking-normal text-foreground">{tab.titulo}</h2>
@@ -1367,7 +1367,7 @@ const GeneradorPromptsArquitectonicos = () => {
             <h3 className="mb-2 text-sm font-bold text-brand-gold">1 · Crea tu render fotorrealista</h3>
             <p className="mb-4 text-xs text-muted-foreground">Después de subir y describir tu imagen, empieza con Fotografía real. Luego podrás ajustar el resultado.</p>
             <button type="button" aria-pressed={selectedRepresentaciones.includes("Fotografía real")} className={clasePildora(selectedRepresentaciones.includes("Fotografía real"))} onClick={() => { if(presetActivo){ const p=PRESETS.find(p=>p.id===presetActivo); if(p) aplicarPreset(p); } setSelectedRepresentaciones(selectedRepresentaciones.includes("Fotografía real") ? [] : ["Fotografía real"]); }}>Fotografía real</button>
-            <p className="mt-3 text-xs text-muted-foreground">Selecciona esta opción y pulsa Generar al final del formulario.</p>
+            <p className="mt-3 text-xs text-muted-foreground">Selecciona esta opción y pulsa Generar en la barra fija inferior.</p>
           </div>
           <div className="border-t border-brand-border px-5 py-5 sm:px-6">
             <h3 className="mb-2 text-sm font-bold text-brand-gold">2 · Itera y mejora tu render</h3>
@@ -1514,14 +1514,22 @@ const GeneradorPromptsArquitectonicos = () => {
               const faltan = faltanPara(costoGeneracion, userId, creditos);
               const sinSaldo = faltan > 0;
               return (
+                <div role="region" aria-label="Generar render" className="fixed inset-x-0 bottom-0 z-30 border-t border-brand-border bg-card px-4 pt-3 shadow-[0_-6px_24px_rgba(0,0,0,0.25)]" style={{paddingBottom:"max(12px, env(safe-area-inset-bottom))"}}>
+                  <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
+                    <div className="min-w-0 text-xs text-muted-foreground">
+                      <p className="truncate font-bold text-foreground">{selectedRepresentaciones.length ? selectedRepresentaciones.join(" · ") : presetActivo ? nombrePreset(PRESETS.find(p=>p.id===presetActivo)!) : "Iterar render · estilo, luz e indicaciones"}</p>
+                      {error && <p role="alert" className="mt-1 text-destructive">{error}</p>}
+                    </div>
                 <button
                   // Sin saldo el botón sigue activo: es la única vía visible a los planes.
                   disabled={generando || cadenaActiva}
-                  className="w-full rounded-md border-0 bg-[#EA580C] px-4 py-4 text-base font-bold text-white transition hover:bg-[#c2470a] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full shrink-0 sm:w-auto sm:min-w-64 rounded-md border-0 bg-[#EA580C] px-4 py-4 text-base font-bold text-white transition hover:bg-[#c2470a] disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={sinSaldo ? () => setMostrarPlanes(true) : generarRender}
                 >
                   {generando ? "Generando..." : cadenaActiva ? "Generando piezas…" : sinSaldo ? "Conseguir más generaciones" : `Generar · ${costoGeneracion} ${costoGeneracion === 1 ? "generación" : "generaciones"}`}
                 </button>
+                  </div>
+                </div>
               );
             })()}
           </div>
