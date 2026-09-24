@@ -65,7 +65,7 @@ Deno.serve(async req=>{
    const {data:claim,error}=await db.rpc('claim_video_clip',{p_user_id:uid,p_job_id:job.id});
    if(error)fail('No pudimos reservar la toma. No se envió a generar.');
    if(claim==='existing'){const {data}=await db.from('video_clip_jobs').select('*').eq('id',job.id).eq('user_id',uid).single();return reply(200,{job:await output(data)});}
-   if(claim!=='claimed')fail(({expired:'El precio venció. Consúltalo otra vez.',active:'Hay una toma pendiente. Espera su resultado antes de generar otra.',budget:'Alcanzaste el límite de USD 1 de esta prueba privada.'} as Record<string,string>)[claim]||'La prueba no está habilitada.');
+   if(claim!=='claimed')fail(({expired:'El precio venció. Consúltalo otra vez.',active:'Hay una toma pendiente. Espera su resultado antes de generar otra.',budget:'Alcanzaste el límite de video habilitado para tu cuenta.'} as Record<string,string>)[claim]||'La prueba no está habilitada.');
    // Never retry a submission: a timeout can still mean the provider accepted it.
    let r:Response;
    try{r=await provider(job.payload.model,job.payload.input);}catch{job=await update(job.id,{state:'unknown'});return reply(200,{job:await output(job)});}

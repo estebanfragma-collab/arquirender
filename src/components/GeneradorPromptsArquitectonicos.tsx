@@ -1420,7 +1420,7 @@ const GeneradorPromptsArquitectonicos = () => {
               )}
             </div>
           </div>
-          {userId && <div className="mt-4 border-t border-brand-border pt-4"><a href="/app/presentaciones" target="_blank" rel="noopener noreferrer" className="inline-flex rounded-md border border-[#EA580C]/40 px-4 py-2 text-sm font-bold text-[#EA580C] hover:bg-[#EA580C]/10">Presentaciones ↗</a><a href="/app/videos" target="_blank" rel="noopener noreferrer" className="ml-3 inline-flex rounded-md border border-[#EA580C]/40 px-4 py-2 text-sm font-bold text-[#EA580C] hover:bg-[#EA580C]/10">Estudio de video ↗</a><span className="ml-3 text-xs text-muted-foreground">Crea tus láminas y PDF con los renders de tu historial.</span></div>}
+          {userId && <div className="mt-4 border-t border-brand-border pt-4"><a href="/app/presentaciones" target="_blank" rel="noopener noreferrer" className="inline-flex rounded-md border border-[#EA580C]/40 px-4 py-2 text-sm font-bold text-[#EA580C] hover:bg-[#EA580C]/10">Presentaciones ↗</a><a href="/app/videos" target="_blank" rel="noopener noreferrer" className="ml-3 inline-flex rounded-md border border-[#EA580C]/40 px-4 py-2 text-sm font-bold text-[#EA580C] hover:bg-[#EA580C]/10">Estudio de video ↗</a><span className="ml-3 text-xs text-muted-foreground">Usa tus renders para crear presentaciones PDF y escenas de video.</span></div>}
         </div>
       </header>
 

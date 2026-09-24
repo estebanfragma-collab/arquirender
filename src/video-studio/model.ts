@@ -4,11 +4,11 @@ export const movements = [
   {id:'rise',label:'Elevación suave',instruction:'Small, slow upward camera movement; do not reveal a roof plan or hidden geometry.'},
   {id:'fixed',label:'Cámara fija · ambiente',instruction:'Locked-off camera. Only subtle natural environmental movement already supported by the reference.'},
 ];
-export type Scene = {id:string;name:string;mode:'animate'|'transition';startId:string;endId:string;movement:string;duration:5|10;format:'16:9'|'9:16'|'1:1';brief:string;prompt:string;notes:string;promptBasis:string};
+export type Scene = {presetId?:string;id:string;name:string;mode:'animate'|'transition';startId:string;endId:string;movement:string;duration:5|10;format:'16:9'|'9:16'|'1:1';brief:string;prompt:string;notes:string;promptBasis:string};
 export type RenderAsset = {id:string;src:string;name:string};
 export type VideoProject = {id:string;name:string;scenes:Scene[];revision:number;updated_at:string};
 export const newScene = (n=1):Scene => ({id:crypto.randomUUID(),name:`Escena ${String(n).padStart(2,'0')}`,mode:'animate',startId:'',endId:'',movement:'push',duration:5,format:'16:9',brief:'',prompt:'',notes:'',promptBasis:''});
-export function basis(s:Scene){return JSON.stringify([s.mode,s.startId,s.mode==='transition'?s.endId:'',s.movement,s.duration,s.format,s.brief]);}
+export function basis(s:Scene){return JSON.stringify([s.mode,s.startId,s.mode==='transition'?s.endId:'',s.movement,s.duration,s.format,s.brief,...(s.presetId?[s.presetId]:[])]);}
 export function sceneError(s:Scene,assets:RenderAsset[]){
   if(!assets.some(a=>a.id===s.startId))return 'Escoge la imagen inicial de esta escena.';
   if(s.mode==='transition'&&!assets.some(a=>a.id===s.endId))return 'Escoge la imagen final de esta escena.';
@@ -30,5 +30,5 @@ export function projectScript(name:string,scenes:Scene[],assets:RenderAsset[]){
 export function validScenes(value:unknown):value is Scene[]{
   if(!Array.isArray(value)||value.length<1||value.length>24)return false;
   const keys=['id','name','startId','endId','brief','prompt','notes','promptBasis'];
-  return new Set(value.map(s=>s?.id)).size===value.length && value.every(s=>s&&keys.every(k=>typeof s[k]==='string')&&s.id&&s.name.length<=80&&s.brief.length<=1000&&s.prompt.length<=2200&&s.notes.length<=700&&['animate','transition'].includes(s.mode)&&movements.some(m=>m.id===s.movement)&&[5,10].includes(s.duration)&&['16:9','9:16','1:1'].includes(s.format));
+  return new Set(value.map(s=>s?.id)).size===value.length && value.every(s=>s&&(s.presetId===undefined||typeof s.presetId==='string')&&keys.every(k=>typeof s[k]==='string')&&s.id&&s.name.length<=80&&s.brief.length<=1000&&s.prompt.length<=2200&&s.notes.length<=700&&['animate','transition'].includes(s.mode)&&movements.some(m=>m.id===s.movement)&&[5,10].includes(s.duration)&&['16:9','9:16','1:1'].includes(s.format));
 }

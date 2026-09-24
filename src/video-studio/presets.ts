@@ -1,0 +1,98 @@
+import {basis, type Scene} from './model';
+export const videoPresets = [
+  {
+    "id": "approach",
+    "label": "Acercamiento al proyecto",
+    "description": "Avanza hacia el acceso. Una imagen, 10 segundos.",
+    "status": "Seleccionada",
+    "mode": "animate",
+    "duration": 10,
+    "movement": "push",
+    "prompt": "A continuous ten-second architectural tracking shot. The camera travels directly FORWARD toward the ground-floor entrance of the reference building, covering substantial distance. Begin in the wide street view and finish near the entrance where wood, glass and vegetation fill most of the frame. Constant purposeful forward travel with visible foreground parallax, gentle ease-out only at the very end. Preserve all architecture, floors, windows and materials. No lateral orbit, no cuts or dissolves."
+  },
+  {
+    "id": "lateral",
+    "label": "Recorrido lateral",
+    "description": "Muestra la fachada con desplazamiento lateral.",
+    "status": "Seleccionada",
+    "mode": "animate",
+    "duration": 5,
+    "movement": "slide",
+    "prompt": "One continuous 5-second photorealistic architectural shot. Start from the exact reference image. Truck the camera RIGHT three metres along the street while panning slightly left to hold the glazed corner centered. Foreground trees and cars cross frame faster than the facade. Clear lateral parallax. Establish the specified movement immediately, maintain it through the middle, and ease out for a clean final half-second. Preserve the original building, floor count, facade materials, structural columns, window grid and proportions. No added floors, moving walls, melting glass, cuts, text or logos. Do not invent hidden interiors. Natural realistic perspective."
+  },
+  {
+    "id": "day-night",
+    "label": "Día a noche",
+    "description": "Dos renders del mismo encuadre con distinta iluminación.",
+    "status": "Seleccionada",
+    "mode": "transition",
+    "duration": 5,
+    "movement": "fixed",
+    "prompt": "Locked-off architectural timelapse. Start exactly at the daylight reference and finish exactly at the nighttime reference. Keep the camera fixed. Daylight fades through sunset into blue hour, the sky darkens, warm interior lights and soffit lights progressively switch on. Preserve the building geometry, floors, windows and materials. No orbit, no camera travel, no melting or reconstruction. A continuous lighting transformation, not a crossfade."
+  },
+  {
+    "id": "render-transition",
+    "label": "Entre dos renders",
+    "description": "Conecta dos vistas compatibles sin personas.",
+    "status": "Por validar",
+    "mode": "transition",
+    "duration": 5,
+    "movement": "slide",
+    "prompt": "A continuous architectural camera transition between the supplied two renders of the same project. Travel naturally from the initial view toward the final view. Preserve the architecture, furniture and materials, with no added people. No crossfade, no melting geometry, no abrupt jump. Use a short coherent camera path."
+  },
+  {
+    "id": "aerial",
+    "label": "Revelación aérea",
+    "description": "Abre el plano hacia una vista más amplia del entorno.",
+    "status": "Seleccionada para edición",
+    "mode": "transition",
+    "duration": 5,
+    "movement": "rise",
+    "prompt": "One continuous aerial drone pullback. Start close to the house at the exact first reference. Fly backward and rise steadily, revealing the whole garden, forest and distant landscape, ending at the wide aerial reference. Strong visible retreat and elevation change throughout the shot. Keep the house rigid and unchanged, no orbit, no dissolves or transformations. Smooth controlled deceleration at the end."
+  },
+  {
+    "id": "model",
+    "label": "Giro de maqueta",
+    "description": "Gira el modelo físico y su base como un conjunto.",
+    "status": "Seleccionada",
+    "mode": "animate",
+    "duration": 5,
+    "movement": "fixed",
+    "prompt": "Product photography of a physical architectural scale model on its white display plinth. The entire model and plinth rotate together clockwise by approximately 35 degrees on a hidden turntable. The camera stays fixed at the same height and distance. Clearly visible rotation revealing the adjacent facade; miniature trees rotate with the base. Preserve every floor, window and miniature material. Soft studio light, static softly blurred background. No zoom, no morphing, no full-scale city transformation."
+  },
+  {
+    "id": "rain",
+    "label": "Cambio de clima",
+    "description": "Del render seco al render con lluvia, con encuadre similar.",
+    "status": "En pruebas",
+    "mode": "transition",
+    "duration": 5,
+    "movement": "fixed",
+    "prompt": "Locked tripod architectural weather timelapse, same house and same camera throughout. Begin with the dry daylight reference. Clouds gradually thicken, light becomes overcast, rain starts gently then grows, the deck and gravel gradually darken with moisture and puddles develop realistic reflections. Finish at the rainy reference. Preserve every wall, window, roof line and object. Continuous weather evolution, no crossfade, no orbit, no zoom, no structural changes."
+  },
+  {
+    "id": "material",
+    "label": "Detalle de materiales",
+    "description": "Deslizamiento corto sobre una textura en primer plano.",
+    "status": "En pruebas",
+    "mode": "animate",
+    "duration": 5,
+    "movement": "slide",
+    "prompt": "Architectural macro cinematography. A short smooth lateral camera slide of approximately 20 centimeters parallel to the textured concrete wall. Keep optical focus on the fine pores and grain of the wall; warm sunset grazes the texture. The distant glass frame and reflected mountains remain softly out of focus. Clearly visible subtle foreground parallax, constant focal length. Preserve the wall texture and straight metal profiles. No focus change, no orbit, no added objects, no morphing."
+  },
+  {
+    "id": "roof",
+    "label": "Revelar distribución",
+    "description": "De la vista exterior a una vista sin cubierta.",
+    "status": "Experimental",
+    "mode": "transition",
+    "duration": 5,
+    "movement": "rise",
+    "prompt": "Architectural exploded-view reveal in one continuous shot. Start at the supplied completed house aerial view. Its roof lifts vertically upward as one intact rigid assembly, progressively uncovering the furnished rooms beneath. Gently raise and tilt the camera downward to reach the supplied cutaway view. End with the roof out of frame and the room layout visible. Preserve all existing walls, furniture, openings and floor levels. The roof must physically lift, not dissolve or melt. No demolition, no orbit, no collapsing walls, no jump cut."
+  }
+] as const;
+export function applyPreset(scene:Scene,id:string):Scene {
+ const preset=videoPresets.find(p=>p.id===id);if(!preset)return scene;
+ const next:Scene={...scene,presetId:id,name:preset.label,mode:preset.mode,duration:preset.duration,movement:preset.movement,prompt:preset.prompt,notes:preset.description,brief:'',endId:preset.mode==='transition'?scene.endId:''};
+ next.promptBasis=basis(next);return next;
+}

@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { VideoProject, Scene, RenderAsset } from './model';
+import {videoPresets} from './presets';
 import { prepareImage } from '@/presentaciones-demo/analysis';
 // These new tables are absent from the repository's generated schema until it is refreshed.
 const db=supabase as any;
@@ -20,7 +21,7 @@ export async function saveProject(userId:string,name:string,scenes:Scene[],exist
 export async function proposeScene(scene:Scene,assets:RenderAsset[]):Promise<{prompt:string;notes:string}>{
   const ids=scene.mode==='transition'?[scene.startId,scene.endId]:[scene.startId];
   const images=await Promise.all(ids.map(async id=>{const asset=assets.find(a=>a.id===id);if(!asset)throw new Error('No se encontró una imagen de la escena.');return prepareImage(asset.src);}));
-  const {data,error}=await supabase.functions.invoke('video-scene-prompt',{body:{images,mode:scene.mode,movement:scene.movement,duration:scene.duration,format:scene.format,brief:scene.brief},signal:AbortSignal.timeout(60000)});
+  const {data,error}=await supabase.functions.invoke('video-scene-prompt',{body:{images,mode:scene.mode,movement:scene.movement,duration:scene.duration,format:scene.format,brief:[videoPresets.find(p=>p.id===scene.presetId)?.prompt,scene.brief].filter(Boolean).join(' Intención adicional: ').slice(0,1000)},signal:AbortSignal.timeout(60000)});
   if(error){let message='No se pudo preparar el prompt. Tu texto anterior se conserva.';try{const result=await error.context?.json();if(typeof result?.error==='string')message=result.error;}catch{}throw new Error(message);}
   if(typeof data?.prompt!=='string'||typeof data?.notes!=='string')throw new Error('La respuesta de la IA no es válida.');return data;
 }
