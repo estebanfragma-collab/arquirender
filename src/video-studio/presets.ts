@@ -84,7 +84,7 @@ export const videoPresets = [
     "id": "roof",
     "label": "Revelar distribución",
     "description": "De la vista exterior a una vista sin cubierta.",
-    "status": "Experimental",
+    "status": "Seleccionada",
     "mode": "transition",
     "duration": 5,
     "movement": "rise",

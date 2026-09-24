@@ -1,0 +1,27 @@
+import {act,fireEvent,render,within,cleanup} from '@testing-library/react';
+import {afterEach,expect,it,vi} from 'vitest';
+import Clips from './Clips';
+import type {Scene} from './model';
+const {invoke}=vi.hoisted(()=>({invoke:vi.fn()}));
+vi.mock('@/integrations/supabase/client',()=>({supabase:{functions:{invoke}}}));
+afterEach(()=>{cleanup();vi.clearAllMocks();});
+it('keeps cost and confirmation in the composer and sends results to the separate panel',async()=>{
+ Object.defineProperty(AbortSignal,'timeout',{configurable:true,value:()=>new AbortController().signal});
+ const panel=document.createElement('div');document.body.append(panel);
+ const scene:Scene={id:'scene',name:'Cubierta',mode:'animate',startId:'render',endId:'',movement:'push',duration:5,format:'16:9',brief:'',prompt:'Reveal the roof',notes:'',promptBasis:''};
+ const job={id:'job',sceneId:'scene',name:'Cubierta',model:'dop',duration:5,state:'quoted',estimatedUsd:.125,url:null,expiresAt:''};
+ let finish:(value:unknown)=>void=()=>{};
+ invoke.mockImplementation((_name,{body})=>body.action==='list'?Promise.resolve({data:{jobs:[]}}):body.action==='quote'?Promise.resolve({data:{job}}):new Promise(resolve=>{finish=resolve;}));
+ const view=render(<Clips scene={scene} blocked={false} resultsPanel={panel}/>);
+ await within(panel).findByText('Tu video aparecerá aquí cuando lo envíes a generar.');
+ fireEvent.click(within(view.container).getByText('Consultar costo de esta toma'));
+ const generate=await within(view.container).findByText('Generar video · USD 0.125');
+ expect(within(panel).queryByText('Generar video · USD 0.125')).toBeNull();
+ expect(invoke.mock.calls.some(([,args])=>args.body.action==='start')).toBe(false);
+ fireEvent.click(generate);
+ await within(panel).findByText('Enviando · consulta el estado antes de repetir');
+ expect(within(view.container).queryByText('Cubierta')).toBeNull();
+ await act(async()=>finish({data:{job:{...job,state:'completed',url:'https://example.com/clip.mp4'}}}));
+ expect(within(panel).getByText('Clip listo')).toBeTruthy();
+ panel.remove();
+});
