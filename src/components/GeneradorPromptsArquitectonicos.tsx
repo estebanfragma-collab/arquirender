@@ -135,132 +135,6 @@ const clasePildora = (activo: boolean) =>
 
 const claseVerTodos = "mt-3 text-[11px] font-bold text-muted-foreground underline transition hover:text-[#EA580C]";
 
-/**
- * Fila horizontal de presets de transformación. Scrollea en pantallas estrechas.
- *
- * Estados del card: hover cambia solo el borde; seleccionado cambia borde Y título.
- * El color del título es lo único que los distingue.
- */
-const PresetsRow = ({
-  activo,
-  onSeleccionar,
-  transformacion,
-  preservar,
-  negativePrompt,
-  avisarBase,
-  onVolverAlOriginal,
-  deshabilitado,
-}: {
-  activo: string | null;
-  onSeleccionar: (preset: Preset) => void;
-  transformacion: string;
-  preservar: string[];
-  negativePrompt: string;
-  /** El preset activo parte de la foto original pero hay un render encima. */
-  avisarBase: boolean;
-  onVolverAlOriginal: () => void;
-  /** Hay representaciones activas: los presets no tendrían efecto. */
-  deshabilitado: boolean;
-}) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [fade, setFade] = useState({ izquierda: false, derecha: false });
-
-  // Cada extremo solo se difumina si de ese lado queda contenido cortado.
-  const actualizarFade = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const { scrollLeft, scrollWidth, clientWidth } = el;
-    setFade({
-      izquierda: scrollLeft > 1,
-      derecha: scrollLeft + clientWidth < scrollWidth - 1,
-    });
-  }, []);
-
-  useEffect(() => {
-    actualizarFade();
-    const el = scrollRef.current;
-    if (!el) return;
-    // El ancho disponible cambia con el viewport y con el layout del panel.
-    const observer = new ResizeObserver(actualizarFade);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [actualizarFade]);
-
-  return (
-    <div className={`border-t border-brand-border px-5 py-5 sm:px-6 ${deshabilitado ? "pointer-events-none opacity-40" : ""}`} aria-disabled={deshabilitado || undefined}>
-      <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
-        <span>Presets de transformación</span>
-        <span className="font-bold text-muted-foreground">Opcional</span>
-      </label>
-
-      <div className="relative -mx-1">
-        <div ref={scrollRef} onScroll={actualizarFade} className="grid grid-cols-1 gap-3 px-1 pb-2 sm:grid-cols-2">
-          {PRESETS_VISIBLES.map((preset) => {
-            const seleccionado = activo === preset.id;
-            return (
-              <button
-                key={preset.id}
-                type="button"
-                disabled={deshabilitado}
-                onClick={() => onSeleccionar(preset)}
-                aria-pressed={seleccionado}
-                className={`flex w-full flex-col gap-1 rounded-md border bg-transparent p-3 text-left transition ${
-                  seleccionado ? "border-[#EA580C]" : "border-brand-border hover:border-[#EA580C]"
-                }`}
-              >
-                <span className={`text-xs font-extrabold ${seleccionado ? "text-[#EA580C]" : "text-foreground"}`}>
-                  {preset.nombre}
-                </span>
-                <span className="text-[11px] leading-snug text-muted-foreground">{preset.descripcion}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div
-          aria-hidden="true"
-          className={`pointer-events-none absolute inset-y-0 left-0 w-10 transition-opacity duration-200 ${fade.izquierda ? "opacity-100" : "opacity-0"}`}
-          style={{ background: "linear-gradient(to right, hsl(var(--card)), transparent)" }}
-        />
-        <div
-          aria-hidden="true"
-          className={`pointer-events-none absolute inset-y-0 right-0 w-10 transition-opacity duration-200 ${fade.derecha ? "opacity-100" : "opacity-0"}`}
-          style={{ background: "linear-gradient(to left, hsl(var(--card)), transparent)" }}
-        />
-      </div>
-
-      {/* Qué dejó cargado el preset. Solo lectura: los campos no tienen UI propia. */}
-      {activo && (
-        <div className="mt-3 space-y-1.5 rounded-md border border-brand-border bg-input/40 p-3 text-[11px] leading-snug text-muted-foreground">
-          {transformacion && (
-            <p>
-              <span className="font-bold">Transformación:</span> {transformacion}
-            </p>
-          )}
-          {preservar.length > 0 && (
-            <p>
-              <span className="font-bold">Preservar:</span> {preservar.join(" · ")}
-            </p>
-          )}
-          {negativePrompt && (
-            <p>
-              <span className="font-bold">Evitar:</span> {negativePrompt}
-            </p>
-          )}
-          {avisarBase && (
-            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-[#EA580C]">
-              <span className="font-bold">Este preset trabaja mejor desde tu foto original.</span>
-              <button type="button" onClick={onVolverAlOriginal} className="font-extrabold underline transition hover:opacity-80">
-                Volver al original
-              </button>
-            </p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
 const extraerErrorRender = async (error: unknown) => {
   if (error && typeof error === "object" && "context" in error) {
     const respuesta = (error as { context?: Response }).context;
@@ -470,12 +344,22 @@ const categoriasRepresentacion = [
   { categoria: "Atmósfera", icono: "🌙", opciones: ["Nocturno", "Día lluvioso"] },
   { categoria: "Cámara", icono: "📷", opciones: ["Vista lateral", "Vista aérea de dron"] },
   { categoria: "Detalles", icono: "🔍", opciones: ["Close up", "Macro close up", "Actividad close up"] },
-  { categoria: "Documentación", icono: "📐", opciones: ["Axonométrico"] },
+  { categoria: "Documentación", icono: "📐", opciones: ["Axonométrico", "Maqueta"] },
   { categoria: "Portfolio", icono: "🗂️", opciones: ["Lámina de presentación"] },
-  { categoria: "Materiales", icono: "🪨", opciones: ["Moodboard", "Maqueta"] },
+  { categoria: "Materiales", icono: "🪨", opciones: ["Moodboard"] },
   { categoria: "Transformaciones", icono: "⚡", opciones: ["Lugar abandonado", "Remodelación"] },
-  { categoria: "Realismo", icono: "📸", opciones: ["Fotografía real"] },
-] as const;
+  { categoria: "Ambientación", icono: "🪴", opciones: [] },
+ ] as const;
+
+// The category controls share one visual language; each retains its own generator.
+const presetsPorCategoria: Record<string, string[]> = {
+  "Atmósfera": ["nocturno"],
+  "Cámara": ["ampliar"],
+  "Materiales": ["acabados"],
+  "Transformaciones": ["obra-gris"],
+  "Ambientación": ["staging", "limpiar", "personas"],
+};
+const nombrePreset = (preset: Preset) => preset.id === "nocturno" ? "Noche interior" : preset.id === "staging" ? "Amoblar espacio" : preset.nombre;
 
 // Normaliza la etiqueta a clave (minúsculas, sin tildes, sin conectores, underscore).
 // Espeja slugRepresentacion de la Edge Function para que todas las opciones —no solo
@@ -1567,25 +1451,21 @@ const GeneradorPromptsArquitectonicos = () => {
               </p>
             )}
             <p className="mb-4 text-xs text-muted-foreground">Cuando el render esté listo, crea otras vistas, atmósferas o propuestas. Elige una transformación o selecciona representaciones. Cada representación genera una imagen; las transformaciones se prueban de una en una.</p>
-          <PresetsRow
-            activo={presetActivo}
-            onSeleccionar={aplicarPreset}
-            transformacion={valorTexto(valores.transformacion)}
-            preservar={Array.isArray(valores.preservar) ? valores.preservar : []}
-            negativePrompt={valorTexto(valores.negativePrompt)}
-            avisarBase={PRESETS.find((p) => p.id === presetActivo)?.base === "original" && !!imagenRender}
-            onVolverAlOriginal={volverAlOriginal}
-            deshabilitado={false}
-          />
+
 
             <div className="grid gap-4 sm:grid-cols-2">
-              {categoriasRepresentacion.filter(cat => cat.categoria !== "Realismo").map((cat) => (
+              {categoriasRepresentacion.map((cat) => (
                 <div key={cat.categoria} className="rounded-xl border border-brand-border bg-input p-4">
                   <div className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
                     <span aria-hidden="true">{cat.icono}</span>
                     <span>{cat.categoria}</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    {(presetsPorCategoria[cat.categoria] || []).map(id => {
+                      const preset = PRESETS_VISIBLES.find(p => p.id === id)!;
+                      const activo = presetActivo === id;
+                      return <button key={id} type="button" aria-pressed={activo} title={preset.descripcion} onClick={() => aplicarPreset(preset)} className={`rounded-full border px-3 py-2 text-xs font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-foreground/30 ${activo ? "border-[#EA580C] bg-[#EA580C] text-white" : "border-[hsl(var(--pill-border))] bg-transparent text-foreground hover:border-foreground/40"}`}>{nombrePreset(preset)}</button>;
+                    })}
                     {cat.opciones.map((op) => {
                       const activo = selectedRepresentaciones.includes(op);
                       // Con el tope alcanzado solo se pueden quitar, no añadir.
@@ -1606,6 +1486,7 @@ const GeneradorPromptsArquitectonicos = () => {
                       );
                     })}
                   </div>
+                  {(presetsPorCategoria[cat.categoria] || []).includes(presetActivo || "") && <div className="mt-3 text-xs leading-relaxed text-muted-foreground"><p>{PRESETS.find(p => p.id === presetActivo)?.descripcion}</p>{PRESETS.find(p => p.id === presetActivo)?.base === "original" && imagenRender && <p className="mt-2">Esta opción funciona mejor desde la imagen original. <button type="button" onClick={volverAlOriginal} className="text-brand-gold underline">Volver al original</button></p>}</div>}
                 </div>
               ))}
             </div>
