@@ -5,3 +5,29 @@
 .editor-controls{border:0;margin:0;padding:0;min-width:0}.editor-controls:disabled{opacity:.7}.cloud-toolbar{display:flex;align-items:end;gap:12px;flex-wrap:wrap;padding:18px 36px;background:#fff;border-bottom:1px solid #dedfd7}.cloud-toolbar label{font-size:11px;color:#666}.cloud-toolbar input{display:block;margin-top:6px;min-width:260px;padding:10px;border:1px solid #bbb;border-radius:4px;font:14px Arial}.cloud-toolbar button,.cloud-list button{padding:10px;font-size:12px}.cloud-toolbar>span{font-size:11px;color:#616b5b;align-self:center;margin-left:auto}.cloud-list{margin:20px 36px;padding:20px;border:1px solid #cbd0c5;background:white}.cloud-list>div,.cloud-list article{display:flex;align-items:center;gap:12px}.cloud-list h2{margin-right:auto}.cloud-list article{border-top:1px solid #ddd;padding:14px 0;margin-top:12px}.cloud-list article>div{flex:1}.cloud-list small{display:block;font-size:10px;color:#777;margin-top:5px}.cloud-list p{padding-top:18px;font-size:13px}.global-status:not(:empty){position:sticky;bottom:0;background:#fff4e9;border-top:1px solid #edcbb5;z-index:4}@media(max-width:650px){.cloud-toolbar{padding:16px}.cloud-toolbar label,.cloud-toolbar input{width:100%;min-width:0}.cloud-list{margin:12px;padding:12px}.cloud-toolbar>span{margin-left:0}.cloud-list article{flex-wrap:wrap}}@media print{.editor-controls{display:none!important}}
 
 .analysis-panel{margin:22px 0;padding:18px 14px;background:#f1eee7;border:1px solid #d4d4c8;border-radius:8px}.analysis-panel h3{font-size:16px;margin:0 0 12px}.analysis-panel p,.analysis-panel small{font-size:12px;line-height:1.65;display:block;color:#626858}.analysis-panel label{margin-top:14px}.analysis-panel button{width:100%;padding:11px 8px;margin:8px 0;white-space:normal;font-size:12px}.analysis-panel textarea{box-sizing:border-box;width:100%;font:inherit;padding:10px;border:1px solid #d4d4c8;border-radius:4px;resize:vertical}.analysis-panel [role=alert]{color:#a13d22}.ai-proposal{border-top:1px solid #c9c9bd;padding-top:18px;margin-top:20px}.analysis-panel .number-option{display:flex;gap:8px;align-items:center}.analysis-panel .number-option input{width:auto}
+
+/* Workspace theme only: exported sheets retain their original design. */
+.studio-nav{display:flex;align-items:center;gap:24px;font-size:13px}.studio-nav a{text-decoration:none;color:inherit}.studio-nav [aria-current]{color:#ff9b67}
+@media screen{
+ body{background:#101012;color:#f4f4f5;color-scheme:dark}
+ button{background:#1b1b1f;border-color:#303036;color:#f4f4f5}
+ button:hover:not(:disabled){background:#29231f;border-color:#f26922}
+ .top{background:#111113;height:auto;min-height:82px;flex-wrap:wrap;padding-top:18px;padding-bottom:18px;border-bottom:1px solid #303036}
+ .brand span{color:#f26922}.brand small,.demo-label{color:#a4a4ab}
+ .primary{background:#f26922;color:white}.primary:hover:not(:disabled){background:#cd4818}
+ .save-button{background:#1b1b1f;border-color:#303036;color:#f4f4f5;text-decoration:none}
+ .intro p,.local-note,.section-title>span,.template small,.format,.library>p,.canvas-bar>span,.page-tools>span,.properties label,.hint p,.next p,.field-help,.preview-heading,footer,.cloud-toolbar label,.cloud-toolbar>span,.cloud-list small{color:#a4a4ab}
+ .eyebrow,.check,.page-strip button span{color:#ff9b67}
+ .local-note,.workspace,.library,.properties,.hint,.cloud-toolbar,.cloud-list,.cloud-list article,.analysis-panel,.ai-proposal{border-color:#303036}
+ .template{background:#1b1b1f;border-color:#303036}.template.selected,.page-strip button.active{background:#342219;border-color:#f26922}
+ .library,.properties,.cloud-toolbar,.cloud-list{background:#141416}.canvas{background:#101012}
+ .asset b{background:#303036;color:white}.asset.chosen{border-color:#f26922}.asset.chosen b{background:#f26922}
+ .upload{border-color:#55555e}.next,.analysis-panel{background:#1b1b1f}
+ .properties textarea,.cloud-toolbar input,.analysis-panel textarea{background:#1b1b1f;color:#f4f4f5;border-color:#3b3b43;color-scheme:dark}
+ .analysis-panel p,.analysis-panel small{color:#b4b4bd}.analysis-panel [role=alert]{color:#ffc391}
+ .global-status{color:#ffc391}.global-status:not(:empty){background:#302219;border-color:#68402d}
+ .sheet{color:#20221f;color-scheme:light;box-shadow:0 10px 32px #0005}
+ .sheet .eyebrow{color:#ab461f}.sheet.inmersiva .eyebrow{color:#eee}
+}
+@media(max-width:1050px){.studio-nav{gap:16px}.top .demo-label{display:none}}
+@media(max-width:650px){.studio-nav{order:2;flex-basis:100%;padding-top:8px;gap:22px}.top{padding:16px}.top .primary{margin-left:0}}
