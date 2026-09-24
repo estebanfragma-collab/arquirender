@@ -1327,14 +1327,41 @@ const GeneradorPromptsArquitectonicos = () => {
             </div>
           )}
 
+          <section aria-label="Descripción e indicaciones" className="border-t border-brand-border px-5 py-5 sm:px-6">
+            <h3 className="mb-2 text-sm font-bold text-foreground">Descripción e indicaciones</h3>
+            <p className="mb-5 text-xs text-muted-foreground">Revisa lo que detectó la IA, añade tus indicaciones y define qué quieres evitar.</p>
+            <div className="space-y-5">
           {campoPorId("descripcion") && (
-            <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+            <div className="space-y-2">
               <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
                 <span>{campoPorId("descripcion")!.etiqueta}</span>
               </label>
               {renderCampo(campoPorId("descripcion")!)}
             </div>
           )}
+
+          {/* Notas adicionales, justo debajo de la descripción */}
+          {campoPorId("notas") && (
+            <div className="space-y-2">
+              <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
+                <span>{campoPorId("notas")!.etiqueta}</span>
+                <span className="font-bold text-muted-foreground">Opcional</span>
+              </label>
+              {renderCampo(campoPorId("notas")!)}
+            </div>
+          )}
+
+          <div className="space-y-2" aria-disabled={repsMandan || undefined}>
+            <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
+              <span>Qué evitar en la generación</span>
+              <span className="font-bold text-muted-foreground">Opcional</span>
+            </label>
+            <input aria-label="Qué evitar en la generación" disabled={repsMandan} className={clasesControl} placeholder="Ej: personas, texto, marcas de agua, desenfoque" value={valorTexto(valores.negativePrompt)} onChange={(e) => actualizarCampo({ id: "negativePrompt", etiqueta: "Qué evitar", tipo: "textarea" }, e.target.value)} />
+            {repsMandan && <p className="text-xs text-muted-foreground">Este campo se aplica al iterar. Fotografía real y las representaciones usan sus propias restricciones.</p>}
+          </div>
+
+            </div>
+          </section>
 
           <div className="border-t border-brand-border px-5 py-5 sm:px-6">
             <h3 className="mb-2 text-sm font-bold text-brand-gold">1 · Crea tu render fotorrealista</h3>
@@ -1349,17 +1376,6 @@ const GeneradorPromptsArquitectonicos = () => {
             {imagenRender && <button type="button" className="ml-3 text-xs text-muted-foreground underline" onClick={volverAlOriginal}>Volver a la imagen original</button>}
             {repsMandan && <p className="mt-3 text-xs text-muted-foreground">Fotografía real y las representaciones usan un prompt propio. Pulsa «Preparar una iteración» para activar Estilo y Luz.</p>}
           </div>
-
-          {/* Notas adicionales, justo debajo de la descripción */}
-          {campoPorId("notas") && (
-            <div className="border-t border-brand-border px-5 py-5 sm:px-6">
-              <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
-                <span>{campoPorId("notas")!.etiqueta}</span>
-                <span className="font-bold text-muted-foreground">Opcional</span>
-              </label>
-              {renderCampo(campoPorId("notas")!)}
-            </div>
-          )}
 
           {/* Estilo y Luz: tarjetas con el mismo formato que las de Láminas. */}
           <div className={`border-t border-brand-border px-5 py-5 sm:px-6 ${claseBloqueo}`} aria-disabled={repsMandan || undefined}>
@@ -1427,14 +1443,6 @@ const GeneradorPromptsArquitectonicos = () => {
               {campoPorId("materiales") && renderCampo(campoPorId("materiales")!)}
             </div>
           ), repsMandan)}
-
-          <div className={`border-t border-brand-border px-5 py-5 sm:px-6 ${claseBloqueo}`} aria-disabled={repsMandan || undefined}>
-            <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
-              <span>Qué evitar en la generación</span>
-              <span className="font-bold text-muted-foreground">Opcional</span>
-            </label>
-            <input disabled={repsMandan} className={clasesControl} placeholder="Ej: personas, texto, marcas de agua, desenfoque" value={valorTexto(valores.negativePrompt)} onChange={(e) => actualizarCampo({ id: "negativePrompt", etiqueta: "Qué evitar", tipo: "textarea" }, e.target.value)} />
-          </div>
 
           {/* Representaciones: multi-selección con tope. Cada una genera una
               pieza y cuesta un crédito; su prompt fijo reemplaza al de estilo. */}
