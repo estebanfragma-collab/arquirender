@@ -194,7 +194,7 @@ const PresetsRow = ({
       </label>
 
       <div className="relative -mx-1">
-        <div ref={scrollRef} onScroll={actualizarFade} className="flex gap-3 overflow-x-auto px-1 pb-2">
+        <div ref={scrollRef} onScroll={actualizarFade} className="grid grid-cols-1 gap-3 px-1 pb-2 sm:grid-cols-2">
           {PRESETS_VISIBLES.map((preset) => {
             const seleccionado = activo === preset.id;
             return (
@@ -204,7 +204,7 @@ const PresetsRow = ({
                 disabled={deshabilitado}
                 onClick={() => onSeleccionar(preset)}
                 aria-pressed={seleccionado}
-                className={`flex w-[210px] shrink-0 flex-col gap-1 rounded-md border bg-transparent p-3 text-left transition ${
+                className={`flex w-full flex-col gap-1 rounded-md border bg-transparent p-3 text-left transition ${
                   seleccionado ? "border-[#EA580C]" : "border-brand-border hover:border-[#EA580C]"
                 }`}
               >
@@ -589,10 +589,11 @@ const GeneradorPromptsArquitectonicos = () => {
 
   /** Multi-selección de representaciones, con tope. Un segundo clic quita. */
   const toggleRepresentacion = (opcion: string) => {
+    if (presetActivo) { const p = PRESETS.find(p => p.id === presetActivo); if (p) aplicarPreset(p); }
     setSelectedRepresentaciones((actual) => {
       if (actual.includes(opcion)) return actual.filter((o) => o !== opcion);
       if (actual.length >= MAX_REPRESENTACIONES) return actual;
-      return [...actual, opcion];
+      return [...actual.filter(o => o !== "Fotografía real"), opcion];
     });
   };
 
@@ -610,6 +611,7 @@ const GeneradorPromptsArquitectonicos = () => {
   const valoresPrevios = useRef<ValoresFormulario | null>(null);
 
   const aplicarPreset = (preset: Preset) => {
+    setSelectedRepresentaciones([]);
     const deseleccionar = presetActivo === preset.id;
     const base = valoresPrevios.current;
 
@@ -1450,6 +1452,20 @@ const GeneradorPromptsArquitectonicos = () => {
             </div>
           )}
 
+          <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+            <h3 className="mb-2 text-sm font-bold text-brand-gold">1 · Crea tu render fotorrealista</h3>
+            <p className="mb-4 text-xs text-muted-foreground">Después de subir y describir tu imagen, empieza con Fotografía real. Luego podrás ajustar el resultado.</p>
+            <button type="button" aria-pressed={selectedRepresentaciones.includes("Fotografía real")} className={clasePildora(selectedRepresentaciones.includes("Fotografía real"))} onClick={() => { if(presetActivo){ const p=PRESETS.find(p=>p.id===presetActivo); if(p) aplicarPreset(p); } setSelectedRepresentaciones(selectedRepresentaciones.includes("Fotografía real") ? [] : ["Fotografía real"]); }}>Fotografía real</button>
+            <p className="mt-3 text-xs text-muted-foreground">Selecciona esta opción y pulsa Generar al final del formulario.</p>
+          </div>
+          <div className="border-t border-brand-border px-5 py-5 sm:px-6">
+            <h3 className="mb-2 text-sm font-bold text-brand-gold">2 · Itera y mejora tu render</h3>
+            <p className="mb-3 text-xs text-muted-foreground">Ajusta luz, estilo y materiales. En Notas adicionales puedes pedir vegetación, personas, otro cielo o cambios concretos. Al preparar una iteración se toma la imagen del visor como base. Puedes volver a la imagen original.</p>
+            <button type="button" className={clasePildora(!repsMandan && !presetActivo)} onClick={() => { if(imagenVisor) setImagenRenders(actual => ({...actual,[tabActiva]:imagenVisor})); setSelectedRepresentaciones([]); if(presetActivo){ const p=PRESETS.find(p=>p.id===presetActivo); if(p) aplicarPreset(p); } }}>Preparar una iteración</button>
+            {imagenRender && <button type="button" className="ml-3 text-xs text-muted-foreground underline" onClick={volverAlOriginal}>Volver a la imagen original</button>}
+            {repsMandan && <p className="mt-3 text-xs text-muted-foreground">Fotografía real y las representaciones usan un prompt propio. Pulsa «Preparar una iteración» para activar Estilo y Luz.</p>}
+          </div>
+
           {/* Notas adicionales, justo debajo de la descripción */}
           {campoPorId("notas") && (
             <div className="border-t border-brand-border px-5 py-5 sm:px-6">
@@ -1460,17 +1476,6 @@ const GeneradorPromptsArquitectonicos = () => {
               {renderCampo(campoPorId("notas")!)}
             </div>
           )}
-
-          <PresetsRow
-            activo={presetActivo}
-            onSeleccionar={aplicarPreset}
-            transformacion={valorTexto(valores.transformacion)}
-            preservar={Array.isArray(valores.preservar) ? valores.preservar : []}
-            negativePrompt={valorTexto(valores.negativePrompt)}
-            avisarBase={PRESETS.find((p) => p.id === presetActivo)?.base === "original" && !!imagenRender}
-            onVolverAlOriginal={volverAlOriginal}
-            deshabilitado={repsMandan}
-          />
 
           {/* Estilo y Luz: tarjetas con el mismo formato que las de Láminas. */}
           <div className={`border-t border-brand-border px-5 py-5 sm:px-6 ${claseBloqueo}`} aria-disabled={repsMandan || undefined}>
@@ -1533,13 +1538,27 @@ const GeneradorPromptsArquitectonicos = () => {
             </div>
           </div>
 
+          {renderAcordeon("materiales", "Materiales a aplicar", (
+            <div className="space-y-5">
+              {campoPorId("materiales") && renderCampo(campoPorId("materiales")!)}
+            </div>
+          ), repsMandan)}
+
+          <div className={`border-t border-brand-border px-5 py-5 sm:px-6 ${claseBloqueo}`} aria-disabled={repsMandan || undefined}>
+            <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
+              <span>Qué evitar en la generación</span>
+              <span className="font-bold text-muted-foreground">Opcional</span>
+            </label>
+            <input disabled={repsMandan} className={clasesControl} placeholder="Ej: personas, texto, marcas de agua, desenfoque" value={valorTexto(valores.negativePrompt)} onChange={(e) => actualizarCampo({ id: "negativePrompt", etiqueta: "Qué evitar", tipo: "textarea" }, e.target.value)} />
+          </div>
+
           {/* Representaciones: multi-selección con tope. Cada una genera una
               pieza y cuesta un crédito; su prompt fijo reemplaza al de estilo. */}
           <div className="border-t border-brand-border px-5 py-5 sm:px-6">
             <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
-              <span>Representaciones</span>
+              <span>3 · Representaciones y transformaciones</span>
               <span className="font-bold text-muted-foreground">
-                {repsMandan ? `${selectedRepresentaciones.length} de ${MAX_REPRESENTACIONES}` : "Opcional"}
+                {repsMandan && !selectedRepresentaciones.includes("Fotografía real") ? `${selectedRepresentaciones.length} de ${MAX_REPRESENTACIONES}` : "Opcional"}
               </span>
             </label>
             {repsMandan && (
@@ -1547,8 +1566,20 @@ const GeneradorPromptsArquitectonicos = () => {
                 Las representaciones usan su propia configuración.
               </p>
             )}
+            <p className="mb-4 text-xs text-muted-foreground">Cuando el render esté listo, crea otras vistas, atmósferas o propuestas. Elige una transformación o selecciona representaciones. Cada representación genera una imagen; las transformaciones se prueban de una en una.</p>
+          <PresetsRow
+            activo={presetActivo}
+            onSeleccionar={aplicarPreset}
+            transformacion={valorTexto(valores.transformacion)}
+            preservar={Array.isArray(valores.preservar) ? valores.preservar : []}
+            negativePrompt={valorTexto(valores.negativePrompt)}
+            avisarBase={PRESETS.find((p) => p.id === presetActivo)?.base === "original" && !!imagenRender}
+            onVolverAlOriginal={volverAlOriginal}
+            deshabilitado={false}
+          />
+
             <div className="grid gap-4 sm:grid-cols-2">
-              {categoriasRepresentacion.map((cat) => (
+              {categoriasRepresentacion.filter(cat => cat.categoria !== "Realismo").map((cat) => (
                 <div key={cat.categoria} className="rounded-xl border border-brand-border bg-input p-4">
                   <div className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
                     <span aria-hidden="true">{cat.icono}</span>
@@ -1578,20 +1609,6 @@ const GeneradorPromptsArquitectonicos = () => {
                 </div>
               ))}
             </div>
-          </div>
-
-          {renderAcordeon("materiales", "Materiales a aplicar", (
-            <div className="space-y-5">
-              {campoPorId("materiales") && renderCampo(campoPorId("materiales")!)}
-            </div>
-          ), repsMandan)}
-
-          <div className={`border-t border-brand-border px-5 py-5 sm:px-6 ${claseBloqueo}`} aria-disabled={repsMandan || undefined}>
-            <label className="mb-3 flex justify-between gap-3 text-sm font-semibold text-brand-gold">
-              <span>Qué evitar en la generación</span>
-              <span className="font-bold text-muted-foreground">Opcional</span>
-            </label>
-            <input disabled={repsMandan} className={clasesControl} placeholder="Ej: personas, texto, marcas de agua, desenfoque" value={valorTexto(valores.negativePrompt)} onChange={(e) => actualizarCampo({ id: "negativePrompt", etiqueta: "Qué evitar", tipo: "textarea" }, e.target.value)} />
           </div>
 
           <div className="px-5 pb-6 sm:px-6">
