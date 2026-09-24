@@ -31,3 +31,5 @@
 }
 @media(max-width:1050px){.studio-nav{gap:16px}.top .demo-label{display:none}}
 @media(max-width:650px){.studio-nav{order:2;flex-basis:100%;padding-top:8px;gap:22px}.top{padding:16px}.top .primary{margin-left:0}}
+
+.page-strip button .page-strip-copy{color:inherit;min-width:0;overflow-wrap:anywhere}.page-strip-copy small{display:block;margin-top:5px;font-size:11px;opacity:.8}
