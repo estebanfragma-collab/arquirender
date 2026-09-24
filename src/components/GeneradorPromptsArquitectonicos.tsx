@@ -1,3 +1,4 @@
+import { renderSize } from "@/lib/renderSize";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -451,6 +452,8 @@ const GeneradorPromptsArquitectonicos = () => {
   const imagenRender = imagenRenders[tabActiva];
   const imagenOriginal = vistasPrevias[tabActiva]?.imagen?.url || "";
   const imagenBaseActiva = imagenRender || imagenOriginal;
+  const [ratioVisor,setRatioVisor]=useState<number>(1.5);
+  useEffect(()=>{let active=true;const img=new Image();img.onload=()=>{if(active)setRatioVisor(img.naturalWidth/img.naturalHeight);};img.src=imagenOriginal;return()=>{active=false;};},[imagenOriginal]);
   // Lo que se ve en grande. Solo visual: la base de la próxima generación
   // sigue siendo imagenBaseActiva, no cambia al mirar otra pieza.
   const imagenVisor = piezaVisor?.imagen || imagenRender;
@@ -459,7 +462,7 @@ const GeneradorPromptsArquitectonicos = () => {
   const toggleAcordeon = (clave: string) => setAcordeones((actual) => ({ ...actual, [clave]: !actual[clave] }));
 
   // Descarta el render de esta pestaña para volver a partir de la foto subida.
-  const volverAlOriginal = () => setImagenRenders((actual) => ({ ...actual, [tabActiva]: "" }));
+  const volverAlOriginal = () => { setImagenRenders((actual) => ({ ...actual, [tabActiva]: "" })); setPiezaVisor(null); setComparacion("antes"); };
 
   // El placeholder del campo libre rota mientras esté vacío y visible.
   useEffect(() => {
@@ -742,6 +745,7 @@ const GeneradorPromptsArquitectonicos = () => {
           body: {
             prompt: promptFinal,
             imageBase64: imagenBaseActiva,
+            outputSize: await renderSize(imagenOriginal || imagenBaseActiva),
             originalBase64: imagenOriginal || undefined,
             estilo: valorTexto(valores.estiloDiseno).trim() || undefined,
             representacion: slugRepresentacion(representacion),
@@ -766,8 +770,9 @@ const GeneradorPromptsArquitectonicos = () => {
         }
         const imagen = `data:image/png;base64,${data.imageBase64}`;
         setPiezas((actual) => ({ ...actual, [representacion]: { estado: "ok", imagen } }));
-        // La primera que termina ocupa el visor; las siguientes no lo roban.
-        setPiezaVisor((actual) => actual ?? { etiqueta: representacion, imagen });
+        setImagenRenders(actual => ({...actual,[tabActiva]:imagen}));
+        setPiezaVisor({ etiqueta: representacion, imagen });
+        setComparacion("despues");
       } catch {
         setPiezas((actual) => ({ ...actual, [representacion]: { estado: "error", error: "Error inesperado" } }));
       }
@@ -807,6 +812,7 @@ const GeneradorPromptsArquitectonicos = () => {
         body: {
           prompt: promptFinal,
           imageBase64: imagenVisor,
+            outputSize: await renderSize(imagenOriginal || imagenVisor),
           originalBase64: imagenOriginal || undefined,
           estilo: valorTexto(valores.estiloDiseno).trim() || undefined,
           representacion: opciones.representacion,
@@ -827,6 +833,8 @@ const GeneradorPromptsArquitectonicos = () => {
         setPiezas((actual) => ({ ...actual, [etiqueta]: { estado: "ok", imagen } }));
         // La pieza recién pedida pasa al visor: es lo que el usuario quiso ver.
         setPiezaVisor({ etiqueta, imagen });
+        setImagenRenders(actual => ({...actual,[tabActiva]:imagen}));
+        setComparacion("despues");
       }
     } catch {
       setPiezas((actual) => ({ ...actual, [etiqueta]: { estado: "error", error: "Error inesperado" } }));
@@ -850,6 +858,7 @@ const GeneradorPromptsArquitectonicos = () => {
           body: {
             prompt: promptFinal,
             imageBase64: imagenPieza1,
+            outputSize: await renderSize(imagenOriginal || imagenPieza1),
             originalBase64: original || undefined,
             representacion: pieza.representacion,
             piezaAdicional: true,
@@ -891,7 +900,6 @@ const GeneradorPromptsArquitectonicos = () => {
     setPrompt(promptFinal);
 
     setErrorRender("");
-    setImagenRenders((actual) => ({ ...actual, [tabActiva]: "" }));
     setPiezas({});
     setModoGrid(null);
     setPiezaVisor(null);
@@ -920,6 +928,7 @@ const GeneradorPromptsArquitectonicos = () => {
         body: {
           prompt: promptFinal,
           imageBase64,
+          outputSize: await renderSize(imagenOriginal || imageBase64),
           originalBase64: imagenOriginal || undefined,
           estilo: valorTexto(valores.estiloDiseno).trim() || undefined,
           representacion,
@@ -1075,6 +1084,10 @@ const GeneradorPromptsArquitectonicos = () => {
         imagen: { nombre: "Desde historial", url: originalData },
       },
     }));
+    setPiezaVisor(null);
+    setPiezas({});
+    setModoGrid(null);
+    setSelectedRepresentaciones([]);
     setComparacion("despues");
     setVista("generar");
   };
@@ -1176,8 +1189,8 @@ const GeneradorPromptsArquitectonicos = () => {
                   );
                 })}
               </div>
-              <div className="relative">
-                <img src={comparacion === "antes" ? vistaPrevia.url : imagenVisor} alt={comparacion === "antes" ? "Imagen original" : etiquetaVisor} className="h-auto max-h-none w-full rounded-[8px] border border-brand-gold object-contain" />
+              <div className="relative bg-black" style={{aspectRatio:ratioVisor}}>
+                <img src={comparacion === "antes" ? vistaPrevia.url : imagenVisor} alt={comparacion === "antes" ? "Imagen original" : etiquetaVisor} className="h-full w-full rounded-[8px] border border-brand-gold object-contain" />
                 <span className="absolute left-3 top-3 rounded-full bg-black/70 px-2 py-1 text-[11px] font-bold text-white">{comparacion === "antes" ? "Original" : etiquetaVisor}</span>
               </div>
               <button type="button" onClick={() => setComparacion(comparacion === "antes" ? "despues" : "antes")} className="flex w-full items-center gap-3 rounded-md border border-brand-border p-2 text-left transition hover:border-brand-gold">
@@ -1652,8 +1665,8 @@ const GeneradorPromptsArquitectonicos = () => {
                     role={listo ? "button" : undefined}
                     tabIndex={listo ? 0 : undefined}
                     aria-pressed={listo ? enVisor : undefined}
-                    onClick={listo ? () => setPiezaVisor({ etiqueta, imagen: estado.imagen! }) : undefined}
-                    onKeyDown={listo ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPiezaVisor({ etiqueta, imagen: estado.imagen! }); } } : undefined}
+                    onClick={listo ? () => { setPiezaVisor({ etiqueta, imagen: estado.imagen! }); setImagenRenders(actual=>({...actual,[tabActiva]:estado.imagen!})); } : undefined}
+                    onKeyDown={listo ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPiezaVisor({ etiqueta, imagen: estado.imagen! }); setImagenRenders(actual=>({...actual,[tabActiva]:estado.imagen!})); } } : undefined}
                     className={`relative aspect-square overflow-hidden rounded-md border bg-input transition ${enVisor ? "border-[#EA580C] ring-2 ring-[#EA580C]/40" : "border-brand-border"} ${listo ? "cursor-pointer hover:border-[#EA580C]" : ""}`}
                   >
                     {estado?.estado === "ok" && estado.imagen ? (

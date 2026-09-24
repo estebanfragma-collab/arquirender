@@ -188,9 +188,18 @@ Deno.serve(async (req) => {
     userId = userData.user.id;
 
     // 2) Validación del body (antes de descontar, para no cobrar por inputs inválidos)
-    const body = await req.json().catch(() => null) as { prompt?: string; imageBase64?: string; originalBase64?: string; estilo?: string; representacion?: string; notas?: string; piezaAdicional?: boolean } | null;
+    const body = await req.json().catch(() => null) as { prompt?: string; imageBase64?: string; originalBase64?: string; estilo?: string; representacion?: string; notas?: string; piezaAdicional?: boolean; outputSize?: string } | null;
     let prompt = body?.prompt?.trim();
     const imageBase64 = body?.imageBase64?.trim();
+    const requestedSize = body?.outputSize;
+    let outputSize = SIZE;
+    if (requestedSize !== undefined) {
+      const match = typeof requestedSize === "string" && /^(\d+)x(\d+)$/.exec(requestedSize);
+      if (!match) return json({success:false,error:"Formato de imagen inválido"},400);
+      const w=Number(match[1]),h=Number(match[2]);
+      if(w%16||h%16||w<512||h<512||w>1536||h>1536||w*h>1572864||w/h>3||h/w>3) return json({success:false,error:"Formato de imagen no admitido"},400);
+      outputSize=requestedSize;
+    }
     const originalBase64 = body?.originalBase64?.trim();
     const estilo = body?.estilo?.trim() || null;
     const notas = body?.notas?.trim();
@@ -288,7 +297,7 @@ Deno.serve(async (req) => {
       const form = new FormData();
       form.append("model", MODEL);
       form.append("prompt", prompt);
-      form.append("size", SIZE);
+      form.append("size", outputSize);
       form.append("quality", QUALITY);
       form.append("n", "1");
       form.append("image", new Blob([parsed.bytes], { type: parsed.mime }), `reference.${ext}`);
@@ -309,7 +318,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           model: MODEL,
           prompt,
-          size: SIZE,
+          size: outputSize,
           quality: QUALITY,
           n: 1,
         }),
