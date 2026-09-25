@@ -37,14 +37,14 @@ it('adds rain from one visible reference without asking for a final image',()=>{
  expect(screen.queryByRole('button',{name:'Elegir imagen final'})).toBeNull();
  expect((screen.getByRole('textbox',{name:'Prompt de la escena'}) as HTMLTextAreaElement).value).toContain('single supplied reference');
 });
-it('uses a free controlled fusion for the general view and hides AI prompt controls',()=>{
+it('restores aerial camera movement and AI prompt controls',()=>{
  render(<Editor session={{id:'fusion-test',assets:[]}}/>);
  fireEvent.click(screen.getByRole('button',{name:/De una imagen a otra/}));
- fireEvent.click(screen.getByRole('button',{name:/Fusión hacia vista general/}));
- expect(screen.getByRole('button',{name:'Crear fusión suave · sin costo'})).toBeDisabled();
- expect(screen.queryByRole('button',{name:'Ayudarme con el prompt'})).toBeNull();
- expect(screen.queryByRole('textbox',{name:'Prompt de la escena'})).toBeNull();
- expect(screen.queryByRole('combobox',{name:'Movimiento de cámara'})).toBeNull();
+ fireEvent.click(screen.getByRole('button',{name:/Revelación aérea/}));
+ expect(screen.queryByRole('button',{name:'Crear fusión suave · sin costo'})).toBeNull();
+ expect(screen.getByRole('button',{name:'Ayudarme con el prompt'})).toBeTruthy();
+ expect((screen.getByRole('textbox',{name:'Prompt de la escena'}) as HTMLTextAreaElement).value).toContain('backward');
+ expect(screen.getByRole('combobox',{name:'Movimiento de cámara'})).toHaveValue('rise');
 });
 
 it('routes between-renders to the controlled fusion without AI prompt controls',()=>{

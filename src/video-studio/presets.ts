@@ -50,12 +50,12 @@ export const videoPresets = [
   },
   {
     "id": "aerial",
-    "label": "Fusión hacia vista general",
-    "description": "Fundido controlado de una vista cercana a una vista general. Usa dos imágenes: el detalle inicial y la vista amplia final. Sin costo de generación.",
+    "label": "Revelación aérea",
+    "description": "La cámara retrocede y asciende desde la vista cercana hasta la vista aérea amplia. Usa dos vistas compatibles del mismo proyecto. Movimiento generado por IA.",
     "mode": "transition",
     "duration": 5,
-    "movement": "fixed",
-    "prompt": "A five-second smooth cross-dissolve between the two supplied images. Cross-dissolve from the supplied close view into the supplied wide aerial view. Reveal the wider landscape through gradual opacity blending, not a fast drone flight or a forced zoom. Preserve both reference compositions. Hold the first image for 0.5 seconds, blend continuously over the next 4 seconds with gentle ease-in and ease-out, then hold the final image for 0.5 seconds. Start the blend early; do not delay it until the end. No hard cuts, sudden switches, flashes, whip pans or geometry morphing. No added people, objects or text. Keep the camera still; create the transition through overlapping image opacity."
+    "movement": "rise",
+    "prompt": "One continuous five-second aerial drone pullback between the supplied views of the same project. Begin at the exact close reference. Immediately start moving the camera smoothly backward and gradually upward, revealing the wider surroundings and reaching the wide final reference. Spread the retreat and ascent across the entire shot with gentle acceleration and deceleration. Preserve the building geometry, materials and landscape. No static hold followed by a jump, no hard cut, no sudden zoom, no orbit and no opacity dissolve replacing the physical camera movement. Do not invent a flight through walls or hidden rooms. A coherent continuous backward camera path is the priority."
   },
   {
     "id": "model",

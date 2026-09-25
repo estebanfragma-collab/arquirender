@@ -2,6 +2,7 @@ import {render,screen,fireEvent,within,cleanup} from '@testing-library/react';
 import {it,expect,vi,afterEach} from 'vitest';
 import Fusion from './Fusion';
 import {newScene} from './model';
+vi.mock('./fusion-cloud',()=>({saveFusion:vi.fn(async()=>{})}));
 vi.mock('./fusion-export',()=>({createFusion:vi.fn(async()=>new Blob(['video'],{type:'video/mp4'}))}));
 afterEach(()=>{cleanup();vi.restoreAllMocks();});
 it('reveals the new fusion and provides a direct download next to its ready message',async()=>{
@@ -17,4 +18,19 @@ it('reveals the new fusion and provides a direct download next to its ready mess
  expect(scroll).toHaveBeenCalled();scroll.mockClear();
  fireEvent.click(screen.getByRole('button',{name:'Ver fusión'}));expect(scroll).toHaveBeenCalled();
  panel.remove();
+});
+it('keeps a downloadable result when cloud saving fails and retries without regenerating',async()=>{
+ const {saveFusion}=await import('./fusion-cloud');
+ const {createFusion}=await import('./fusion-export');
+ vi.mocked(saveFusion).mockRejectedValueOnce(Error('No se pudo guardar.')).mockResolvedValueOnce(undefined);
+ Object.defineProperty(HTMLElement.prototype,'scrollIntoView',{configurable:true,value:vi.fn()});
+ URL.createObjectURL=vi.fn(()=> 'blob:retry');URL.revokeObjectURL=vi.fn();
+ const count=vi.mocked(createFusion).mock.calls.length;
+ const view=render(<Fusion scene={{...newScene(),mode:'transition',startId:'a',endId:'b'}} assets={[{id:'a',src:'/a.png',name:'A'},{id:'b',src:'/b.png',name:'B'}]} panel={null}/>);
+ fireEvent.click(screen.getByRole('button',{name:'Crear fusión suave · sin costo'}));
+ await screen.findByText('No se pudo guardar.');
+ expect(within(view.container).getByRole('link',{name:'Descargar MP4'})).toHaveAttribute('href','blob:retry');
+ fireEvent.click(screen.getByRole('button',{name:'Reintentar guardar en mi cuenta'}));
+ await screen.findByText('Fusión guardada en Tus generaciones.');
+ expect(vi.mocked(createFusion).mock.calls.length).toBe(count+1);
 });

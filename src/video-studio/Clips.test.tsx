@@ -3,6 +3,7 @@ import {afterEach,expect,it,vi} from 'vitest';
 import Clips from './Clips';
 import type {Scene} from './model';
 const {invoke}=vi.hoisted(()=>({invoke:vi.fn()}));
+vi.mock('./fusion-cloud',()=>({listFusions:vi.fn(async()=>[])}));
 vi.mock('@/integrations/supabase/client',()=>({supabase:{functions:{invoke}}}));
 afterEach(()=>{cleanup();vi.clearAllMocks();});
 it('keeps cost and confirmation in the composer and sends results to the separate panel',async()=>{
@@ -23,5 +24,19 @@ it('keeps cost and confirmation in the composer and sends results to the separat
  expect(within(view.container).queryByText('Cubierta')).toBeNull();
  await act(async()=>finish({data:{job:{...job,state:'completed',url:'https://example.com/clip.mp4'}}}));
  expect(within(panel).getByText('Clip listo')).toBeTruthy();
+ panel.remove();
+});
+
+it('loads saved fusions again on mount and keeps them separate from paid jobs',async()=>{
+ const {listFusions}=await import('./fusion-cloud');
+ vi.mocked(listFusions).mockResolvedValue([{id:'fusion',name:'Fusión guardada',duration:5,url:'https://example.com/saved.mp4',storage_path:'owner/fusion.mp4',created_at:''}]);
+ invoke.mockResolvedValue({data:{jobs:[]}});
+ const panel=document.createElement('div');document.body.append(panel);
+ const {newScene}=await import('./model');
+ const view=render(<Clips scene={newScene()} blocked={false} resultsPanel={panel}/>);
+ expect(await within(panel).findByText('Fusión guardada')).toBeTruthy();
+ view.unmount();
+ render(<Clips scene={newScene()} blocked={false} resultsPanel={panel}/>);
+ expect(await within(panel).findByRole('link',{name:'Abrir / descargar fusión'})).toHaveAttribute('href','https://example.com/saved.mp4');
  panel.remove();
 });

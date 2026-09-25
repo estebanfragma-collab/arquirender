@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {createPortal} from 'react-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { Scene } from './model';
+import {listFusions,type SavedFusion} from './fusion-cloud';
 import {videoPresets} from './presets';
 type Job={createdAt?:string;model:string;duration:number;id:string;sceneId:string;name:string;state:string;estimatedUsd:number;url:string|null;expiresAt:string};
 async function request(body:unknown){
@@ -11,6 +12,8 @@ async function request(body:unknown){
 const pending=(j:Job)=>['queued','in_progress'].includes(j.state)||j.state==='completed'&&!j.url;
 const labels:Record<string,string>={submitting:'Enviando · consulta el estado antes de repetir',queued:'En cola',in_progress:'Generando tu clip…',completed:'Clip listo',failed:'El proveedor rechazó la toma. Revisa el saldo o la escena.',nsfw:'El proveedor no aceptó esta escena.',canceled:'Cancelado',unknown:'Envío por confirmar. No repitas la generación; revisaremos esta toma.'};
 export default function Clips({scene,blocked,resultsPanel,resultsOnly=false}:{scene:Scene;blocked:boolean;resultsPanel:HTMLElement|null;resultsOnly?:boolean}){
+ const [fusions,setFusions]=useState<SavedFusion[]>([]),[fusionError,setFusionError]=useState('');
+ useEffect(()=>{let alive=true;const refresh=()=>{listFusions().then(rows=>{if(alive){setFusions(rows);setFusionError('');}}).catch(e=>{if(alive)setFusionError(e.message);});};refresh();window.addEventListener('arqui-fusion-saved',refresh);return()=>{alive=false;window.removeEventListener('arqui-fusion-saved',refresh);};},[]);
  const [jobs,setJobs]=useState<Job[]>([]),[quote,setQuote]=useState<{job:Job;basis:string}|null>(null);
  const [engine,setEngine]=useState(scene.duration===10?'minimax':'dop');
  useEffect(()=>{setEngine(scene.duration===10?'minimax':'dop');},[scene.duration,scene.presetId]);
@@ -31,7 +34,7 @@ export default function Clips({scene,blocked,resultsPanel,resultsOnly=false}:{sc
   try{
    if(action==='quote'){const s=signature;const d=await request({action,scene,engine});if(latest.current===s)setQuote({job:d.job,basis:s});}
    else if(action==='start'&&quote&&quote.basis===signature){const id=quote.job.id;merge({...quote.job,state:'submitting'});setQuote(null);const d=await request({action,id});merge(d.job);}
-   else if(action==='refresh'){const d=await request({action:'list'});setJobs(d.jobs||[]);for(const j of d.jobs||[]){if(pending(j)){const result=await request({action:'status',id:j.id});merge(result.job);}}}
+   else if(action==='refresh'){window.dispatchEvent(new Event('arqui-fusion-saved'));const d=await request({action:'list'});setJobs(d.jobs||[]);for(const j of d.jobs||[]){if(pending(j)){const result=await request({action:'status',id:j.id});merge(result.job);}}}
   }catch(e){setMessage((e as Error).message);if(action==='start'){try{const d=await request({action:'list'});setJobs(d.jobs||[]);}catch{}}}
   finally{lock.current=false;if(mounted.current)setBusy(false);}
  }
@@ -44,7 +47,7 @@ export default function Clips({scene,blocked,resultsPanel,resultsOnly=false}:{sc
  <small>La generación utiliza el saldo de video y el límite habilitado para tu cuenta; no los créditos de renders.</small>{incompatible&&<p className="vs-warning">{incompatible}</p>}{active&&<p className="vs-warning">Hay una toma pendiente. Puedes seguir preparando y guardando escenas. Vuelve a este estudio para consultar el resultado; no repitas la generación.</p>}
  {message&&<p role="status" className="vs-warning">{message}</p>}
  </>}
- {resultsPanel&&createPortal(<section className="vs-results"><span className="vs-eyebrow">TUS GENERACIONES</span><h2>Resultados</h2><p>Prepara la siguiente escena mientras llega tu video.</p> {jobs.length>0&&<div className="vs-clips"><h4>Tus últimas tomas</h4>{jobs.map(j=><article key={j.id}><strong>{j.name}</strong><small>{j.model?.includes('minimax')?'MiniMax':j.model?.includes('dop')?'DoP Lite':'Prueba anterior · Kling'} · {j.duration}s</small><p>{j.state==='completed'&&!j.url?'Generado · pendiente de guardar':labels[j.state]||j.state}</p>{j.url?<><video src={j.url} controls preload="none" playsInline/><a href={j.url} target="_blank" rel="noreferrer">Abrir / descargar clip</a><a href="/app/edicion">Montar mis videos en el editor →</a></>:null}{pending(j)&&j.createdAt&&Date.now()-Date.parse(j.createdAt)>10*60*1000&&<p className="vs-warning">Esta toma lleva más de 10 minutos. El proveedor todavía no entregó el clip. Puedes volver después y pulsar «Actualizar mis clips» sin volver a pagar por generarlo.</p>}<small>Costo estimado: USD {j.estimatedUsd.toFixed(3)}</small></article>)}</div>}
- <button disabled={busy} onClick={()=>run('refresh')}>Actualizar mis clips</button>{!jobs.length&&<div className="vs-empty-results">Tu video aparecerá aquí cuando lo envíes a generar.</div>}</section>,resultsPanel)}
+ {resultsPanel&&createPortal(<section className="vs-results"><span className="vs-eyebrow">TUS GENERACIONES</span><h2>Resultados</h2><p>Prepara la siguiente escena mientras llega tu video.</p>{fusionError&&<p role="status">{fusionError}</p>}{fusions.length>0&&<div className="vs-clips"><h4>Tus fusiones guardadas</h4>{fusions.map(f=><article key={f.id}><strong>{f.name}</strong><small>Fusión suave · {f.duration}s · sin costo de generación</small><video src={f.url} controls preload="none" playsInline/><a href={f.url} target="_blank" rel="noreferrer">Abrir / descargar fusión</a></article>)}</div>} {jobs.length>0&&<div className="vs-clips"><h4>Tus últimas tomas</h4>{jobs.map(j=><article key={j.id}><strong>{j.name}</strong><small>{j.model?.includes('minimax')?'MiniMax':j.model?.includes('dop')?'DoP Lite':'Prueba anterior · Kling'} · {j.duration}s</small><p>{j.state==='completed'&&!j.url?'Generado · pendiente de guardar':labels[j.state]||j.state}</p>{j.url?<><video src={j.url} controls preload="none" playsInline/><a href={j.url} target="_blank" rel="noreferrer">Abrir / descargar clip</a><a href="/app/edicion">Montar mis videos en el editor →</a></>:null}{pending(j)&&j.createdAt&&Date.now()-Date.parse(j.createdAt)>10*60*1000&&<p className="vs-warning">Esta toma lleva más de 10 minutos. El proveedor todavía no entregó el clip. Puedes volver después y pulsar «Actualizar mis clips» sin volver a pagar por generarlo.</p>}<small>Costo estimado: USD {j.estimatedUsd.toFixed(3)}</small></article>)}</div>}
+ <button disabled={busy} onClick={()=>run('refresh')}>Actualizar mis clips</button>{!jobs.length&&!fusions.length&&<div className="vs-empty-results">Tu video aparecerá aquí cuando lo envíes a generar.</div>}</section>,resultsPanel)}
  </section>;
 }

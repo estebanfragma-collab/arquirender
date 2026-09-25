@@ -51,7 +51,7 @@ export function Editor({session}:{session:Session}){
   const clean=useRef('');
   const current=scenes.find(s=>s.id===active)||scenes[0];
   const index=scenes.indexOf(current);
-  const localFusion=current.mode==='transition'&&['aerial','render-transition'].includes(current.presetId||'');
+  const localFusion=current.mode==='transition'&&current.presetId==='render-transition';
   const selectedPreset=videoPresets.find(p=>p.id===current.presetId&&p.mode===current.mode);
   const changeMode=(mode:Scene['mode'])=>{if(mode===current.mode)return;update(changeSceneMode(current,mode));setSlot('start');setNotice('Modo cambiado. Elige un efecto y prepara el prompt para esta toma.');};
   const start=session.assets.find(a=>a.id===current.startId),end=session.assets.find(a=>a.id===current.endId);
@@ -100,7 +100,7 @@ export function Editor({session}:{session:Session}){
         <section className="vs-effects" aria-label="Efectos compatibles">
           <h3 className="vs-step">2 · ¿Qué quieres que pase?</h3>
           <p>{current.mode==='animate'?'Estos efectos usan una sola imagen.':'Estos efectos usan una imagen inicial y una final.'} Elige uno o escribe tu propia indicación más abajo.</p>
-          <div className="vs-preset-grid">{presetsForMode(current.mode).map(p=><button key={p.id} aria-pressed={selectedPreset?.id===p.id} className={selectedPreset?.id===p.id?'selected':''} onClick={()=>{if(current.prompt.trim()&&!confirm('¿Aplicar este efecto? Reemplazará el prompt y los ajustes de esta escena.'))return;update(applyPreset(current,p.id));setNotice('Efecto aplicado. Selecciona las imágenes indicadas y revisa el prompt.');}}><small>{p.mode==='animate'?'1 imagen':'2 imágenes'}{selectedPreset?.id===p.id?' · ✓ Seleccionado':''}{p.mode==='transition'?' · Fusión suave':''}</small><strong>{p.label}</strong><span>{p.description}</span></button>)}</div>
+          <div className="vs-preset-grid">{presetsForMode(current.mode).map(p=><button key={p.id} aria-pressed={selectedPreset?.id===p.id} className={selectedPreset?.id===p.id?'selected':''} onClick={()=>{if(current.prompt.trim()&&!confirm('¿Aplicar este efecto? Reemplazará el prompt y los ajustes de esta escena.'))return;update(applyPreset(current,p.id));setNotice('Efecto aplicado. Selecciona las imágenes indicadas y revisa el prompt.');}}><small>{p.mode==='animate'?'1 imagen':'2 imágenes'}{selectedPreset?.id===p.id?' · ✓ Seleccionado':''}{p.mode==='transition'?(p.id==='aerial'?' · Retroceso de cámara':' · Fusión suave'):''}</small><strong>{p.label}</strong><span>{p.description}</span></button>)}</div>
         </section>
         {current.mode==='transition'&&<p className="vs-tip">Aquí tú eliges cómo empieza y cómo termina el video. Necesitas dos vistas compatibles del mismo proyecto. Si solo tienes una imagen, elige «Animar un render».</p>}
 
