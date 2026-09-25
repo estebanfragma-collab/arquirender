@@ -5,6 +5,7 @@ import { movements, newScene, validScenes, basis, sceneError, projectScript, typ
 import { listProjects, saveProject, proposeScene } from './api';
 import './studio.css';
 import Clips from './Clips';
+import Fusion from './Fusion';
 import {videoPresets,applyPreset,presetsForMode,changeSceneMode} from './presets';
 
 type Session = {id:string;assets:RenderAsset[]};
@@ -49,6 +50,7 @@ export function Editor({session}:{session:Session}){
   const clean=useRef('');
   const current=scenes.find(s=>s.id===active)||scenes[0];
   const index=scenes.indexOf(current);
+  const localFusion=current.mode==='transition'&&current.presetId==='aerial';
   const selectedPreset=videoPresets.find(p=>p.id===current.presetId&&p.mode===current.mode);
   const changeMode=(mode:Scene['mode'])=>{if(mode===current.mode)return;update(changeSceneMode(current,mode));setSlot('start');setNotice('Modo cambiado. Elige un efecto y prepara el prompt para esta toma.');};
   const start=session.assets.find(a=>a.id===current.startId),end=session.assets.find(a=>a.id===current.endId);
@@ -101,17 +103,19 @@ export function Editor({session}:{session:Session}){
         </section>
         {current.mode==='transition'&&<p className="vs-tip">Aquí tú eliges cómo empieza y cómo termina el video. Necesitas dos vistas compatibles del mismo proyecto. Si solo tienes una imagen, elige «Animar un render».</p>}
 
-        <h3 className="vs-step">3 · Describe tu idea</h3><label>¿Qué debe transmitir esta toma?<textarea rows={3} maxLength={1000} placeholder="Ej.: un acercamiento lento para mostrar la luz cálida, sin cambiar ventanas ni materiales." value={current.brief} onChange={e=>update({brief:e.target.value})}/></label>
+        {!localFusion&&<><h3 className="vs-step">3 · Describe tu idea</h3><label>¿Qué debe transmitir esta toma?<textarea rows={3} maxLength={1000} placeholder="Ej.: un acercamiento lento para mostrar la luz cálida, sin cambiar ventanas ni materiales." value={current.brief} onChange={e=>update({brief:e.target.value})}/></label>
         <div className="vs-prompt-action"><button className="vs-primary" disabled={!!validation} onClick={generatePrompt}><Sparkles size={17}/>Ayudarme con el prompt</button><small>{validation||'La IA escribe el prompt debajo. Puedes editarlo antes de generar.'}</small></div>
 
       <section className="vs-prompt-editor"><div className="vs-section-heading"><h2><span>4</span> Revisa el prompt</h2></div><span className={`vs-status ${current.prompt&&!stale?'ready':''}`}>{current.prompt?(stale?'REVISAR AJUSTES':'PROMPT PREPARADO'):'POR PREPARAR'}</span><p>El prompt se prepara en inglés para usarlo en el generador que elijas. Puedes modificarlo aquí.</p><label>Prompt de la escena<textarea aria-label="Prompt de la escena" rows={7} maxLength={2200} placeholder="Prepara la escena con IA o escribe tu propio prompt." value={current.prompt} onChange={e=>update({prompt:e.target.value})}/></label>
         {stale&&<div className="vs-warning"><p>Cambiaste las imágenes o los ajustes. Revisa el prompt o prepara una nueva propuesta antes de generar.</p><button disabled={!!validation||!current.prompt.trim()} onClick={()=>update({promptBasis:basis(current)})}>He revisado el prompt para estas imágenes</button></div>}
         <button disabled={!current.prompt.trim()} onClick={copyPrompt}><Copy size={16}/>Copiar prompt</button>
         {current.notes&&<details><summary>Notas de la IA</summary><p>{current.notes}</p></details>}
-        <h3 className="vs-step">5 · Ajustes y costo</h3>
-        <div className="vs-settings"><label>Movimiento de cámara<select aria-label="Movimiento de cámara" value={current.movement} onChange={e=>update({movement:e.target.value})}>{movements.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}</select></label><label>Duración<select aria-label="Duración" value={current.duration} onChange={e=>update({duration:Number(e.target.value) as 5|10})}><option value={5}>5 segundos</option><option value={10}>10 segundos</option></select></label><label>Formato<select aria-label="Formato" value={current.format} onChange={e=>update({format:e.target.value as Scene['format']})}><option value="16:9">Horizontal · 16:9</option><option value="9:16">Vertical · 9:16</option><option value="1:1">Cuadrado · 1:1</option></select></label></div>
-        <Clips scene={current} blocked={!!validation||stale} resultsPanel={resultsPanel}/>
-        <small className="vs-ai-note">Preparar la escena envía copias reducidas de las imágenes seleccionadas a OpenAI. Hasta 30 propuestas diarias, sin gastar créditos de renders.</small>
+      </section></>}
+      <section className="vs-prompt-editor"><h3 className="vs-step">{localFusion?'3 · Ajusta tu fusión':'5 · Ajustes y costo'}</h3>
+        <div className="vs-settings">{!localFusion&&<label>Movimiento de cámara<select aria-label="Movimiento de cámara" value={current.movement} onChange={e=>update({movement:e.target.value})}>{movements.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}</select></label>}<label>Duración<select aria-label="Duración" value={current.duration} onChange={e=>update({duration:Number(e.target.value) as 5|10})}><option value={5}>5 segundos</option><option value={10}>10 segundos</option></select></label><label>Formato<select aria-label="Formato" value={current.format} onChange={e=>update({format:e.target.value as Scene['format']})}><option value="16:9">Horizontal · 16:9</option><option value="9:16">Vertical · 9:16</option><option value="1:1">Cuadrado · 1:1</option></select></label></div>
+        <Clips scene={current} blocked={!!validation||stale} resultsPanel={resultsPanel} resultsOnly={localFusion}/>
+        {localFusion&&<Fusion key={current.id} scene={current} assets={session.assets} panel={resultsPanel}/>}
+        {!localFusion&&<small className="vs-ai-note">Preparar la escena envía copias reducidas de las imágenes seleccionadas a OpenAI. Hasta 30 propuestas diarias, sin gastar créditos de renders.</small>}
       </section>
         <div className="vs-scene-tools"><button aria-label="Mover escena antes" disabled={index===0} onClick={()=>move(-1)}><ArrowLeft size={16}/></button><button aria-label="Mover escena después" disabled={index===scenes.length-1} onClick={()=>move(1)}><ArrowRight size={16}/></button><button disabled={scenes.length>=24} onClick={()=>add(true)}><Copy size={15}/>Duplicar escena</button><button disabled={scenes.length===1} onClick={remove}>Quitar escena</button></div>
       </main>

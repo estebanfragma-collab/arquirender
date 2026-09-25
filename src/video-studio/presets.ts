@@ -50,8 +50,8 @@ export const videoPresets = [
   },
   {
     "id": "aerial",
-    "label": "Revelación aérea",
-    "description": "Fusión de una vista cercana a una aérea amplia. El cambio de encuadre aparece poco a poco, sin un vuelo acelerado.",
+    "label": "Fusión hacia vista general",
+    "description": "Fundido controlado de una vista cercana a una vista general. Usa dos imágenes: el detalle inicial y la vista amplia final. Sin costo de generación.",
     "mode": "transition",
     "duration": 5,
     "movement": "fixed",

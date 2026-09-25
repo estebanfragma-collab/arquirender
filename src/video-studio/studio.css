@@ -33,3 +33,5 @@
 .vs-reference-pin .vs-frame-tools{margin:6px 0}.vs-reference-pin .vs-frame-tools small{font-size:10px}
 @media(max-width:800px){.vs-reference-pin{top:0}.video-studio .vs-reference-pin .vs-frame{height:100px}}
 @media(max-height:600px){.video-studio .vs-reference-pin .vs-frame{height:72px}.vs-reference-pin .vs-frame-tools{display:none}}
+
+.vs-local-fusion{padding:18px;border:1px solid var(--orange);border-radius:10px;margin:16px 0}.vs-local-fusion video{width:100%;margin:12px 0}.vs-local-fusion a{display:block;color:#ff995d;text-decoration:underline}.vs-local-fusion small{display:block;margin-top:8px}
