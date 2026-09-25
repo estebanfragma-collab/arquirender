@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 
 import StudioLayout, {StudioProjects} from "./components/StudioLayout";
 
+const VideoEditor = lazy(() => import("./video-editor/Editor"));
 const VideoStudio = lazy(() => import("./video-studio/Studio"));
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/" element={<Landing />} />
           <Route element={<StudioLayout/>}>
           <Route path="/app" element={<AppPage />} />
+          <Route path="/app/edicion" element={<Suspense fallback={<p>Abriendo editor…</p>}><VideoEditor/></Suspense>}/>
           <Route path="/app/videos" element={<Suspense fallback={<p>Abriendo estudio de video…</p>}><VideoStudio /></Suspense>} />
           <Route path="/app/presentaciones" element={<Presentaciones />} />
           <Route path="/app/proyectos" element={<StudioProjects/>}/>
