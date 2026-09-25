@@ -42,7 +42,7 @@ export const videoPresets = [
   {
     "id": "render-transition",
     "label": "Entre dos renders",
-    "description": "Un render desaparece suavemente mientras aparece el otro. Elige la vista inicial y la final; no se fuerza un recorrido de cámara.",
+    "description": "Fundido controlado de 1,5 segundos entre dos renders. Conserva ambas imágenes, sin movimiento de cámara ni costo de generación.",
     "mode": "transition",
     "duration": 5,
     "movement": "fixed",

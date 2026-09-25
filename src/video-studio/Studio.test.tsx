@@ -46,3 +46,12 @@ it('uses a free controlled fusion for the general view and hides AI prompt contr
  expect(screen.queryByRole('textbox',{name:'Prompt de la escena'})).toBeNull();
  expect(screen.queryByRole('combobox',{name:'Movimiento de cámara'})).toBeNull();
 });
+
+it('routes between-renders to the controlled fusion without AI prompt controls',()=>{
+ render(<Editor session={{id:'two-renders-test',assets:[]}}/>);
+ fireEvent.click(screen.getByRole('button',{name:/De una imagen a otra/}));
+ fireEvent.click(screen.getByRole('button',{name:/Entre dos renders/}));
+ expect(screen.getByText('Fusión entre dos renders')).toBeTruthy();
+ expect(screen.getByRole('button',{name:'Crear fusión suave · sin costo'})).toBeDisabled();
+ expect(screen.queryByRole('textbox',{name:'Prompt de la escena'})).toBeNull();
+});

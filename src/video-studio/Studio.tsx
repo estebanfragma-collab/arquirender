@@ -50,7 +50,7 @@ export function Editor({session}:{session:Session}){
   const clean=useRef('');
   const current=scenes.find(s=>s.id===active)||scenes[0];
   const index=scenes.indexOf(current);
-  const localFusion=current.mode==='transition'&&current.presetId==='aerial';
+  const localFusion=current.mode==='transition'&&['aerial','render-transition'].includes(current.presetId||'');
   const selectedPreset=videoPresets.find(p=>p.id===current.presetId&&p.mode===current.mode);
   const changeMode=(mode:Scene['mode'])=>{if(mode===current.mode)return;update(changeSceneMode(current,mode));setSlot('start');setNotice('Modo cambiado. Elige un efecto y prepara el prompt para esta toma.');};
   const start=session.assets.find(a=>a.id===current.startId),end=session.assets.find(a=>a.id===current.endId);
