@@ -62,3 +62,68 @@
 }
 
 @media screen{.embedded-studio .top .brand,.embedded-studio .studio-nav,.embedded-studio .intro{display:none}.embedded-studio .top{min-height:70px;padding:16px 24px}.embedded-studio .workspace{border-top:0}}
+
+/* Presentation composer and independent live canvas share the studio layout. */
+@media screen{
+ .studio .editor-controls{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+ .studio .top,.studio .cloud-toolbar{flex-shrink:0}
+ .studio .intro{display:none}
+ .studio .top{min-height:68px;padding:14px 20px;gap:12px}
+ .studio .cloud-toolbar{padding:12px 20px;gap:8px}
+ .studio .cloud-toolbar input{min-width:180px}
+ .studio .cloud-toolbar button{font-size:11px;padding:9px}
+ .studio .workspace{display:grid;grid-template-columns:390px minmax(0,1fr);gap:16px;padding:16px;min-height:0;flex:1;overflow:hidden;align-items:stretch}
+ .presentation-composer{min-width:0;overflow:auto;padding:20px;background:#141416;border:1px solid #303036;border-radius:9px;scrollbar-gutter:stable}
+ .composer-title{font-size:18px;margin:0 0 20px}
+ .presentation-composer .page-tools{margin:0 0 12px;gap:5px;flex-wrap:wrap}
+ .presentation-composer .page-tools>span{flex-basis:100%;margin-bottom:5px}
+ .presentation-composer .page-strip{display:grid;grid-template-columns:1fr 1fr;max-height:230px;overflow:auto;padding:3px;gap:8px}
+ .presentation-composer .page-strip button{width:100%;min-width:0;max-width:none;padding:10px;font-size:10px}
+ .presentation-composer .page-strip button svg{flex-shrink:0}
+ .presentation-composer .template-section{padding:20px 0;margin-top:18px;border-top:1px solid #303036}
+ .presentation-composer .section-title{display:block;margin-bottom:14px}
+ .presentation-composer .section-title>span{display:block;font-size:10px;margin-top:7px;line-height:1.5}
+ .presentation-composer .templates{grid-template-columns:1fr 1fr;gap:9px}
+ .presentation-composer .template{display:flex;align-items:flex-start;padding:12px 9px;gap:8px;min-height:100px}
+ .presentation-composer .template.selected{padding:11px 8px}
+ .presentation-composer .template strong{font-size:12px}.presentation-composer .template small{font-size:10px}
+ .presentation-composer .mini{width:35px;height:32px;margin:0;border-width:3px}
+ .presentation-composer .mini.sintesis{width:25px;margin:0 5px;height:36px}
+ .presentation-composer .format{display:none}.presentation-composer .check{width:12px;top:4px;right:4px}
+ .presentation-composer .library{padding:20px 0;border-right:0;border-top:1px solid #303036;background:transparent}
+ .presentation-composer .library-heading{display:block}
+ .presentation-composer .upload{margin-top:14px;width:100%;max-width:none}
+ .presentation-composer .asset-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-height:310px;overflow:auto;padding:3px;scrollbar-gutter:stable}
+ .presentation-composer .asset img{height:70px;object-fit:contain;background:#09090b}
+ .presentation-composer .asset>span{font-size:9px;line-height:1.4;overflow-wrap:anywhere}
+ .presentation-composer .properties{display:block;border-left:0;border-top:1px solid #303036;padding:20px 0 0}
+ .presentation-composer .properties label{margin-bottom:18px}
+ .studio .canvas{min-width:0;overflow:auto;padding:24px;border:1px solid #303036;border-radius:9px;background:#101012}
+ .studio .canvas>.sheet{width:100%;max-width:1200px;margin:24px auto}
+ .studio .canvas>.sheet.sintesis{max-width:480px}
+ .studio .canvas-bar{position:sticky;top:-24px;padding:16px 0;background:#101012;z-index:2;margin:0}
+ .studio .preview{overflow:auto;flex:1;width:100%;padding-top:20px}
+ .studio .cloud-list{flex-shrink:0;max-height:35vh;overflow:auto;margin:12px 20px}
+ .studio>footer{display:none}
+ .studio .global-status:not(:empty){position:fixed;bottom:0;left:0;right:0;padding:10px 20px;font-size:11px;max-height:100px;overflow:auto}
+}
+@media screen and (max-width:1050px) and (min-width:701px){
+ .studio .workspace{grid-template-columns:330px minmax(0,1fr);gap:10px;padding:10px}
+ .presentation-composer{padding:16px}.studio .canvas{padding:16px}
+ .presentation-composer .asset-list{grid-template-columns:1fr 1fr}
+ .presentation-composer .template{display:block}.presentation-composer .mini{margin-bottom:8px}
+}
+@media screen and (max-width:700px){
+ .studio .editor-controls{height:auto;min-height:100dvh;overflow:visible}
+ .studio .top{position:sticky;top:0;z-index:5;padding:10px 12px;gap:8px}
+ .studio .top .demo-label{display:none}
+ .studio .workspace{display:flex;flex-direction:column;padding:10px;overflow:visible}
+ .presentation-composer{overflow:visible;padding:16px;order:2}
+ .studio .canvas{order:1;padding:12px;overflow:visible}
+ .studio .canvas>.sheet{margin:10px auto}
+ .studio .canvas-bar{position:static;padding:0}
+ .studio .canvas>.sheet.sintesis{max-width:260px}
+ .studio .cloud-toolbar{padding:12px}
+ .studio .preview{overflow:visible}
+ .studio .global-status:not(:empty){position:sticky}
+}
