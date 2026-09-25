@@ -5,6 +5,9 @@ import type {Scene,RenderAsset} from './model';
 export default function Fusion({scene,assets,panel}:{scene:Scene;assets:RenderAsset[];panel:HTMLElement|null}){
  const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[result,setResult]=useState<{url:string;name:string}|null>(null);
  const title=scene.presetId==='render-transition'?'Fusión entre dos renders':'Fusión hacia vista general';
+ const preview=useRef<HTMLElement|null>(null);
+ const showResult=()=>preview.current?.scrollIntoView({behavior:'smooth',block:'start'});
+ useEffect(()=>{if(result&&panel)preview.current?.scrollIntoView({behavior:'smooth',block:'start'});},[result,panel]);
  const controller=useRef<AbortController|null>(null),url=useRef('');
  const start=assets.find(a=>a.id===scene.startId),end=assets.find(a=>a.id===scene.endId);
  useEffect(()=>()=>{controller.current?.abort();if(url.current)URL.revokeObjectURL(url.current);},[]);
@@ -21,7 +24,7 @@ export default function Fusion({scene,assets,panel}:{scene:Scene;assets:RenderAs
   finally{if(!task.signal.aborted){setBusy(false);controller.current=null;}}
  }
  return <section className="vs-generation"><h3>Fusión controlada</h3><p>La primera imagen se desvanece mientras aparece la segunda durante 1,5 segundos. Se conservan las dos imágenes, sin movimiento de dron ni cambios generados por IA.</p><small>MP4 · sin audio · sin costo de generación. El video se crea en tu dispositivo. Descárgalo antes de cerrar.</small>
- <div className="vs-generate-dock"><div className="vs-take-summary"><strong>{title}</strong><small>2 imágenes · {scene.duration} segundos · {scene.format} · sin costo</small></div><button className="vs-primary" disabled={busy||!start||!end||start.id===end.id} onClick={generate}>{busy?'Creando fusión…':'Crear fusión suave · sin costo'}</button>{(!start||!end)&&<small>Selecciona las imágenes inicial y final.</small>}<p role="status">{message}</p></div>
- {panel&&result&&createPortal(<article className="vs-local-fusion"><h3>{result.name}</h3><p>Fundido controlado · creado en este dispositivo</p><video controls src={result.url} playsInline/><a href={result.url} download="fusion-suave.mp4">Descargar fusión MP4</a><small>Descarga el archivo y añádelo en Edición. No se guarda en el historial de generaciones.</small></article>,panel)}
+ <div className="vs-generate-dock"><div className="vs-take-summary"><strong>{title}</strong><small>2 imágenes · {scene.duration} segundos · {scene.format} · sin costo</small></div><button className="vs-primary" disabled={busy||!start||!end||start.id===end.id} onClick={generate}>{busy?'Creando fusión…':'Crear fusión suave · sin costo'}</button>{(!start||!end)&&<small>Selecciona las imágenes inicial y final.</small>}<p role="status">{message}</p>{result&&<div className="vs-fusion-actions"><button onClick={showResult}>Ver fusión</button><a href={result.url} download="fusion-suave.mp4">Descargar MP4</a></div>}</div>
+ {panel&&result&&createPortal(<article ref={preview} className="vs-local-fusion" aria-label="Tu nueva fusión"><span className="vs-eyebrow">TU NUEVA FUSIÓN · LISTA</span><h3>{result.name}</h3><p>Fundido controlado · creado en este dispositivo</p><video controls src={result.url} playsInline/><a href={result.url} download="fusion-suave.mp4">Descargar fusión MP4</a><small>Descarga el archivo y añádelo en Edición. No se guarda en el historial de generaciones.</small></article>,panel)}
  </section>;
 }

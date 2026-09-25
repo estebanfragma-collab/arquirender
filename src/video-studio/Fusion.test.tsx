@@ -1,0 +1,20 @@
+import {render,screen,fireEvent,within,cleanup} from '@testing-library/react';
+import {it,expect,vi,afterEach} from 'vitest';
+import Fusion from './Fusion';
+import {newScene} from './model';
+vi.mock('./fusion-export',()=>({createFusion:vi.fn(async()=>new Blob(['video'],{type:'video/mp4'}))}));
+afterEach(()=>{cleanup();vi.restoreAllMocks();});
+it('reveals the new fusion and provides a direct download next to its ready message',async()=>{
+ const scroll=vi.fn();vi.stubGlobal('URL',Object.assign(URL,{createObjectURL:vi.fn(()=> 'blob:test-fusion'),revokeObjectURL:vi.fn()}));
+ Object.defineProperty(HTMLElement.prototype,'scrollIntoView',{configurable:true,value:scroll});
+ const panel=document.createElement('div');document.body.append(panel);
+ const view=render(<Fusion scene={{...newScene(),mode:'transition',presetId:'render-transition',startId:'a',endId:'b'}} assets={[{id:'a',src:'/a.png',name:'A'},{id:'b',src:'/b.png',name:'B'}]} panel={panel}/>);
+ fireEvent.click(screen.getByRole('button',{name:'Crear fusión suave · sin costo'}));
+ const link=await within(view.container).findByRole('link',{name:'Descargar MP4'});
+ expect(link).toHaveAttribute('href','blob:test-fusion');
+ expect(within(panel).getByRole('article',{name:'Tu nueva fusión'})).toBeTruthy();
+ expect(within(panel).getByRole('link',{name:'Descargar fusión MP4'})).toHaveAttribute('href','blob:test-fusion');
+ expect(scroll).toHaveBeenCalled();scroll.mockClear();
+ fireEvent.click(screen.getByRole('button',{name:'Ver fusión'}));expect(scroll).toHaveBeenCalled();
+ panel.remove();
+});

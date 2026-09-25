@@ -35,3 +35,5 @@
 @media(max-height:600px){.video-studio .vs-reference-pin .vs-frame{height:72px}.vs-reference-pin .vs-frame-tools{display:none}}
 
 .vs-local-fusion{padding:18px;border:1px solid var(--orange);border-radius:10px;margin:16px 0}.vs-local-fusion video{width:100%;margin:12px 0}.vs-local-fusion a{display:block;color:#ff995d;text-decoration:underline}.vs-local-fusion small{display:block;margin-top:8px}
+
+.vs-fusion-actions{display:flex;gap:8px;align-items:center}.vs-fusion-actions a{display:block;flex:1;text-align:center;padding:10px;background:var(--orange);color:white;border-radius:5px;font-weight:600}.vs-generation .vs-fusion-actions button{width:auto;flex:1}.vs-local-fusion{scroll-margin-top:16px}.arqui-content .vs-director{padding-bottom:280px}@media(max-width:800px){.arqui-content .vs-director{padding-bottom:20px}.arqui-content .vs-timeline{margin-bottom:280px}}

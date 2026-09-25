@@ -44,6 +44,7 @@ export function Editor({session}:{session:Session}){
   const [projects,setProjects]=useState<VideoProject[]|null>(null);
   const [slot,setSlot]=useState<'start'|'end'>('start');
   const [search,setSearch]=useState('');
+  const [fusionPanel,setFusionPanel]=useState<HTMLDivElement|null>(null);
   const [resultsPanel,setResultsPanel]=useState<HTMLDivElement|null>(null);
   const imagePicker=useRef<HTMLDetailsElement>(null);
   const dirty=useRef(false);
@@ -114,12 +115,12 @@ export function Editor({session}:{session:Session}){
       <section className="vs-prompt-editor"><h3 className="vs-step">{localFusion?'3 · Ajusta tu fusión':'5 · Ajustes y costo'}</h3>
         <div className="vs-settings">{!localFusion&&<label>Movimiento de cámara<select aria-label="Movimiento de cámara" value={current.movement} onChange={e=>update({movement:e.target.value})}>{movements.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}</select></label>}<label>Duración<select aria-label="Duración" value={current.duration} onChange={e=>update({duration:Number(e.target.value) as 5|10})}><option value={5}>5 segundos</option><option value={10}>10 segundos</option></select></label><label>Formato<select aria-label="Formato" value={current.format} onChange={e=>update({format:e.target.value as Scene['format']})}><option value="16:9">Horizontal · 16:9</option><option value="9:16">Vertical · 9:16</option><option value="1:1">Cuadrado · 1:1</option></select></label></div>
         <Clips scene={current} blocked={!!validation||stale} resultsPanel={resultsPanel} resultsOnly={localFusion}/>
-        {localFusion&&<Fusion key={current.id} scene={current} assets={session.assets} panel={resultsPanel}/>}
+        {localFusion&&<Fusion key={current.id} scene={current} assets={session.assets} panel={fusionPanel}/>}
         {!localFusion&&<small className="vs-ai-note">Preparar la escena envía copias reducidas de las imágenes seleccionadas a OpenAI. Hasta 30 propuestas diarias, sin gastar créditos de renders.</small>}
       </section>
         <div className="vs-scene-tools"><button aria-label="Mover escena antes" disabled={index===0} onClick={()=>move(-1)}><ArrowLeft size={16}/></button><button aria-label="Mover escena después" disabled={index===scenes.length-1} onClick={()=>move(1)}><ArrowRight size={16}/></button><button disabled={scenes.length>=24} onClick={()=>add(true)}><Copy size={15}/>Duplicar escena</button><button disabled={scenes.length===1} onClick={remove}>Quitar escena</button></div>
       </main>
-      <aside className="vs-results-panel"><div ref={setResultsPanel}/></aside>
+      <aside className="vs-results-panel"><div ref={setFusionPanel}/><div ref={setResultsPanel}/></aside>
     </section>
     <section className="vs-timeline"><div className="vs-section-heading"><div><span className="vs-eyebrow">TU SECUENCIA</span><h2>{scenes.length} escenas · {scenes.reduce((n,s)=>n+s.duration,0)} segundos previstos</h2></div><button onClick={downloadPlan}><Download size={16}/>Descargar plan de escenas</button></div><div className="vs-scene-strip">{scenes.map((s,i)=>{const image=session.assets.find(a=>a.id===s.startId);return <button key={s.id} aria-pressed={current.id===s.id} className={current.id===s.id?'selected':''} onClick={()=>setActive(s.id)}><div>{image?<img src={image.src} alt=""/>:<Film size={24}/>}<b>{String(i+1).padStart(2,'0')}</b></div><strong>{s.name||'Sin título'}</strong><small>{s.duration}s · {s.format} · {s.prompt?'Con prompt':'Pendiente'}</small></button>;})}<button className="vs-add-scene" disabled={scenes.length>=24} onClick={()=>add()}><Plus size={26}/><strong>Añadir escena</strong><small>Hasta 24 por proyecto</small></button></div></section>
     </fieldset><div className="vs-notice" role="status" aria-live="polite">{busy||notice}</div><footer className="vs-footer">ARQUIRENDER · ESTUDIO DE VIDEO <span>Primero la idea. Después el movimiento.</span></footer>
