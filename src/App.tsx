@@ -13,6 +13,8 @@ import ResetPassword from "./pages/ResetPassword";
 import Presentaciones from "./pages/Presentaciones";
 import NotFound from "./pages/NotFound";
 
+import StudioLayout, {StudioProjects} from "./components/StudioLayout";
+
 const VideoStudio = lazy(() => import("./video-studio/Studio"));
 
 const queryClient = new QueryClient();
@@ -25,9 +27,12 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route element={<StudioLayout/>}>
           <Route path="/app" element={<AppPage />} />
           <Route path="/app/videos" element={<Suspense fallback={<p>Abriendo estudio de video…</p>}><VideoStudio /></Suspense>} />
           <Route path="/app/presentaciones" element={<Presentaciones />} />
+          <Route path="/app/proyectos" element={<StudioProjects/>}/>
+          </Route>
           <Route path="/terminos" element={<Terminos />} />
           <Route path="/privacidad" element={<Privacidad />} />
           <Route path="/reembolsos" element={<Reembolsos />} />

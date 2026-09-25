@@ -1,3 +1,4 @@
+import {createPortal} from "react-dom";
 import { renderSize } from "@/lib/renderSize";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { User } from "lucide-react";
@@ -413,6 +414,7 @@ const GeneradorPromptsArquitectonicos = () => {
   const [generando, setGenerando] = useState(false);
   const [imagenRenders, setImagenRenders] = useState<Record<TabId, string>>({ nueva: "", remodelacion: "", planta: "", sketch: "" });
   const [errorRender, setErrorRender] = useState("");
+  const [resultHost,setResultHost] = useState<HTMLDivElement|null>(null);
   const [comparacion, setComparacion] = useState<"antes" | "despues">("despues");
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
@@ -1177,7 +1179,7 @@ const GeneradorPromptsArquitectonicos = () => {
           </label>
           <p className="text-xs font-bold text-muted-foreground">La imagen no se envía a ningún servidor — solo se usa como referencia visual local.</p>
           {nombreArchivo && <p className="text-xs font-bold text-foreground">Archivo seleccionado: {nombreArchivo}</p>}
-          {vistaPrevia && (imagenVisor && campo.id === "imagen" ? (
+          {vistaPrevia && resultHost && createPortal((imagenVisor && campo.id === "imagen" ? (
             <div className="space-y-3">
               <div className="flex gap-2">
                 {(["antes", "despues"] as const).map((modo) => {
@@ -1215,7 +1217,7 @@ const GeneradorPromptsArquitectonicos = () => {
               {descripcionIA[tabActiva] && <p className="text-xs font-bold text-brand-gold">Descripción generada por IA — puedes editarla</p>}
               {errorAnalisis && <p className="text-xs font-bold text-destructive">{errorAnalisis}</p>}
             </div>
-          ))}
+          )), resultHost)}
         </div>
       );
     }
@@ -1252,13 +1254,13 @@ const GeneradorPromptsArquitectonicos = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background font-sans text-foreground">
+    <div className="render-dashboard min-h-screen bg-background font-sans text-foreground">
       <header className="border-b border-brand-border bg-card">
         <div className="mx-auto w-[min(1180px,calc(100%-32px))] py-8">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="mb-3 text-xs font-extrabold uppercase tracking-[0.2em] text-brand-gold">Generaciones arquitectónicas con IA</div>
-              <h1 className="m-0 text-[clamp(28px,4vw,48px)] font-black leading-tight tracking-normal text-foreground">ArquiRender</h1>
+              <h1 className="m-0 text-[clamp(28px,4vw,48px)] font-black leading-tight tracking-normal text-foreground">Estudio de renders</h1>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               {!userId && (
@@ -1319,7 +1321,7 @@ const GeneradorPromptsArquitectonicos = () => {
               )}
             </div>
           </div>
-          {userId && <div className="mt-4 border-t border-brand-border pt-4"><a href="/app/presentaciones" target="_blank" rel="noopener noreferrer" className="inline-flex rounded-md border border-[#EA580C]/40 px-4 py-2 text-sm font-bold text-[#EA580C] hover:bg-[#EA580C]/10">Presentaciones ↗</a><a href="/app/videos" target="_blank" rel="noopener noreferrer" className="ml-3 inline-flex rounded-md border border-[#EA580C]/40 px-4 py-2 text-sm font-bold text-[#EA580C] hover:bg-[#EA580C]/10">Estudio de video ↗</a><span className="ml-3 text-xs text-muted-foreground">Usa tus renders para crear presentaciones PDF y escenas de video.</span></div>}
+
         </div>
       </header>
 
@@ -1328,8 +1330,8 @@ const GeneradorPromptsArquitectonicos = () => {
           <HistorialRenders userId={userId} refreshSignal={refrescarHistorial} onContinuar={continuarDesde} />
         </main>
       ) : (
-      <main className="mx-auto grid w-[min(1180px,calc(100%-32px))] gap-8 pt-7 pb-36 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start">
-        <section className="overflow-hidden rounded-md border border-brand-border bg-card">
+      <main className="render-workspace">
+        <section className="render-composer overflow-hidden rounded-md border border-brand-border bg-card">
           <div className="px-5 py-5 sm:px-6">
             <h2 className="m-0 text-2xl font-black tracking-normal text-foreground">{tab.titulo}</h2>
           </div>
@@ -1527,7 +1529,7 @@ const GeneradorPromptsArquitectonicos = () => {
               const faltan = faltanPara(costoGeneracion, userId, creditos);
               const sinSaldo = faltan > 0;
               return (
-                <div role="region" aria-label="Generar render" className="fixed inset-x-0 bottom-0 z-30 border-t border-brand-border bg-card px-4 pt-3 shadow-[0_-6px_24px_rgba(0,0,0,0.25)]" style={{paddingBottom:"max(12px, env(safe-area-inset-bottom))"}}>
+                <div role="region" aria-label="Generar render" className="render-generate fixed inset-x-0 bottom-0 z-30 border-t border-brand-border bg-card px-4 pt-3 shadow-[0_-6px_24px_rgba(0,0,0,0.25)]" style={{paddingBottom:"max(12px, env(safe-area-inset-bottom))"}}>
                   <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
                     <div className="min-w-0 text-xs text-muted-foreground">
                       <p className="truncate font-bold text-foreground">{selectedRepresentaciones.length ? selectedRepresentaciones.join(" · ") : presetActivo ? nombrePreset(PRESETS.find(p=>p.id===presetActivo)!) : "Iterar render · estilo, luz e indicaciones"}</p>
@@ -1548,15 +1550,16 @@ const GeneradorPromptsArquitectonicos = () => {
           </div>
         </section>
 
-        <aside className="sticky top-5 rounded-md border border-brand-border bg-card p-5">
+        <aside className="render-results rounded-md border border-brand-border bg-card p-5">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="m-0 text-xl font-black tracking-normal text-foreground">Tu generación</h2>
+            <h2 className="m-0 text-xl font-black tracking-normal text-foreground">Tus creaciones</h2>
             <span className="text-xs font-bold text-muted-foreground">{prompt.length} caracteres</span>
           </div>
           <button type="button" onClick={nuevoPrompt} className="mb-3 w-full rounded-md bg-[#EA580C] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#c2470a]">+ Nueva generación</button>
+          <div ref={setResultHost} className="render-preview"/>
           {/* Estado y visor. El prompt ya no vive aquí: va más abajo, tras el
               grid, para que "¿Y ahora qué?" siga al botón Descargar. */}
-          {(generando || errorRender || (imagenVisor && !vistasPrevias[tabActiva]?.imagen) || !prompt) && (
+          {(generando || errorRender || (imagenVisor && !vistasPrevias[tabActiva]?.imagen) || (!prompt && !vistasPrevias[tabActiva]?.imagen)) && (
             <div className="flex min-h-72 flex-col overflow-wrap-anywhere rounded-md border border-brand-gold bg-input p-4 text-sm leading-relaxed text-foreground">
               {generando ? (
                 <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
@@ -1574,7 +1577,7 @@ const GeneradorPromptsArquitectonicos = () => {
                   <a href={imagenVisor} download={`arquirender-${etiquetaVisor.toLowerCase().replace(/\s+/g, "-")}.png`} className="rounded-md bg-[#EA580C] px-4 py-3 text-center text-sm font-extrabold text-white transition hover:bg-[#c2470a]">Descargar</a>
                 </div>
               ) : (
-                <div className="whitespace-pre-wrap">Completa las opciones y genera tu generación con IA.</div>
+                <div className="whitespace-pre-wrap">Tus renders aparecerán aquí. Sube una imagen y prepara tu primera generación.</div>
               )}
             </div>
           )}
@@ -1688,15 +1691,16 @@ const GeneradorPromptsArquitectonicos = () => {
 
           {/* Prompt generado, separado del visor para respetar el orden del panel. */}
           {prompt && (
-            <div className="mt-3 overflow-wrap-anywhere whitespace-pre-wrap rounded-md border border-brand-gold bg-input p-4 text-sm leading-relaxed text-foreground">
+            <details className="mt-3"><summary>Ver prompt utilizado</summary><div className="mt-3 overflow-wrap-anywhere whitespace-pre-wrap rounded-md border border-brand-gold bg-input p-4 text-sm leading-relaxed text-foreground">
               {prompt}
-            </div>
+            </div></details>
           )}
 
           <div className="mt-3 grid grid-cols-2 gap-3">
             <button className="rounded-md border border-brand-gold bg-transparent px-3 py-3 text-sm font-extrabold text-brand-gold transition hover:bg-brand-gold hover:text-brand-gold-foreground" onClick={() => copiarTexto(prompt, "prompt")}>{copiado ? "¡Copiado! ✓" : "Copiar prompt"}</button>
             <button className="rounded-md border border-brand-border bg-input px-3 py-3 text-sm font-extrabold text-foreground transition hover:border-brand-gold hover:text-brand-gold" onClick={nuevoPrompt}>Nuevo prompt</button>
           </div>
+          {userId && <details className="render-history" open><summary>Mi historial de renders</summary><HistorialRenders userId={userId} refreshSignal={refrescarHistorial} onContinuar={continuarDesde}/></details>}
         </aside>
       </main>
       )}

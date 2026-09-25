@@ -60,3 +60,5 @@
  .canvas .template-section{padding:24px 0 0;margin-top:14px;border-top:1px solid #303036}
  .canvas .template-section .section-title{gap:16px;flex-wrap:wrap}
 }
+
+@media screen{.embedded-studio .top .brand,.embedded-studio .studio-nav,.embedded-studio .intro{display:none}.embedded-studio .top{min-height:70px;padding:16px 24px}.embedded-studio .workspace{border-top:0}}

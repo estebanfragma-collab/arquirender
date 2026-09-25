@@ -77,6 +77,7 @@ function Demo({accountId, history = []}:{accountId?:string;history?:Asset[]}) {
     catch(e){setNotice(e instanceof Error?e.message:'No se pudo cargar la lista.');}
     finally{setCloudBusy(false);}
   };
+  useEffect(()=>{if(ready && accountId && new URLSearchParams(location.search).has('projects'))void refreshDocuments();},[ready]);
   const openCloud=async(id:string)=>{
     if(!accountId|| (dirty.current&&!window.confirm('Hay cambios sin guardar. ¿Abrir otra presentación y descartarlos?')))return;
     setCloudBusy(true);
@@ -147,7 +148,7 @@ function Demo({accountId, history = []}:{accountId?:string;history?:Asset[]}) {
     </article>;
   }
   if(!ready)return <div className="loading" role="status">Abriendo tu estudio de presentaciones…</div>;
-  return <div className="studio">
+  return <div className={`studio ${new URLSearchParams(location.search).has('embedded')?'embedded-studio':''}`}>
     <style>{sheetPrintStyles}</style>
     <div className="print-document" aria-hidden="true">{pages.map((p,i)=><Sheet key={p.id} page={p} number={i+1}/>)}</div>
     <fieldset className="editor-controls" disabled={saving||cloudBusy||aiBusy||importing}>
