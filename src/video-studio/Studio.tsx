@@ -5,7 +5,7 @@ import { movements, newScene, validScenes, basis, sceneError, projectScript, typ
 import { listProjects, saveProject, proposeScene } from './api';
 import './studio.css';
 import Clips from './Clips';
-import {videoPresets,applyPreset} from './presets';
+import {videoPresets,applyPreset,presetsForMode,changeSceneMode} from './presets';
 
 type Session = {id:string;assets:RenderAsset[]};
 export default function VideoStudio(){
@@ -29,7 +29,7 @@ export default function VideoStudio(){
   },[attempt]);
   return <div className="video-studio">{session?<Editor key={session.id} session={session}/>:<main className="vs-loading"><Film/><h1>Estudio de video</h1><p role="status">{message}</p><a href="/app">Volver a ArquiRender</a><button onClick={()=>setAttempt(n=>n+1)}>Reintentar</button></main>}</div>;
 }
-function Editor({session}:{session:Session}){
+export function Editor({session}:{session:Session}){
   const draftKey=`arquirender-video:${session.id}`;
   const [draft]=useState(()=>{try{const d=JSON.parse(localStorage.getItem(draftKey)||'null');return d?.version===1&&validScenes(d.scenes)&&typeof d.name==='string'?d:null;}catch{return null;}});
   const [scenes,setScenes]=useState<Scene[]>(draft?.scenes||[newScene()]);
@@ -48,6 +48,8 @@ function Editor({session}:{session:Session}){
   const clean=useRef('');
   const current=scenes.find(s=>s.id===active)||scenes[0];
   const index=scenes.indexOf(current);
+  const selectedPreset=videoPresets.find(p=>p.id===current.presetId&&p.mode===current.mode);
+  const changeMode=(mode:Scene['mode'])=>{if(mode===current.mode)return;update(changeSceneMode(current,mode));setSlot('start');setNotice('Modo cambiado. Elige un efecto y prepara el prompt para esta toma.');};
   const start=session.assets.find(a=>a.id===current.startId),end=session.assets.find(a=>a.id===current.endId);
   const validation=sceneError(current,session.assets);
   const stale=!!current.promptBasis&&current.promptBasis!==basis(current);
@@ -83,8 +85,15 @@ function Editor({session}:{session:Session}){
     <section className="vs-workspace">
 
       <main className="vs-director"><div className="vs-section-heading"><h2>Dirige tu escena</h2><span>{String(index+1).padStart(2,'0')} / {String(scenes.length).padStart(2,'0')}</span></div><label className="vs-scene-name">Nombre de la escena<input maxLength={80} value={current.name} onChange={e=>update({name:e.target.value})}/></label>
-        <details className="vs-presets"><summary>Presets de arquitectura</summary><h3>1 · Escoge una toma</h3><p>Carga una dirección de cámara lista para editar. Las opciones en pruebas todavía necesitan tu evaluación.</p><div className="vs-preset-grid">{videoPresets.map(p=><button key={p.id} aria-pressed={current.presetId===p.id} className={current.presetId===p.id?'selected':''} onClick={()=>{if(current.prompt.trim()&&!confirm('¿Aplicar esta toma? Reemplazará el prompt y los ajustes de esta escena.'))return;update(applyPreset(current,p.id));setSlot('start');setNotice('Toma aplicada. Elige las imágenes y revisa el prompt antes de cotizar.');}}><small>{p.status}</small><strong>{p.label}</strong><span>{p.description}</span></button>)}</div></details>
-        <h3 className="vs-step">2 · Selecciona las imágenes</h3><div className="vs-modes"><button aria-pressed={current.mode==='animate'} className={current.mode==='animate'?'selected':''} onClick={()=>{update({mode:'animate'});setSlot('start');}}><Film size={21}/><strong>Animar un render</strong><small>Una imagen, una toma.</small></button><button aria-pressed={current.mode==='transition'} className={current.mode==='transition'?'selected':''} onClick={()=>update({mode:'transition'})}><ImagePlus size={21}/><strong>De una imagen a otra</strong><small>Define el inicio y el final.</small></button></div>
+        <h3 className="vs-step">1 · ¿Cómo quieres crear tu video?</h3>
+        <div className="vs-modes"><button aria-pressed={current.mode==='animate'} className={current.mode==='animate'?'selected':''} onClick={()=>changeMode('animate')}><Film size={21}/><strong>Animar un render</strong><small>1 imagen · una toma en movimiento.</small></button><button aria-pressed={current.mode==='transition'} className={current.mode==='transition'?'selected':''} onClick={()=>changeMode('transition')}><ImagePlus size={21}/><strong>De una imagen a otra</strong><small>2 imágenes · define el inicio y el final.</small></button></div>
+        <section className="vs-effects" aria-label="Efectos compatibles">
+          <h3 className="vs-step">2 · ¿Qué quieres que pase?</h3>
+          <p>{current.mode==='animate'?'Estos efectos usan una sola imagen.':'Estos efectos usan una imagen inicial y una final.'} Elige uno o escribe tu propia indicación más abajo.</p>
+          <div className="vs-preset-grid">{presetsForMode(current.mode).map(p=><button key={p.id} aria-pressed={selectedPreset?.id===p.id} className={selectedPreset?.id===p.id?'selected':''} onClick={()=>{if(selectedPreset?.id===p.id)return;if(current.prompt.trim()&&!confirm('¿Aplicar este efecto? Reemplazará el prompt y los ajustes de esta escena.'))return;update(applyPreset(current,p.id));setNotice('Efecto aplicado. Selecciona las imágenes indicadas y revisa el prompt.');}}><small>{p.mode==='animate'?'1 imagen':'2 imágenes'}{selectedPreset?.id===p.id?' · ✓ Seleccionado':''}</small><strong>{p.label}</strong><span>{p.description}</span></button>)}</div>
+        </section>
+        <h3 className="vs-step">3 · {current.mode==='animate'?'Selecciona tu imagen':'Selecciona el inicio y el final'}</h3>
+        {selectedPreset&&<p className="vs-tip">{selectedPreset.description}</p>}
         <div className={`vs-frames ${current.mode}`}>
           <button className={`vs-frame ${slot==='start'?'active':''}`} aria-label="Elegir imagen inicial" aria-pressed={slot==='start'} onClick={()=>setSlot('start')}>{start?<img src={start.src} alt="Vista inicial de la escena"/>:<div><ImagePlus size={30}/><p>Escoge un render del historial</p></div>}<span>01 · IMAGEN INICIAL</span></button>
           {current.mode==='transition'&&<><div className="vs-frame-arrow"><ArrowRight size={20}/></div><button className={`vs-frame ${slot==='end'?'active':''}`} aria-label="Elegir imagen final" aria-pressed={slot==='end'} onClick={()=>setSlot('end')}>{end?<img src={end.src} alt="Vista final de la escena"/>:<div><ImagePlus size={30}/><p>Escoge cómo termina la toma</p></div>}<span>02 · IMAGEN FINAL</span></button></>}
@@ -95,11 +104,11 @@ function Editor({session}:{session:Session}){
         <label>¿Qué debe transmitir esta toma?<textarea rows={3} maxLength={1000} placeholder="Ej.: un acercamiento lento para mostrar la luz cálida, sin cambiar ventanas ni materiales." value={current.brief} onChange={e=>update({brief:e.target.value})}/></label>
         <div className="vs-prompt-action"><button className="vs-primary" disabled={!!validation} onClick={generatePrompt}><Sparkles size={17}/>Ayudarme con el prompt</button><small>{validation||'La IA escribe el prompt debajo. Puedes editarlo antes de generar.'}</small></div>
 
-      <section className="vs-prompt-editor"><div className="vs-section-heading"><h2><span>3</span> Revisa el prompt</h2></div><span className={`vs-status ${current.prompt&&!stale?'ready':''}`}>{current.prompt?(stale?'REVISAR AJUSTES':'PROMPT PREPARADO'):'POR PREPARAR'}</span><p>El prompt se prepara en inglés para usarlo en el generador que elijas. Puedes modificarlo aquí.</p><label>Prompt de la escena<textarea aria-label="Prompt de la escena" rows={7} maxLength={2200} placeholder="Prepara la escena con IA o escribe tu propio prompt." value={current.prompt} onChange={e=>update({prompt:e.target.value})}/></label>
+      <section className="vs-prompt-editor"><div className="vs-section-heading"><h2><span>4</span> Revisa el prompt</h2></div><span className={`vs-status ${current.prompt&&!stale?'ready':''}`}>{current.prompt?(stale?'REVISAR AJUSTES':'PROMPT PREPARADO'):'POR PREPARAR'}</span><p>El prompt se prepara en inglés para usarlo en el generador que elijas. Puedes modificarlo aquí.</p><label>Prompt de la escena<textarea aria-label="Prompt de la escena" rows={7} maxLength={2200} placeholder="Prepara la escena con IA o escribe tu propio prompt." value={current.prompt} onChange={e=>update({prompt:e.target.value})}/></label>
         {stale&&<div className="vs-warning"><p>Cambiaste las imágenes o los ajustes. Revisa el prompt o prepara una nueva propuesta antes de generar.</p><button disabled={!!validation||!current.prompt.trim()} onClick={()=>update({promptBasis:basis(current)})}>He revisado el prompt para estas imágenes</button></div>}
         <button disabled={!current.prompt.trim()} onClick={copyPrompt}><Copy size={16}/>Copiar prompt</button>
         {current.notes&&<details><summary>Notas de la IA</summary><p>{current.notes}</p></details>}
-        <h3 className="vs-step">4 · Ajustes y costo</h3>
+        <h3 className="vs-step">5 · Ajustes y costo</h3>
         <div className="vs-settings"><label>Movimiento de cámara<select aria-label="Movimiento de cámara" value={current.movement} onChange={e=>update({movement:e.target.value})}>{movements.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}</select></label><label>Duración<select aria-label="Duración" value={current.duration} onChange={e=>update({duration:Number(e.target.value) as 5|10})}><option value={5}>5 segundos</option><option value={10}>10 segundos</option></select></label><label>Formato<select aria-label="Formato" value={current.format} onChange={e=>update({format:e.target.value as Scene['format']})}><option value="16:9">Horizontal · 16:9</option><option value="9:16">Vertical · 9:16</option><option value="1:1">Cuadrado · 1:1</option></select></label></div>
         <Clips scene={current} blocked={!!validation||stale} resultsPanel={resultsPanel}/>
         <small className="vs-ai-note">Preparar la escena envía copias reducidas de las imágenes seleccionadas a OpenAI. Hasta 30 propuestas diarias, sin gastar créditos de renders.</small>

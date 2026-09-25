@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {createPortal} from 'react-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { Scene } from './model';
+import {videoPresets} from './presets';
 type Job={createdAt?:string;model:string;duration:number;id:string;sceneId:string;name:string;state:string;estimatedUsd:number;url:string|null;expiresAt:string};
 async function request(body:unknown){
  const {data,error}=await supabase.functions.invoke('video-clips',{body,signal:AbortSignal.timeout(90000)});
@@ -36,9 +37,9 @@ export default function Clips({scene,blocked,resultsPanel}:{scene:Scene;blocked:
  }
  const incompatible=engine==='dop'&&scene.duration!==5?'Esta duración necesita MiniMax.':engine==='minimax'&&scene.mode==='transition'?'Para dos imágenes elige DoP Lite y 5 segundos.':'';
  const active=jobs.some(j=>['submitting','queued','in_progress','unknown'].includes(j.state));
- return <section className="vs-generation"><span className="vs-eyebrow">5 · GENERA TU VIDEO</span><p>Prueba económica · sin audio. El costo se consulta antes de generar.</p><small>En esta prueba, el clip puede conservar la proporción de la imagen original.</small>
+ return <section className="vs-generation"><span className="vs-eyebrow">6 · GENERA TU VIDEO</span><p>Prueba económica · sin audio. El costo se consulta antes de generar.</p><small>En esta prueba, el clip puede conservar la proporción de la imagen original.</small>
  <label>Modelo de la prueba<select value={engine} disabled={busy} onChange={e=>setEngine(e.target.value)}><option value="dop">DoP Lite · económico · 5 segundos</option><option value="minimax">MiniMax Hailuo 2.3 · estándar</option></select></label><small>{engine==='minimax'?'Una imagen inicial. La opción de 5 s genera un clip de 6 s en MiniMax.':'DoP genera tomas de 5 segundos. Consulta el precio antes de cada toma.'}</small>
- <div className="vs-generate-dock"> <button disabled={busy||blocked||!scene.prompt.trim()||active||!!incompatible} onClick={()=>run('quote')}>{busy?'Consultando…':'Consultar costo de esta toma'}</button>
+ <div className="vs-generate-dock"><div className="vs-take-summary" aria-label="Resumen de tu toma"><strong>{videoPresets.find(p=>p.id===scene.presetId&&p.mode===scene.mode)?.label||'Toma personalizada'}</strong><small>{scene.mode==='animate'?'Animar 1 imagen':'Transición entre 2 imágenes'} · {engine==='minimax'&&scene.duration===5?6:scene.duration} segundos</small></div><button disabled={busy||blocked||!scene.prompt.trim()||active||!!incompatible} onClick={()=>run('quote')}>{busy?'Consultando…':'Consultar costo de esta toma'}</button>
  {quote&&quote.basis===signature&&<div className="vs-clip-quote"><p><strong>USD {quote.job.estimatedUsd.toFixed(3)}</strong> por esta toma de {quote.job.duration} segundos.</p><button className="vs-primary" disabled={busy||active} onClick={()=>run('start')}>Generar video · USD {quote.job.estimatedUsd.toFixed(3)}</button><small>Al generar, envías las imágenes y el prompt a Higgsfield. Cotización válida durante 10 minutos.</small></div>}</div>
  <small>La generación utiliza el saldo de video y el límite habilitado para tu cuenta; no los créditos de renders.</small>{incompatible&&<p className="vs-warning">{incompatible}</p>}{active&&<p className="vs-warning">Hay una toma pendiente. Puedes seguir preparando y guardando escenas. Vuelve a este estudio para consultar el resultado; no repitas la generación.</p>}
  {message&&<p role="status" className="vs-warning">{message}</p>}

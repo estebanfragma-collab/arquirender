@@ -3,8 +3,7 @@ export const videoPresets = [
   {
     "id": "approach",
     "label": "Acercamiento al proyecto",
-    "description": "Avanza hacia el acceso. Una imagen, 10 segundos.",
-    "status": "Seleccionada",
+    "description": "La cámara avanza hacia el acceso. Usa un render exterior donde se vea la entrada.",
     "mode": "animate",
     "duration": 10,
     "movement": "push",
@@ -13,8 +12,7 @@ export const videoPresets = [
   {
     "id": "lateral",
     "label": "Recorrido lateral",
-    "description": "Muestra la fachada con desplazamiento lateral.",
-    "status": "Seleccionada",
+    "description": "La cámara se desplaza de lado. Usa un render de la fachada o del espacio que quieres recorrer.",
     "mode": "animate",
     "duration": 5,
     "movement": "slide",
@@ -23,8 +21,7 @@ export const videoPresets = [
   {
     "id": "day-night",
     "label": "Día a noche",
-    "description": "Dos renders del mismo encuadre con distinta iluminación.",
-    "status": "Seleccionada",
+    "description": "La iluminación pasa de día a noche. Usa el mismo espacio y encuadre: primero de día, después de noche.",
     "mode": "transition",
     "duration": 5,
     "movement": "fixed",
@@ -33,8 +30,7 @@ export const videoPresets = [
   {
     "id": "render-transition",
     "label": "Entre dos renders",
-    "description": "Conecta dos vistas compatibles sin personas.",
-    "status": "Por validar",
+    "description": "La cámara conecta dos vistas del mismo proyecto. Usa encuadres cercanos y compatibles, sin personas.",
     "mode": "transition",
     "duration": 5,
     "movement": "slide",
@@ -43,8 +39,7 @@ export const videoPresets = [
   {
     "id": "aerial",
     "label": "Revelación aérea",
-    "description": "Abre el plano hacia una vista más amplia del entorno.",
-    "status": "Seleccionada para edición",
+    "description": "La cámara retrocede y asciende. Usa una vista cercana como inicio y una vista aérea amplia como final.",
     "mode": "transition",
     "duration": 5,
     "movement": "rise",
@@ -53,8 +48,7 @@ export const videoPresets = [
   {
     "id": "model",
     "label": "Giro de maqueta",
-    "description": "Gira el modelo físico y su base como un conjunto.",
-    "status": "Seleccionada",
+    "description": "La maqueta y su base giran juntas. Usa una imagen de una maqueta física con su base visible.",
     "mode": "animate",
     "duration": 5,
     "movement": "fixed",
@@ -63,8 +57,7 @@ export const videoPresets = [
   {
     "id": "rain",
     "label": "Cambio de clima",
-    "description": "Del render seco al render con lluvia, con encuadre similar.",
-    "status": "En pruebas",
+    "description": "El clima cambia de seco a lluvioso. Usa el mismo encuadre: primero seco, después con lluvia.",
     "mode": "transition",
     "duration": 5,
     "movement": "fixed",
@@ -73,8 +66,7 @@ export const videoPresets = [
   {
     "id": "material",
     "label": "Detalle de materiales",
-    "description": "Deslizamiento corto sobre una textura en primer plano.",
-    "status": "En pruebas",
+    "description": "La cámara se desliza sobre una textura. Usa un primer plano del material que quieres mostrar.",
     "mode": "animate",
     "duration": 5,
     "movement": "slide",
@@ -83,8 +75,7 @@ export const videoPresets = [
   {
     "id": "roof",
     "label": "Revelar distribución",
-    "description": "De la vista exterior a una vista sin cubierta.",
-    "status": "Seleccionada",
+    "description": "La cubierta se eleva para mostrar el interior. Usa la casa con cubierta al inicio y una vista compatible sin cubierta al final.",
     "mode": "transition",
     "duration": 5,
     "movement": "rise",
@@ -92,7 +83,17 @@ export const videoPresets = [
   }
 ] as const;
 export function applyPreset(scene:Scene,id:string):Scene {
- const preset=videoPresets.find(p=>p.id===id);if(!preset)return scene;
+ const preset=videoPresets.find(p=>p.id===id);if(!preset||preset.mode!==scene.mode)return scene;
  const next:Scene={...scene,presetId:id,name:preset.label,mode:preset.mode,duration:preset.duration,movement:preset.movement,prompt:preset.prompt,notes:preset.description,brief:'',endId:preset.mode==='transition'?scene.endId:''};
  next.promptBasis=basis(next);return next;
+}
+
+export function presetsForMode(mode:Scene['mode']) {
+ return videoPresets.filter(p=>p.mode===mode);
+}
+
+export function changeSceneMode(scene:Scene,mode:Scene['mode']):Scene {
+ if(scene.mode===mode)return scene;
+ // Keep references and user intent, but discard directions written for the other mode.
+ return {...scene,mode,presetId:undefined,prompt:'',promptBasis:'',notes:'',movement:mode==='transition'?'fixed':'push',duration:5};
 }
