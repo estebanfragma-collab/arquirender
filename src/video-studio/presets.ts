@@ -1,6 +1,18 @@
 import {basis, type Scene} from './model';
 export const videoPresets = [
   {
+    id: 'add-rain', label: 'Añadir lluvia',
+    description: 'Elige un render seco. La IA anima la llegada de la lluvia; no necesitas una segunda imagen.',
+    mode: 'animate', duration: 5, movement: 'fixed',
+    prompt: 'One continuous five-second architectural weather shot from the single supplied reference. Keep the camera locked and preserve the exact building, furniture, materials and framing. Clouds gradually gather outside, gentle rain begins outdoors and exposed ground becomes wet with subtle reflections. Keep sheltered interiors dry. No rain inside rooms, no structural changes, no cuts or crossfades.'
+  },
+  {
+    id: 'animate-night', label: 'Hacer que anochezca',
+    description: 'Elige un render de día. La IA anima el anochecer y el encendido de luces; no necesitas una imagen nocturna.',
+    mode: 'animate', duration: 5, movement: 'fixed',
+    prompt: 'One continuous five-second architectural lighting timelapse from the single daylight reference. Locked camera, unchanged architecture, furniture and materials. Daylight fades through sunset into night while existing interior and exterior lights gradually turn on. Preserve all geometry and framing. No added fixtures, cuts, crossfades or reconstruction.'
+  },
+  {
     "id": "approach",
     "label": "Acercamiento al proyecto",
     "description": "La cámara avanza hacia el acceso. Usa un render exterior donde se vea la entrada.",
@@ -20,7 +32,7 @@ export const videoPresets = [
   },
   {
     "id": "day-night",
-    "label": "Día a noche",
+    "label": "Conectar día y noche",
     "description": "La iluminación pasa de día a noche. Usa el mismo espacio y encuadre: primero de día, después de noche.",
     "mode": "transition",
     "duration": 5,
@@ -56,7 +68,7 @@ export const videoPresets = [
   },
   {
     "id": "rain",
-    "label": "Cambio de clima",
+    "label": "Conectar seco y lluvia",
     "description": "El clima cambia de seco a lluvioso. Usa el mismo encuadre: primero seco, después con lluvia.",
     "mode": "transition",
     "duration": 5,
