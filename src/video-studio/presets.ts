@@ -33,29 +33,29 @@ export const videoPresets = [
   {
     "id": "day-night",
     "label": "Conectar día y noche",
-    "description": "La iluminación pasa de día a noche. Usa el mismo espacio y encuadre: primero de día, después de noche.",
+    "description": "Fusión gradual de la luz de día a la noche. Usa el mismo espacio y encuadre, primero de día y después de noche.",
     "mode": "transition",
     "duration": 5,
     "movement": "fixed",
-    "prompt": "Locked-off architectural timelapse. Start exactly at the daylight reference and finish exactly at the nighttime reference. Keep the camera fixed. Daylight fades through sunset into blue hour, the sky darkens, warm interior lights and soffit lights progressively switch on. Preserve the building geometry, floors, windows and materials. No orbit, no camera travel, no melting or reconstruction. A continuous lighting transformation, not a crossfade."
+    "prompt": "A five-second smooth cross-dissolve between the two supplied images. Blend daylight gradually into the supplied night view: sky darkens smoothly and existing lights appear progressively. Keep matching building edges aligned. Hold the first image for 0.5 seconds, blend continuously over the next 4 seconds with gentle ease-in and ease-out, then hold the final image for 0.5 seconds. Start the blend early; do not delay it until the end. No hard cuts, sudden switches, flashes, whip pans or geometry morphing. No added people, objects or text. Keep the camera still; create the transition through overlapping image opacity."
   },
   {
     "id": "render-transition",
     "label": "Entre dos renders",
-    "description": "La cámara conecta dos vistas del mismo proyecto. Usa encuadres cercanos y compatibles, sin personas.",
+    "description": "Un render desaparece suavemente mientras aparece el otro. Elige la vista inicial y la final; no se fuerza un recorrido de cámara.",
     "mode": "transition",
     "duration": 5,
-    "movement": "slide",
-    "prompt": "A continuous architectural camera transition between the supplied two renders of the same project. Travel naturally from the initial view toward the final view. Preserve the architecture, furniture and materials, with no added people. No crossfade, no melting geometry, no abrupt jump. Use a short coherent camera path."
+    "movement": "fixed",
+    "prompt": "A five-second smooth cross-dissolve between the two supplied images. Use a classic editorial cross-dissolve between the two supplied renders. Fade out the first view while fading in the second. Preserve each image as a separate intact view instead of inventing a spatial camera route. Hold the first image for 0.5 seconds, blend continuously over the next 4 seconds with gentle ease-in and ease-out, then hold the final image for 0.5 seconds. Start the blend early; do not delay it until the end. No hard cuts, sudden switches, flashes, whip pans or geometry morphing. No added people, objects or text. Keep the camera still; create the transition through overlapping image opacity."
   },
   {
     "id": "aerial",
     "label": "Revelación aérea",
-    "description": "La cámara retrocede y asciende. Usa una vista cercana como inicio y una vista aérea amplia como final.",
+    "description": "Fusión de una vista cercana a una aérea amplia. El cambio de encuadre aparece poco a poco, sin un vuelo acelerado.",
     "mode": "transition",
     "duration": 5,
-    "movement": "rise",
-    "prompt": "One continuous aerial drone pullback. Start close to the house at the exact first reference. Fly backward and rise steadily, revealing the whole garden, forest and distant landscape, ending at the wide aerial reference. Strong visible retreat and elevation change throughout the shot. Keep the house rigid and unchanged, no orbit, no dissolves or transformations. Smooth controlled deceleration at the end."
+    "movement": "fixed",
+    "prompt": "A five-second smooth cross-dissolve between the two supplied images. Cross-dissolve from the supplied close view into the supplied wide aerial view. Reveal the wider landscape through gradual opacity blending, not a fast drone flight or a forced zoom. Preserve both reference compositions. Hold the first image for 0.5 seconds, blend continuously over the next 4 seconds with gentle ease-in and ease-out, then hold the final image for 0.5 seconds. Start the blend early; do not delay it until the end. No hard cuts, sudden switches, flashes, whip pans or geometry morphing. No added people, objects or text. Keep the camera still; create the transition through overlapping image opacity."
   },
   {
     "id": "model",
@@ -69,11 +69,11 @@ export const videoPresets = [
   {
     "id": "rain",
     "label": "Conectar seco y lluvia",
-    "description": "El clima cambia de seco a lluvioso. Usa el mismo encuadre: primero seco, después con lluvia.",
+    "description": "Fusión de la escena seca a la lluviosa. Usa el mismo encuadre: la humedad, las nubes y los reflejos aparecen gradualmente.",
     "mode": "transition",
     "duration": 5,
     "movement": "fixed",
-    "prompt": "Locked tripod architectural weather timelapse, same house and same camera throughout. Begin with the dry daylight reference. Clouds gradually thicken, light becomes overcast, rain starts gently then grows, the deck and gravel gradually darken with moisture and puddles develop realistic reflections. Finish at the rainy reference. Preserve every wall, window, roof line and object. Continuous weather evolution, no crossfade, no orbit, no zoom, no structural changes."
+    "prompt": "A five-second smooth cross-dissolve between the two supplied images. Blend the supplied dry view into the supplied rainy view. Cloud cover, wet surfaces and reflections appear progressively with the dissolve. Keep matching architecture aligned and sheltered interiors dry. Hold the first image for 0.5 seconds, blend continuously over the next 4 seconds with gentle ease-in and ease-out, then hold the final image for 0.5 seconds. Start the blend early; do not delay it until the end. No hard cuts, sudden switches, flashes, whip pans or geometry morphing. No added people, objects or text. Keep the camera still; create the transition through overlapping image opacity."
   },
   {
     "id": "material",
@@ -87,11 +87,11 @@ export const videoPresets = [
   {
     "id": "roof",
     "label": "Revelar distribución",
-    "description": "La cubierta se eleva para mostrar el interior. Usa la casa con cubierta al inicio y una vista compatible sin cubierta al final.",
+    "description": "La cubierta se desvanece suavemente y aparece la distribución interior. Usa una vista con cubierta y otra compatible sin ella.",
     "mode": "transition",
     "duration": 5,
-    "movement": "rise",
-    "prompt": "Architectural exploded-view reveal in one continuous shot. Start at the supplied completed house aerial view. Its roof lifts vertically upward as one intact rigid assembly, progressively uncovering the furnished rooms beneath. Gently raise and tilt the camera downward to reach the supplied cutaway view. End with the roof out of frame and the room layout visible. Preserve all existing walls, furniture, openings and floor levels. The roof must physically lift, not dissolve or melt. No demolition, no orbit, no collapsing walls, no jump cut."
+    "movement": "fixed",
+    "prompt": "A five-second smooth cross-dissolve between the two supplied images. Use a gentle transparency dissolve from the supplied roofed house into the supplied roofless cutaway. The roof fades away while the furnished layout becomes visible. Do not lift, explode or demolish the roof; preserve the walls and furniture visible in each reference. Hold the first image for 0.5 seconds, blend continuously over the next 4 seconds with gentle ease-in and ease-out, then hold the final image for 0.5 seconds. Start the blend early; do not delay it until the end. No hard cuts, sudden switches, flashes, whip pans or geometry morphing. No added people, objects or text. Keep the camera still; create the transition through overlapping image opacity."
   }
 ] as const;
 export function applyPreset(scene:Scene,id:string):Scene {
