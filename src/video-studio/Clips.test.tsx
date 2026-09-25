@@ -20,10 +20,11 @@ it('keeps cost and confirmation in the composer and sends results to the separat
  expect(within(panel).queryByText('Generar video · USD 0.125')).toBeNull();
  expect(invoke.mock.calls.some(([,args])=>args.body.action==='start')).toBe(false);
  fireEvent.click(generate);
- await within(panel).findByText('Enviando · consulta el estado antes de repetir');
- expect(within(view.container).queryByText('Cubierta')).toBeNull();
+ const activity=await within(panel).findByRole('article',{name:'Estado de tu toma'});
+ expect(within(activity).getByRole('status')).toHaveTextContent('Enviando');
+ expect(view.container.querySelector('video')).toBeNull();
  await act(async()=>finish({data:{job:{...job,state:'completed',url:'https://example.com/clip.mp4'}}}));
- expect(within(panel).getByText('Clip listo')).toBeTruthy();
+ expect(within(activity).getByRole('status')).toHaveTextContent('Clip listo');
  panel.remove();
 });
 
@@ -39,4 +40,25 @@ it('loads saved fusions again on mount and keeps them separate from paid jobs',a
  render(<Clips scene={newScene()} blocked={false} resultsPanel={panel}/>);
  expect(await within(panel).findByRole('link',{name:'Abrir / descargar fusión'})).toHaveAttribute('href','https://example.com/saved.mp4');
  panel.remove();
+});
+
+it('shows a restored pending job above history and refreshes it without generating again',async()=>{
+ const {newScene}=await import('./model');
+ const activityPanel=document.createElement('div'),panel=document.createElement('div');
+ document.body.append(activityPanel,panel);
+ const job={id:'pending',sceneId:'scene',name:'Acercamiento al proyecto',model:'minimax',duration:10,state:'queued',estimatedUsd:.2,url:null,expiresAt:'',createdAt:new Date().toISOString()};
+ invoke.mockImplementation((_name,{body})=>Promise.resolve({data:body.action==='status'?{job:{...job,state:'completed',url:'https://example.com/done.mp4'}}:{jobs:[job]}}));
+ const scroll=vi.fn();
+ Element.prototype.scrollIntoView=scroll;
+ const view=render(<Clips scene={newScene()} blocked={false} resultsPanel={panel} activityPanel={activityPanel}/>);
+ const card=await within(activityPanel).findByRole('article',{name:'Estado de tu toma'});
+ expect(within(card).getByRole('status')).toHaveTextContent('En cola');
+ expect(activityPanel.compareDocumentPosition(panel)&Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+ fireEvent.click(within(view.container).getByRole('button',{name:'Ver estado de «Acercamiento al proyecto» →'}));
+ expect(scroll).toHaveBeenCalled();
+ fireEvent.click(within(card).getByRole('button',{name:'Actualizar estado de la toma'}));
+ expect(await within(card).findByRole('link',{name:'Abrir / descargar esta toma'})).toHaveAttribute('href','https://example.com/done.mp4');
+ expect(within(card).getByRole('status')).toHaveTextContent('Clip listo');
+ expect(invoke.mock.calls.some(([,args])=>['start','quote'].includes(args.body.action))).toBe(false);
+ activityPanel.remove();panel.remove();
 });
