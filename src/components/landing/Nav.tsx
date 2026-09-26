@@ -39,6 +39,7 @@ export default function Nav() {
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
+          <Link to="/posters" className={`transition-colors ${linkColor}`}>Pósters</Link>
           <a
             href="#caracteristicas"
             onClick={scrollToSection("caracteristicas")}

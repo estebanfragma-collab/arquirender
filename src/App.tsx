@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 
 import StudioLayout, {StudioProjects} from "./components/StudioLayout";
 
+const PosterStudio = lazy(() => import("./poster-lab/PosterStudio"));
 const VideoEditor = lazy(() => import("./video-editor/Editor"));
 const VideoStudio = lazy(() => import("./video-studio/Studio"));
 
@@ -28,6 +29,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/posters" element={<Suspense fallback={<p>Abriendo estudio creativo…</p>}><PosterStudio/></Suspense>}/>
           <Route element={<StudioLayout/>}>
           <Route path="/app" element={<AppPage />} />
           <Route path="/app/edicion" element={<Suspense fallback={<p>Abriendo editor…</p>}><VideoEditor/></Suspense>}/>

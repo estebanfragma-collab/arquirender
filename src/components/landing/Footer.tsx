@@ -41,6 +41,7 @@ export default function Footer() {
               Producto
             </h3>
             <ul className="mt-4 flex flex-col gap-3">
+              <li><Link to="/posters" className={linkClass}>Pósters editables</Link></li>
               <li>
                 <a href="#caracteristicas" onClick={scrollTo("caracteristicas")} className={linkClass}>
                   Características
