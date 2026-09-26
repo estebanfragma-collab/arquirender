@@ -7,8 +7,8 @@ export const videoPresets = [
     prompt: 'One continuous five-second architectural weather shot from the single supplied reference. Keep the camera locked and preserve the exact building, furniture, materials and framing. Clouds gradually gather outside, gentle rain begins outdoors and exposed ground becomes wet with subtle reflections. Keep sheltered interiors dry. No rain inside rooms, no structural changes, no cuts or crossfades.'
   },
   {
-    id: 'animate-night', label: 'Hacer que anochezca',
-    description: 'Elige un render de día. La IA anima el anochecer y el encendido de luces; no necesitas una imagen nocturna.',
+    id: 'animate-night', label: 'Anochecer · experimental',
+    description: 'Intenta oscurecer un render de día. Puede mover la cámara sin lograr el anochecer. Para definir el resultado final, usa «Conectar día y noche» con dos imágenes.',
     mode: 'animate', duration: 5, movement: 'fixed',
     prompt: 'One continuous five-second architectural lighting timelapse from the single daylight reference. Locked camera, unchanged architecture, furniture and materials. Daylight fades through sunset into night while existing interior and exterior lights gradually turn on. Preserve all geometry and framing. No added fixtures, cuts, crossfades or reconstruction.'
   },
@@ -23,12 +23,12 @@ export const videoPresets = [
   },
   {
     "id": "lateral",
-    "label": "Recorrido lateral",
-    "description": "La cámara se desplaza de lado. Usa un render de la fachada o del espacio que quieres recorrer.",
+    "label": "Desplazamiento lateral · experimental",
+    "description": "Intenta un movimiento lateral corto sobre tu render. Puede alterar la arquitectura; revisa el resultado antes de usarlo para presentar el proyecto.",
     "mode": "animate",
     "duration": 5,
     "movement": "slide",
-    "prompt": "One continuous 5-second photorealistic architectural shot. Start from the exact reference image. Truck the camera RIGHT three metres along the street while panning slightly left to hold the glazed corner centered. Foreground trees and cars cross frame faster than the facade. Clear lateral parallax. Establish the specified movement immediately, maintain it through the middle, and ease out for a clean final half-second. Preserve the original building, floor count, facade materials, structural columns, window grid and proportions. No added floors, moving walls, melting glass, cuts, text or logos. Do not invent hidden interiors. Natural realistic perspective."
+    "prompt": "One continuous five-second shot based strictly on the supplied architectural image. Attempt only a very small, slow lateral camera translation, keeping the same visible facade and composition throughout. Preserve the exact building silhouette, floor count, openings, structural elements, materials, terrain, vegetation and lighting of the reference. Do not reveal hidden sides or interiors. Do not add streets, vehicles, neighboring buildings, people or landscape elements absent from the reference. No orbit, redesign, geometry morphing or cuts. If lateral motion would require inventing unseen geometry, reduce the motion toward a static shot instead. Fidelity to the supplied project takes priority over movement."
   },
   {
     "id": "day-night",
