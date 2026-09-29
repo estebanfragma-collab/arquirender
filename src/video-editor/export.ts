@@ -1,7 +1,7 @@
 import {FFmpeg} from '@ffmpeg/ffmpeg';
 import coreURL from '@ffmpeg/core?url';
 import wasmURL from '@ffmpeg/core/wasm?url';
-import {dimensions,duration,totalDuration,validate,type Edit,type Media} from './model';
+import {dimensions,duration,totalDuration,timeline,validate,type Edit,type Media} from './model';
 export async function exportMontage(edit:Edit,media:Media[],status:(s:string)=>void,signal:AbortSignal){
  validate(edit,media);
  if(signal.aborted)throw Error('Exportación cancelada.');
@@ -21,9 +21,25 @@ export async function exportMontage(edit:Edit,media:Media[],status:(s:string)=>v
    await ff.deleteFile('source');parts.push(out);
   }
   status('Uniendo los fragmentos…');
-  await ff.writeFile('list.txt',parts.map(p=>`file '${p}'`).join('\n'));
-  await exec(['-f','concat','-safe','0','-i','list.txt','-c','copy','-movflags','+faststart','joined.mp4']);
-  for(const part of parts)await ff.deleteFile(part);
+  const rows=timeline(edit.clips);
+  if(rows.some(r=>r.overlap>0)){
+   // Join pairwise to bound decoder memory on mobile and long timelines.
+   let joined=parts[0];
+   for(let i=1;i<parts.length;i++){
+    const out=`joined${i}.mp4`,fade=rows[i-1].overlap;
+    status(`Uniendo toma ${i+1} de ${parts.length}…`);
+    const filter=fade>0
+     ?`[0:v]settb=AVTB,setpts=PTS-STARTPTS[a];[1:v]settb=AVTB,setpts=PTS-STARTPTS[b];[a][b]xfade=transition=fade:duration=${fade}:offset=${rows[i].start}[v]`
+     :'[0:v][1:v]concat=n=2:v=1:a=0[v]';
+    await exec(['-i',joined,'-i',parts[i],'-filter_complex_threads','1','-filter_complex',filter,'-map','[v]','-an','-c:v','libx264','-preset','ultrafast','-crf','23','-pix_fmt','yuv420p','-threads','1',out]);
+    await ff.deleteFile(joined);await ff.deleteFile(parts[i]);joined=out;
+   }
+   await exec(['-i',joined,'-c','copy','-movflags','+faststart','joined.mp4']);await ff.deleteFile(joined);
+  }else{
+   await ff.writeFile('list.txt',parts.map(p=>`file '${p}'`).join('\n'));
+   await exec(['-f','concat','-safe','0','-i','list.txt','-c','copy','-movflags','+faststart','joined.mp4']);
+   for(const part of parts)await ff.deleteFile(part);
+  }
   let output='joined.mp4';
   if(edit.music){
    status('Añadiendo la música…');await ff.writeFile('music',new Uint8Array(await edit.music.file.arrayBuffer()));
