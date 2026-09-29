@@ -2,9 +2,9 @@ import {basis, type Scene} from './model';
 export const videoPresets = [
   {
     id: 'add-rain', label: 'Añadir lluvia',
-    description: 'Elige un render seco. La IA anima la llegada de la lluvia; no necesitas una segunda imagen.',
-    mode: 'animate', duration: 5, movement: 'fixed',
-    prompt: 'One continuous five-second architectural weather shot from the single supplied reference. Keep the camera locked and preserve the exact building, furniture, materials and framing. Clouds gradually gather outside, gentle rain begins outdoors and exposed ground becomes wet with subtle reflections. Keep sheltered interiors dry. No rain inside rooms, no structural changes, no cuts or crossfades.'
+    description: 'Nubes, lluvia y un relámpago lejano sobre el mismo proyecto, con un acercamiento mínimo. Sin audio. Efecto experimental: revisa que conserve la arquitectura.',
+    mode: 'animate', duration: 5, movement: 'push',
+    prompt: 'A single uninterrupted five-second weather animation of the ONE supplied architectural image. The first and last frames must show the SAME exact house and surroundings from essentially the same viewpoint. Treat the building silhouette, floor count, roof, windows, balconies, furniture, rocks, trees and terrain as fixed reference geometry throughout. Animate ONLY the weather: storm clouds drift naturally into the visible sky, outdoor rain gradually begins and continues to the end, and existing exposed surfaces develop subtle wet reflections. Keep clouds above the building, sheltered interiors dry, and existing interior lights unchanged. Include one faint distant lightning glow within the clouds, without a full-frame flash or blackout. Silent video. Allow only a barely perceptible slow forward drift, keeping the whole original facade and revealing no hidden surfaces; stay fixed if motion would require inventing geometry. End on the original house under rain. No transition to another image or location, no cross-dissolve, no cut, no morphing, no replacement house, no new buildings, streets, pools, vehicles or people. Architectural fidelity takes priority over weather intensity and camera movement.'
   },
   {
     id: 'animate-night', label: 'Anochecer · experimental',
