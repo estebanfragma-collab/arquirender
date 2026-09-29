@@ -32,3 +32,19 @@ export function validBudget(v: unknown): v is Budget {
   const positive = (n: unknown) => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1e9;
   return b.version === 1 && typeof b.name === 'string' && typeof b.client === 'string' && typeof b.notes === 'string' && ['local','casa'].includes(b.projectType) && ['included','fees'].includes(b.mode) && ['percent','fixed'].includes(b.feeType) && positive(b.fee) && positive(b.tax) && Array.isArray(b.items) && b.items.length <= 1000 && b.items.every(i => i && typeof i.id === 'string' && (i.libraryId === undefined || typeof i.libraryId === 'string') && typeof i.description === 'string' && typeof i.unit === 'string' && positive(i.quantity) && positive(i.cost) && positive(i.markup));
 }
+
+export const CHAPTERS=['MOBILIARIO Y MÓDULOS','ROTULACIÓN Y SEÑALÉTICA','VIDRIO Y ALUMINIO','ACABADOS Y GYPSUM','PISOS','ILUMINACIÓN','OBRA CIVIL','VARIOS, TRANSPORTE Y MONTAJE','SIN CLASIFICAR'];
+export function categoryOf(i:Item):string {
+ const c=(i.category||'').toUpperCase();
+ if(CHAPTERS.includes(c))return c;
+ if(/MÓDULOS|MOBILIARIO/.test(c))return CHAPTERS[0];
+ if(/FACHADA|VIDRI/.test(c))return CHAPTERS[2];
+ if(/VARIOS|EXTRA|TRANSPORTE/.test(c))return CHAPTERS[7];
+ return i.category?.trim()||'SIN CLASIFICAR';
+}
+export function groupedItems(items:Item[]) {
+ const names=[...new Set(items.map(categoryOf))];
+ names.sort((a,b)=>(CHAPTERS.includes(a)?CHAPTERS.indexOf(a):8)-(CHAPTERS.includes(b)?CHAPTERS.indexOf(b):8));
+ return names.map(category=>({category,items:items.filter(i=>categoryOf(i)===category)}));
+}
+export function generatedBudget(b:Budget,items:Item[]):Budget{return {...b,items};}

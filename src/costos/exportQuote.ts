@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs';
 import templateUrl from './quote-template.xlsx?url';
-import { Budget } from './model';
+import { Budget, groupedItems } from './model';
 export async function quoteWorkbook(b:Budget){
  const book=new ExcelJS.Workbook();const response=await fetch(templateUrl);if(!response.ok)throw new Error('No se pudo abrir la plantilla.');await book.xlsx.load(await response.arrayBuffer());
  const sheet=book.getWorksheet('PLANTILLA COTIZACIÓN')!;
@@ -10,11 +10,11 @@ export async function quoteWorkbook(b:Budget){
  sheet.getCell('C2').value=b.name;sheet.getCell('I2').value=b.client;sheet.getCell('C3').value=new Date();sheet.getCell('I3').value='ArquiRender';sheet.getCell('I4').value=b.tax/100;
  sheet.getCell('A6').value='Cotización preliminar. Cantidades y analogías estimadas: ver REVISIÓN TÉCNICA. Las partidas por definir no se suman.';
  const review=book.getWorksheet('REVISIÓN TÉCNICA')!;for(let r=review.rowCount;r>=4;r--)review.spliceRows(r,1);
- const chapters=[...new Set(b.items.map(i=>i.category||'OTROS RUBROS'))];const subtotalRows:number[]=[];
+ const groups=groupedItems(b.items);const subtotalRows:number[]=[];
  const monetary=[5,6,8,9,10,12,13];
- for(const chapter of chapters){const heading=sheet.addRow([chapter]);sheet.mergeCells(heading.number,1,heading.number,13);heading.height=25;heading.getCell(1).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF344B5C'}};heading.getCell(1).font={bold:true,color:{argb:'FFFFFFFF'}};
+ for(const {category:chapter,items} of groups){const heading=sheet.addRow([chapter]);sheet.mergeCells(heading.number,1,heading.number,13);heading.height=25;heading.getCell(1).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF344B5C'}};heading.getCell(1).font={bold:true,color:{argb:'FFFFFFFF'}};
  const first=sheet.rowCount+1;
- for(const item of b.items.filter(i=>(i.category||'OTROS RUBROS')===chapter)){
+ for(const item of items){
  const row=sheet.addRow([item.libraryId?.replace('base-','')||'',item.description,item.unit,item.pendingQuantity?null:item.quantity,item.pendingCost?null:item.cost,null,b.mode==='included'?item.markup/100:0,null,null,null,0,null,null]);const r=row.number;
  for(let c=1;c<=13;c++)row.getCell(c).style=JSON.parse(JSON.stringify(style[c-1]));
  row.height=Math.max(38,Math.min(140,Math.ceil(item.description.length/65)*14));row.getCell(2).alignment={wrapText:true,vertical:'top'};

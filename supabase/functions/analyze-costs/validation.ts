@@ -36,7 +36,7 @@ export function reviewResult(x:unknown,b:Input):Result|null {
   if(typeof i.priceFactor!=='number'||!Number.isFinite(i.priceFactor)||i.priceFactor<=0||i.priceFactor>100){i.rubricId=null;i.priceFactor=1;i.priceKind='SIN REFERENCIA';notes.push('Factor de precio no válido: requiere valoración.');}
   const entry=b.library.find(e=>e.id===i.rubricId);
   if(!entry){i.rubricId=null;i.priceKind='SIN REFERENCIA';i.status='RUBRO PENDIENTE';notes.push('Selecciona un rubro compatible de la biblioteca.');}
-  else if(entry.unit!==i.unit){i.unit=entry.unit;i.quantity=null;i.status='PENDIENTE';notes.push('La unidad propuesta no coincide con la biblioteca. Verifica la cantidad en '+entry.unit+'.');}
+  else if(entry.unit!==i.unit){i.rubricId=null;i.priceKind='SIN REFERENCIA';i.status='RUBRO PENDIENTE';notes.push('Referencia descartada: su unidad '+entry.unit+' no corresponde al metrado en '+i.unit+'. Se conserva el metrado, sin atribuirle ese precio.');}
   if(typeof i.quantity!=='number'||!Number.isFinite(i.quantity)||i.quantity<=0||i.quantity>1e9){i.quantity=null;if(['CONFIRMADO','ESTIMADO'].includes(i.status))i.status='PENDIENTE';notes.push('Cantidad pendiente: requiere medidas o conteo confirmado.');}
   if(!b.images.some(s=>s.source===i.source)){notes.push('La IA indicó una fuente no verificable: '+i.source);i.source='Fuente pendiente de verificar';i.status='PENDIENTE';i.quantity=null;}
   if(!i.evidence.trim()){i.evidence='Fundamento pendiente de verificar.';i.status='PENDIENTE';i.quantity=null;}

@@ -3,7 +3,7 @@ export type CostEntry = { id: string; description: string; unit: string; cost: n
 export const LIBRARY_KEY = 'arquirender-cost-library-v1';
 import catalog from './catalog.json';
 export const BASE: CostEntry[] = catalog;
-export function fromEntry(e: CostEntry): Item { return {...newItem(),description:e.description,unit:e.unit,cost:e.cost,markup:e.markup,libraryId:e.id}; }
+export function fromEntry(e: CostEntry): Item { return {...newItem(),description:e.description,unit:e.unit,cost:e.cost,markup:e.markup,libraryId:e.id,category:e.category}; }
 export function entryFromItem(i: Item, id: string = crypto.randomUUID()): CostEntry { return {id,description:i.description.trim(),unit:i.unit.trim(),cost:i.cost,markup:i.markup,category:'Mis rubros'}; }
 export function validLibrary(value: unknown): value is CostEntry[] {
  const n=(v:unknown)=>typeof v==='number' && Number.isFinite(v) && v>=0 && v<=1e9;

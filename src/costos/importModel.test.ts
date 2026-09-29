@@ -28,8 +28,8 @@ describe('importación de costos',()=>{
   const original={...a,id:'personal',cost:5};const merged=mergeEntries([original],[a,a]);expect(merged.added).toBe(0);expect(merged.duplicates).toBe(2);expect(merged.entries[0].cost).toBe(5);
  });
  it('maestro unificado conserva indirectos en costo y utilidad separada',()=>{
- expect(BASE.length).toBe(626);expect(new Set(BASE.map(e=>e.id)).size).toBe(626);
+ expect(BASE.length).toBe(698);expect(new Set(BASE.map(e=>e.id)).size).toBe(698);
  const first=BASE.find(e=>e.id==='base-CAM-0001')!;expect(first.cost).toBeCloseTo(61.96*1.22,5);expect(first.markup).toBe(30);
- expect(BASE.every(e=>e.sourceFile&&e.sourceSheet==='MAESTRO PRECIOS'&&e.sourceRow)).toBe(true);
+ expect(BASE.every(e=>e.sourceFile&&['MAESTRO PRECIOS','central costos'].includes(e.sourceSheet||'')&&e.sourceRow)).toBe(true);
  });
 });

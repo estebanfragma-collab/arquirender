@@ -1,6 +1,8 @@
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import Costos from './Costos';
+import {example} from './model';
+beforeEach(()=>localStorage.setItem('arquirender-budget-v1',JSON.stringify(example())));
 afterEach(() => {cleanup();localStorage.clear();});
 it('edita, guarda y cambia a una cotización sin costos internos', () => {
  render(<Costos/>);
@@ -42,4 +44,11 @@ it('conecta biblioteca y presupuesto manteniendo precios independientes',()=>{
  expect(screen.getByLabelText('Costo unitario 5')).toHaveValue(40);
  fireEvent.click(screen.getByRole('button',{name:'Biblioteca de costos'}));
  expect(screen.getByRole('heading',{name:'Piso de prueba'})).toBeTruthy();
+});
+
+it('starts empty and renders ordered client categories and subtotals without private prices',()=>{
+ localStorage.clear();const {unmount}=render(<Costos/>);expect(screen.queryByLabelText('Descripción 1')).toBeNull();unmount();
+ const b=example();b.items=[{...b.items[0],category:'PISOS'},{...b.items[1],category:'MOBILIARIO Y MÓDULOS'}];localStorage.setItem('arquirender-budget-v1',JSON.stringify(b));render(<Costos/>);fireEvent.click(screen.getByRole('button',{name:/Vista del cliente/}));
+ const table=screen.getByRole('table');expect(within(table).getByText('Subtotal PISOS')).toBeTruthy();expect(within(table).queryByText('Costo unit.')).toBeNull();
+ expect([...table.querySelectorAll('.cost-chapter')].map(e=>e.textContent)).toEqual(['MOBILIARIO Y MÓDULOS','PISOS']);
 });

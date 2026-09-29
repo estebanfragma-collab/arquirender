@@ -23,7 +23,7 @@ it('keeps valid rows and downgrades missing quantities and mismatched units',()=
  expect(result.items).toHaveLength(5);
  expect(result.items[0].status).toBe('CONFIRMADO');
  expect(result.items[1].status).toBe('PENDIENTE');
- expect(result.items[2].quantity).toBeNull();
+ expect(result.items[2].quantity).toBe(20);expect(result.items[2].rubricId).toBeNull();expect(result.items[2].unit).toBe('u');
  expect(result.items[3].rubricId).toBeNull();
  expect(result.items[4].quantity).toBeNull();
  expect(validateResult(result,body)).toBe(true);

@@ -1,7 +1,7 @@
 import {it,expect,vi,afterEach} from 'vitest';
 import {draftItems} from './analysis';
 import {analysisLibrary,BASE} from './library';
-import {totals,example} from './model';
+import {totals,example,generatedBudget,groupedItems} from './model';
 import {quoteWorkbook} from './exportQuote';
 import {readFileSync} from 'node:fs';
 afterEach(()=>vi.unstubAllGlobals());
@@ -17,4 +17,11 @@ it('exports the supplied template with live formulas and technical review',async
  expect(s.getCell('I4').value).toBe(.15);expect(s.getCell('F10').value).toEqual({formula:'IF(OR(D10="",E10=""),"",ROUND(D10*E10,2))'});
  expect(book.getWorksheet('REVISIÓN TÉCNICA')!.rowCount).toBe(7);
  const output=await book.xlsx.writeBuffer();expect(output.byteLength).toBeGreaterThan(1000);
+});
+
+it('replaces all earlier project rows and groups client chapters with unclassified last',()=>{
+ const old={...example(),items:[...example().items,{...example().items[0],analysisEvidence:{source:'Casa anterior',status:'CONFIRMADO',evidence:'Anterior',observation:''}}]};
+ const fresh=[{...example().items[0],description:'Vitrina',category:'MOBILIARIO Y MÓDULOS'}];
+ expect(generatedBudget(old,fresh).items).toEqual(fresh);
+ expect(groupedItems([{...fresh[0],category:undefined},...fresh]).map(g=>g.category)).toEqual(['MOBILIARIO Y MÓDULOS','SIN CLASIFICAR']);
 });
