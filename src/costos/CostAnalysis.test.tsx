@@ -1,0 +1,24 @@
+import {afterEach,it,expect,vi} from 'vitest';
+import {render,screen,fireEvent,cleanup,waitFor} from '@testing-library/react';
+import CostAnalysis from './CostAnalysis';
+import {analyzeCosts} from './analysis';
+vi.mock('./analysis',()=>({analyzeCosts:vi.fn().mockResolvedValue({items:[],questions:[]}),acceptedItem:vi.fn()}));
+vi.mock('./RenderPicker',()=>({default:({onChange}:{onChange:(v:unknown[])=>void})=><button onClick={()=>onChange([{id:'r1',src:'https://example.test/render.jpg',name:'Casa'}])}>Elegir render de prueba</button>}));
+afterEach(()=>{cleanup();vi.clearAllMocks();});
+it('combines a saved render and incremental uploads, previews and removes files, analyzes without scope using project context',async()=>{
+ vi.stubGlobal('URL',Object.assign(URL,{createObjectURL:vi.fn(()=> 'blob:preview'),revokeObjectURL:vi.fn()}));
+ render(<CostAnalysis projectType="casa" entries={[{id:'p',description:'Pintura',unit:'m²',cost:4,markup:25,category:'Acabados'}]} onAdd={()=>{}}/>);
+ fireEvent.click(screen.getByText('Elegir render de prueba'));
+ const input=screen.getByLabelText('Archivos del proyecto');
+ fireEvent.change(input,{target:{files:[new File(['a'],'fachada.png',{type:'image/png'})]}});
+ fireEvent.change(input,{target:{files:[new File(['b'],'planta.png',{type:'image/png'})]}});
+ expect(screen.getByAltText('fachada.png')).toBeTruthy();expect(screen.getByAltText('planta.png')).toBeTruthy();
+ fireEvent.click(screen.getByRole('button',{name:'Quitar archivo fachada.png'}));
+ expect(screen.queryByAltText('fachada.png')).toBeNull();
+ expect(screen.getByRole('button',{name:'Analizar proyecto'})).toBeEnabled();
+ fireEvent.click(screen.getByRole('button',{name:'Analizar proyecto'}));
+ await waitFor(()=>expect(analyzeCosts).toHaveBeenCalledTimes(1));
+ const args=vi.mocked(analyzeCosts).mock.calls[0];
+ expect(args[0].map(f=>f.name)).toEqual(['planta.png']);expect(args[1]).toContain('Casa / vivienda');expect(args[1]).toContain('Alcance de ejecución pendiente');expect(args[4]?.[0].id).toBe('r1');
+ vi.unstubAllGlobals();
+});
