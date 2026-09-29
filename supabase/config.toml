@@ -14,3 +14,7 @@ verify_jwt = false
 
 [functions.video-clips]
 verify_jwt = false
+
+[functions.analyze-costs]
+# Online Auth and shared daily analysis allowance are checked before OpenAI.
+verify_jwt = false

@@ -1,0 +1,45 @@
+import { afterEach, expect, it } from 'vitest';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import Costos from './Costos';
+afterEach(() => {cleanup();localStorage.clear();});
+it('edita, guarda y cambia a una cotización sin costos internos', () => {
+ render(<Costos/>);
+ fireEvent.change(screen.getByLabelText('Costo unitario 1'), {target:{value:'8'}});
+ expect(JSON.parse(localStorage.getItem('arquirender-budget-v1')!).items[0].cost).toBe(8);
+ fireEvent.click(screen.getByRole('button',{name:/Costos \+ honorarios/}));
+ expect(screen.queryByLabelText('Utilidad 1')).toBeNull();
+ fireEvent.change(screen.getByLabelText('Valor de honorarios'),{target:{value:'10'}});
+ fireEvent.click(screen.getByRole('button',{name:/Vista del cliente/}));
+ const table=screen.getByRole('table');
+ expect(within(table).queryByText('Costo unit.')).toBeNull();
+ expect(within(table).getByText('Precio unit.')).toBeTruthy();
+ fireEvent.click(screen.getByRole('button',{name:/Volver a editar/}));
+ fireEvent.click(screen.getByRole('button',{name:/Todo incluido/}));
+ expect(screen.getByLabelText('Utilidad 1')).toHaveValue(25);
+});
+it('permite añadir y eliminar partidas',()=>{
+ render(<Costos/>); fireEvent.click(screen.getByRole('button',{name:'Añadir rubro'}));
+ expect(screen.getByLabelText('Descripción 5')).toBeTruthy();
+ fireEvent.click(screen.getByRole('button',{name:'Eliminar rubro 5'}));
+ expect(screen.queryByLabelText('Descripción 5')).toBeNull();
+});
+it('conecta biblioteca y presupuesto manteniendo precios independientes',()=>{
+ render(<Costos/>);
+ fireEvent.click(screen.getByRole('button',{name:'Biblioteca de costos'}));
+ fireEvent.click(screen.getByRole('button',{name:'Crear rubro'}));
+ fireEvent.change(screen.getByLabelText('Descripción del rubro'),{target:{value:'Piso de prueba'}});
+ fireEvent.change(screen.getByLabelText('Costo unitario USD'),{target:{value:'20'}});
+ fireEvent.click(screen.getByRole('button',{name:'Guardar rubro'}));
+ fireEvent.click(screen.getByRole('button',{name:'Añadir al presupuesto'}));
+ fireEvent.click(screen.getByRole('button',{name:'Editar Piso de prueba'}));
+ fireEvent.change(screen.getByLabelText('Costo unitario USD'),{target:{value:'30'}});
+ fireEvent.click(screen.getByRole('button',{name:'Guardar rubro'}));
+ fireEvent.click(screen.getByRole('button',{name:'Presupuesto'}));
+ expect(screen.getByLabelText('Costo unitario 5')).toHaveValue(20);
+ fireEvent.change(screen.getByLabelText('Costo unitario 5'),{target:{value:'40'}});
+ expect(JSON.parse(localStorage.getItem('arquirender-cost-library-v1')!)[0].cost).toBe(30);
+ cleanup();render(<Costos/>);
+ expect(screen.getByLabelText('Costo unitario 5')).toHaveValue(40);
+ fireEvent.click(screen.getByRole('button',{name:'Biblioteca de costos'}));
+ expect(screen.getByRole('heading',{name:'Piso de prueba'})).toBeTruthy();
+});
