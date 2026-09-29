@@ -11,7 +11,7 @@ export function MontagePreview({clips,cursor,playing,source,onReady,onError,widt
  const nearby=rows.slice(Math.max(0,index-1),index+2);
  useEffect(()=>{
   const visible=rows.filter(r=>cursor>=r.start&&cursor<r.end);
-  if(!visible.length&&rows.length)visible.push(rows[rows.length-1]);
+  if(!visible.length&&rows.length)visible.push(rows[index]);
   let ready=true;
   for(const r of nearby){
    const v=videos.current.get(r.clip.id);if(!v){ready=false;continue;}
@@ -22,14 +22,17 @@ export function MontagePreview({clips,cursor,playing,source,onReady,onError,widt
    if(showing&&(v.readyState<2||v.seeking))ready=false;
    if(playing&&showing&&v.readyState>=2&&!v.seeking){if(v.paused)void v.play().catch(onError);}else v.pause();
   }
+  // Check the composition itself, not only the preload window. Decoder refs can
+  // be temporarily absent during a seek or a timeline edit.
+  ready=ready&&visible.every(r=>{const v=videos.current.get(r.clip.id);return !!v&&v.readyState>=2&&!v.seeking&&v.videoWidth>0&&v.videoHeight>0;});
   onReady(ready);
   if(!ready)return; // Retain the last complete composition during decoder waits.
   const ctx=canvas.current?.getContext('2d');if(!ctx)return;
   ctx.globalAlpha=1;ctx.fillStyle='#000';ctx.fillRect(0,0,width,height);
   const layer=buffer.current||(buffer.current=document.createElement('canvas'));if(layer.width!==width)layer.width=width;if(layer.height!==height)layer.height=height;const layerCtx=layer.getContext('2d')!;
   visible.forEach((r,i)=>{
-   const v=videos.current.get(r.clip.id)!;
-   if(!v.videoWidth||!v.videoHeight)return;
+   const v=videos.current.get(r.clip.id);
+   if(!v||!v.videoWidth||!v.videoHeight)return;
    const previous=visible[i-1];
    ctx.globalAlpha=previous?blendProgress((cursor-r.start)/previous.overlap,previous.clip.transitionKind):1;
    // Opaque letterboxing for each layer gives the same result as FFmpeg pad+xfade.
