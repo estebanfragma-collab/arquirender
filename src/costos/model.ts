@@ -1,4 +1,4 @@
-export type Item = { analysisEvidence?: {source:string;evidence:string;status:string;observation:string}; id: string; libraryId?: string; description: string; unit: string; quantity: number; cost: number; markup: number };
+export type Item = { generated?:boolean;category?:string;priceKind?:string;priceReference?:string;priceFactor?:number;pendingQuantity?:boolean;pendingCost?:boolean; analysisEvidence?: {source:string;evidence:string;status:string;observation:string}; id: string; libraryId?: string; description: string; unit: string; quantity: number; cost: number; markup: number };
 export type Budget = { version: 1; name: string; client: string; projectType: 'local' | 'casa'; mode: 'included' | 'fees'; feeType: 'percent' | 'fixed'; fee: number; tax: number; notes: string; items: Item[] };
 export const money = (n: number) => new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(n);
 export const round = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
@@ -9,7 +9,7 @@ export function line(item: Item, mode: Budget['mode']) {
   return { costTotal, price, total: round(item.quantity * price) };
 }
 export function totals(b: Budget) {
-  const lines = b.items.map(i => line(i, b.mode));
+  const lines = b.items.filter(i=>!i.pendingQuantity&&!i.pendingCost).map(i => line(i, b.mode));
   const cost = round(lines.reduce((a, i) => a + i.costTotal, 0));
   const subtotal = round(lines.reduce((a, i) => a + i.total, 0));
   const fees = b.mode === 'fees' ? round(b.feeType === 'percent' ? cost * b.fee / 100 : b.fee) : 0;
@@ -20,10 +20,10 @@ export function totals(b: Budget) {
 export const newItem = (): Item => ({ id: crypto.randomUUID(), description: '', unit: 'm²', quantity: 1, cost: 0, markup: 25 });
 export function example(): Budget {
   return { version: 1, name: 'Mi primer presupuesto', client: '', projectType: 'local', mode: 'included', feeType: 'percent', fee: 15, tax: 0, notes: 'Honorarios de administración incluidos. Define aquí el alcance, las exclusiones, el plazo y la validez de tu oferta.', items: [
-    { ...newItem(), description: 'Pintura de paredes', quantity: 100, cost: 4 },
-    { ...newItem(), description: 'Cielo raso de gypsum', quantity: 60, cost: 12 },
-    { ...newItem(), description: 'Instalación de luminarias', unit: 'u', quantity: 12, cost: 25 },
-    { ...newItem(), description: 'Transporte e instalación', unit: 'glb', quantity: 1, cost: 200 },
+    { ...newItem(), generated:true, description: 'Pintura de paredes', quantity: 100, cost: 4 },
+    { ...newItem(), generated:true, description: 'Cielo raso de gypsum', quantity: 60, cost: 12 },
+    { ...newItem(), generated:true, description: 'Instalación de luminarias', unit: 'u', quantity: 12, cost: 25 },
+    { ...newItem(), generated:true, description: 'Transporte e instalación', unit: 'glb', quantity: 1, cost: 200 },
   ] };
 }
 export function validBudget(v: unknown): v is Budget {

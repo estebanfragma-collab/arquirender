@@ -1,5 +1,5 @@
 export const statuses = ['CONFIRMADO','ESTIMADO','PENDIENTE','RUBRO PENDIENTE','NECESIDAD POR CONFIRMAR'] as const;
-export type Proposal = {status:typeof statuses[number];element:string;rubricId:string|null;quantity:number|null;unit:string;source:string;evidence:string;observation:string};
+export type Proposal = {category?:string;priceKind?:string;priceFactor?:number;status:typeof statuses[number];element:string;rubricId:string|null;quantity:number|null;unit:string;source:string;evidence:string;observation:string};
 export type Result = {items:Proposal[];questions:string[]};
 export type Input = {context:string;library:{id:string;description:string;unit:string;category:string}[];images:{source:string;data:string}[]};
 const str=(x:unknown,max=2000):x is string=>typeof x==='string'&&x.length<=max;
@@ -11,6 +11,7 @@ export function validateResult(x:unknown,b:Input):x is Result {
  const r=x as Result;
  return !!r&&Array.isArray(r.items)&&r.items.length<=100&&Array.isArray(r.questions)&&r.questions.length<=30&&r.questions.every(q=>str(q))&&r.items.every(i=>{
  if(!i||!statuses.includes(i.status)||!str(i.element)||!i.element.trim()||!str(i.evidence)||!i.evidence.trim()||!str(i.observation)||!(b.images.some(s=>s.source===i.source)||(i.source==='Fuente pendiente de verificar'&&!['CONFIRMADO','ESTIMADO'].includes(i.status))))return false;
+ if(i.priceFactor!==undefined&&(typeof i.priceFactor!=='number'||!Number.isFinite(i.priceFactor)||i.priceFactor<=0||i.priceFactor>100))return false;
  const entry=b.library.find(e=>e.id===i.rubricId);
  if(i.rubricId!==null&&(!entry||entry.unit!==i.unit))return false;
  if(i.quantity!==null&&(typeof i.quantity!=='number'||!Number.isFinite(i.quantity)||i.quantity<=0||i.quantity>1e9))return false;
@@ -18,7 +19,8 @@ export function validateResult(x:unknown,b:Input):x is Result {
  });
 }
 const text={type:'string'};
-export const schema={type:'object',additionalProperties:false,properties:{items:{type:'array',items:{type:'object',additionalProperties:false,properties:{status:{type:'string',enum:statuses},element:text,rubricId:{type:['string','null']},quantity:{type:['number','null']},unit:text,source:text,evidence:text,observation:text},required:['status','element','rubricId','quantity','unit','source','evidence','observation']}},questions:{type:'array',items:text}},required:['items','questions']};
+export const priceKinds=['PRECIO DE BASE','PRECIO REFERENCIAL','PRECIO ESTIMADO','SIN REFERENCIA'];
+export const schema={type:'object',additionalProperties:false,properties:{items:{type:'array',items:{type:'object',additionalProperties:false,properties:{category:text,priceKind:{type:'string',enum:priceKinds},priceFactor:{type:'number'},status:{type:'string',enum:statuses},element:text,rubricId:{type:['string','null']},quantity:{type:['number','null']},unit:text,source:text,evidence:text,observation:text},required:['category','priceKind','priceFactor','status','element','rubricId','quantity','unit','source','evidence','observation']}},questions:{type:'array',items:text}},required:['items','questions']};
 
 // Keep uncertain proposals visible, but never eligible for automatic acceptance.
 export function reviewResult(x:unknown,b:Input):Result|null {
@@ -28,8 +30,12 @@ export function reviewResult(x:unknown,b:Input):Result|null {
  for(const raw of r.items){
   if(!raw||!statuses.includes(raw.status)||!str(raw.element)||!raw.element.trim()||!str(raw.evidence)||!str(raw.observation)||!str(raw.source)||!str(raw.unit))return null;
   const i={...raw};const notes:string[]=[];
+  i.priceKind=priceKinds.includes(i.priceKind||'')?i.priceKind:'PRECIO DE BASE';
+  i.priceFactor=i.priceFactor??1;
+  if(i.priceKind==='PRECIO DE BASE')i.priceFactor=1;
+  if(typeof i.priceFactor!=='number'||!Number.isFinite(i.priceFactor)||i.priceFactor<=0||i.priceFactor>100){i.rubricId=null;i.priceFactor=1;i.priceKind='SIN REFERENCIA';notes.push('Factor de precio no válido: requiere valoración.');}
   const entry=b.library.find(e=>e.id===i.rubricId);
-  if(!entry){i.rubricId=null;i.unit='';i.status='RUBRO PENDIENTE';notes.push('Selecciona un rubro compatible de la biblioteca.');}
+  if(!entry){i.rubricId=null;i.priceKind='SIN REFERENCIA';i.status='RUBRO PENDIENTE';notes.push('Selecciona un rubro compatible de la biblioteca.');}
   else if(entry.unit!==i.unit){i.unit=entry.unit;i.quantity=null;i.status='PENDIENTE';notes.push('La unidad propuesta no coincide con la biblioteca. Verifica la cantidad en '+entry.unit+'.');}
   if(typeof i.quantity!=='number'||!Number.isFinite(i.quantity)||i.quantity<=0||i.quantity>1e9){i.quantity=null;if(['CONFIRMADO','ESTIMADO'].includes(i.status))i.status='PENDIENTE';notes.push('Cantidad pendiente: requiere medidas o conteo confirmado.');}
   if(!b.images.some(s=>s.source===i.source)){notes.push('La IA indicó una fuente no verificable: '+i.source);i.source='Fuente pendiente de verificar';i.status='PENDIENTE';i.quantity=null;}

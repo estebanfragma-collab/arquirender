@@ -34,3 +34,12 @@ export function acceptedItem(p:Proposal,library:CostEntry[]) {
  if(!e||e.unit!==p.unit||!['CONFIRMADO','ESTIMADO'].includes(p.status)||!p.quantity||!Number.isFinite(p.quantity)||p.quantity<=0||p.quantity>1e9)throw new Error('Completa y revisa el rubro y su cantidad.');
  return {...fromEntry(e),quantity:p.quantity,analysisEvidence:{source:p.source,evidence:p.evidence,status:p.status,observation:p.observation}};
 }
+
+export function draftItems(result:Result,library:CostEntry[]) {
+ return result.items.map(p=>{
+ const e=library.find(e=>e.id===p.rubricId);
+ const factor=p.priceKind==='PRECIO DE BASE'?1:(p.priceFactor??1);
+ const hasQuantity=typeof p.quantity==='number'&&Number.isFinite(p.quantity)&&p.quantity>0;
+ return {id:crypto.randomUUID(),generated:true,libraryId:e?.id,description:p.element,unit:e?.unit||p.unit||'u',quantity:hasQuantity?p.quantity!:0,cost:e?Math.round(e.cost*factor*100)/100:0,markup:e?.markup??30,category:p.category||e?.category||'VARIOS, TRANSPORTE Y MONTAJE',priceKind:p.priceKind||'PRECIO DE BASE',priceReference:e?.description,priceFactor:factor,pendingQuantity:!hasQuantity,pendingCost:!e,analysisEvidence:{source:p.source,evidence:p.evidence,status:p.status,observation:p.observation}};
+ });
+}
