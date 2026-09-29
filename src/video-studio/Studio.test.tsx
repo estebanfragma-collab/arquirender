@@ -19,7 +19,7 @@ it('shows only compatible effects, keeps the mode stable, and clears old prompts
  expect(effects().queryByRole('button',{name:/Acercamiento al proyecto/})).toBeNull();
  fireEvent.click(effects().getByRole('button',{name:/Conectar día y noche/}));
  expect(screen.getByRole('button',{name:/De una imagen a otra/})).toHaveAttribute('aria-pressed','true');
- expect(effects().queryByRole('button',{name:/Conectar seco y lluvia/})).toBeNull();
+ fireEvent.click(effects().getByRole('button',{name:/Conectar seco y lluvia/}));
  expect(effects().getAllByRole('button',{pressed:true})).toHaveLength(1);
  expect(screen.getByRole('button',{name:'Elegir imagen final'})).toBeTruthy();
 });

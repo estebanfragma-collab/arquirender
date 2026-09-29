@@ -30,9 +30,9 @@ it('changing mode removes incompatible directions but preserves images and user 
  expect(changeSceneMode(next,'transition')).toBe(next);
 });
 
-it('offers only validated effects while preserving retired projects',()=>{
- expect(presetsForMode('animate').map(p=>p.id)).toEqual(['approach']);
- expect(presetsForMode('transition').map(p=>p.id)).toEqual(['day-night','render-transition']);
+it('retires only night and material effects while preserving saved projects',()=>{
+ expect(presetsForMode('animate').map(p=>p.id)).toEqual(['add-rain','approach','lateral','model']);
+ expect(presetsForMode('transition').map(p=>p.id)).toEqual(['day-night','render-transition','aerial','rain','roof']);
  const legacy=applyPreset(newScene(),'material');
  expect(validScenes([legacy])).toBe(true);
  expect(legacy.presetId).toBe('material');

@@ -100,8 +100,8 @@ export function applyPreset(scene:Scene,id:string):Scene {
  next.promptBasis=basis(next);return next;
 }
 
-// Retain definitions for saved projects; only validated options belong in the catalog.
-export const availablePresetIds:readonly string[]=['approach','day-night','render-transition'];
+// Keep retired definitions so saved projects remain readable.
+export const availablePresetIds:readonly string[]=['add-rain','approach','lateral','day-night','render-transition','aerial','model','rain','roof'];
 export function presetsForMode(mode:Scene['mode']) {
  return videoPresets.filter(p=>p.mode===mode&&availablePresetIds.includes(p.id));
 }
