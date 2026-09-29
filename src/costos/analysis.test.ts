@@ -1,5 +1,5 @@
 import { describe,it,expect,vi } from 'vitest';
-import { validateInput,validateResult,Input } from '../../supabase/functions/analyze-costs/validation';
+import { validateInput,validateResult,reviewResult,Input } from '../../supabase/functions/analyze-costs/validation';
 import { createHandler } from '../../supabase/functions/analyze-costs/handler';
 const body:Input={context:'Pintar sala',library:[{id:'p',description:'Pintura',unit:'m²',category:'Acabados'}],images:[{source:'1. sala.jpg',data:'data:image/jpeg;base64,/9j/AAAA'}]};
 const item={status:'CONFIRMADO',element:'Pared',rubricId:'p',quantity:20,unit:'m²',source:'1. sala.jpg',evidence:'4 × 5 m confirmados',observation:''};
@@ -16,4 +16,15 @@ describe('cost analysis boundaries',()=>{
  expect((await handler(new Request('https://local.invalid',{method:'POST',body:JSON.stringify(body)}))).status).toBe(401);expect(calls).toHaveLength(0);
  expect((await handler(new Request('https://local.invalid',{method:'POST',headers:{Authorization:'Bearer user'},body:JSON.stringify(body)}))).status).toBe(200);expect(calls).toHaveLength(3);vi.unstubAllGlobals();
  });
+});
+
+it('keeps valid rows and downgrades missing quantities and mismatched units',()=>{
+ const result=reviewResult({items:[item,{...item,quantity:null},{...item,unit:'u'},{...item,rubricId:'invented'},{...item,source:'invented'}],questions:[]},body)!;
+ expect(result.items).toHaveLength(5);
+ expect(result.items[0].status).toBe('CONFIRMADO');
+ expect(result.items[1].status).toBe('PENDIENTE');
+ expect(result.items[2].quantity).toBeNull();
+ expect(result.items[3].rubricId).toBeNull();
+ expect(result.items[4].quantity).toBeNull();
+ expect(validateResult(result,body)).toBe(true);
 });
