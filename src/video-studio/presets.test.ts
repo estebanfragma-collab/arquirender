@@ -29,3 +29,11 @@ it('changing mode removes incompatible directions but preserves images and user 
  expect(next).toMatchObject({mode:'transition',startId:'start',endId:'end',brief:'Warm light',presetId:undefined,prompt:'',promptBasis:'',duration:5});
  expect(changeSceneMode(next,'transition')).toBe(next);
 });
+
+it('offers only validated effects while preserving retired projects',()=>{
+ expect(presetsForMode('animate').map(p=>p.id)).toEqual(['approach']);
+ expect(presetsForMode('transition').map(p=>p.id)).toEqual(['day-night','render-transition']);
+ const legacy=applyPreset(newScene(),'material');
+ expect(validScenes([legacy])).toBe(true);
+ expect(legacy.presetId).toBe('material');
+});

@@ -6,7 +6,7 @@ import { listProjects, saveProject, proposeScene } from './api';
 import './studio.css';
 import Clips from './Clips';
 import Fusion from './Fusion';
-import {videoPresets,applyPreset,presetsForMode,changeSceneMode} from './presets';
+import {videoPresets,applyPreset,presetsForMode,changeSceneMode,availablePresetIds} from './presets';
 
 type Session = {id:string;assets:RenderAsset[]};
 export default function VideoStudio(){
@@ -56,7 +56,8 @@ export function Editor({session}:{session:Session}){
   const selectedPreset=videoPresets.find(p=>p.id===current.presetId&&p.mode===current.mode);
   const changeMode=(mode:Scene['mode'])=>{if(mode===current.mode)return;update(changeSceneMode(current,mode));setSlot('start');setNotice('Modo cambiado. Elige un efecto y prepara el prompt para esta toma.');};
   const start=session.assets.find(a=>a.id===current.startId),end=session.assets.find(a=>a.id===current.endId);
-  const validation=sceneError(current,session.assets);
+  const retiredPreset=!!current.presetId&&!availablePresetIds.includes(current.presetId);
+  const validation=retiredPreset?'Este efecto se retiró del catálogo por resultados inconsistentes. Elige uno de los efectos disponibles.':sceneError(current,session.assets);
   const stale=!!current.promptBasis&&current.promptBasis!==basis(current);
   useEffect(()=>{setSlot('start');},[current.id]);
   useEffect(()=>{dirty.current=JSON.stringify({name,scenes})!==clean.current;setSaved(!dirty.current&&!!cloud);const timer=setTimeout(()=>{try{localStorage.setItem(draftKey,JSON.stringify({version:1,name,scenes,cloud}));setLocalError(false);}catch{setLocalError(true);}},400);return()=>clearTimeout(timer);},[name,scenes,cloud]);
@@ -101,7 +102,7 @@ export function Editor({session}:{session:Session}){
         <section className="vs-effects" aria-label="Efectos compatibles">
           <h3 className="vs-step">2 · ¿Qué quieres que pase?</h3>
           <p>{current.mode==='animate'?'Estos efectos usan una sola imagen.':'Estos efectos usan una imagen inicial y una final.'} Elige uno o escribe tu propia indicación más abajo.</p>
-          <div className="vs-preset-grid">{presetsForMode(current.mode).map(p=><button key={p.id} aria-pressed={selectedPreset?.id===p.id} className={selectedPreset?.id===p.id?'selected':''} onClick={()=>{if(current.prompt.trim()&&!confirm('¿Aplicar este efecto? Reemplazará el prompt y los ajustes de esta escena.'))return;update(applyPreset(current,p.id));setNotice('Efecto aplicado. Selecciona las imágenes indicadas y revisa el prompt.');}}><small>{p.mode==='animate'?'1 imagen':'2 imágenes'}{selectedPreset?.id===p.id?' · ✓ Seleccionado':''}{p.mode==='transition'?(p.id==='aerial'?' · Retroceso de cámara':' · Fusión suave'):''}</small><strong>{p.label}</strong><span>{p.description}</span></button>)}</div>
+          {retiredPreset&&<p className="vs-warning" role="status">{validation} Tus tomas anteriores siguen disponibles.</p>}<div className="vs-preset-grid">{presetsForMode(current.mode).map(p=><button key={p.id} aria-pressed={selectedPreset?.id===p.id} className={selectedPreset?.id===p.id?'selected':''} onClick={()=>{if(current.prompt.trim()&&!confirm('¿Aplicar este efecto? Reemplazará el prompt y los ajustes de esta escena.'))return;update(applyPreset(current,p.id));setNotice('Efecto aplicado. Selecciona las imágenes indicadas y revisa el prompt.');}}><small>{p.mode==='animate'?'1 imagen':'2 imágenes'}{selectedPreset?.id===p.id?' · ✓ Seleccionado':''}{p.mode==='transition'?(p.id==='aerial'?' · Retroceso de cámara':' · Fusión suave'):''}</small><strong>{p.label}</strong><span>{p.description}</span></button>)}</div>
         </section>
         {current.mode==='transition'&&<p className="vs-tip">Aquí tú eliges cómo empieza y cómo termina el video. Necesitas dos vistas compatibles del mismo proyecto. Si solo tienes una imagen, elige «Animar un render».</p>}
 
@@ -114,7 +115,7 @@ export function Editor({session}:{session:Session}){
         {current.notes&&<details><summary>Notas de la IA</summary><p>{current.notes}</p></details>}
       </section></>}
       <section className="vs-prompt-editor"><h3 className="vs-step">{localFusion?'3 · Ajusta tu fusión':'5 · Ajustes y costo'}</h3>
-        <div className="vs-settings">{!localFusion&&<label>Movimiento de cámara<select aria-label="Movimiento de cámara" value={current.movement} onChange={e=>update({movement:e.target.value})}>{movements.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}</select></label>}<label>Duración<select aria-label="Duración" value={current.duration} onChange={e=>update({duration:Number(e.target.value) as 5|10})}><option value={5}>5 segundos</option><option value={10}>10 segundos</option></select></label><label>Formato<select aria-label="Formato" value={current.format} onChange={e=>update({format:e.target.value as Scene['format']})}><option value="16:9">Horizontal · 16:9</option><option value="9:16">Vertical · 9:16</option><option value="1:1">Cuadrado · 1:1</option></select></label></div>
+        <div className="vs-settings">{!localFusion&&<label>Movimiento de cámara{selectedPreset?<><input aria-label="Movimiento de cámara" readOnly value={movements.find(m=>m.id===current.movement)?.label||current.movement}/><small>Incluido en el efecto elegido.</small></>:<><select aria-label="Movimiento de cámara" value={current.movement} onChange={e=>{update({movement:e.target.value,prompt:'',promptBasis:''});setNotice('Movimiento cambiado. Pulsa «Ayudarme con el prompt» para preparar la nueva indicación.');}}>{movements.filter(m=>['push','fixed'].includes(m.id)||m.id===current.movement).map(m=><option key={m.id} value={m.id} disabled={!['push','fixed'].includes(m.id)}>{m.label}</option>)}</select><small>Indicación para preparar el prompt; la IA puede variar el movimiento.</small></>}</label>}<label>Duración<select aria-label="Duración" value={current.duration} onChange={e=>update({duration:Number(e.target.value) as 5|10})}><option value={5}>5 segundos</option><option value={10}>10 segundos</option></select></label><label>Formato<select aria-label="Formato" value={current.format} onChange={e=>update({format:e.target.value as Scene['format']})}><option value="16:9">Horizontal · 16:9</option><option value="9:16">Vertical · 9:16</option><option value="1:1">Cuadrado · 1:1</option></select></label></div>
         <Clips scene={current} blocked={!!validation||stale} resultsPanel={resultsPanel} resultsOnly={localFusion} activityPanel={activityPanel}/>
         {localFusion&&<Fusion key={current.id} scene={current} assets={session.assets} panel={fusionPanel}/>}
         {!localFusion&&<small className="vs-ai-note">Preparar la escena envía copias reducidas de las imágenes seleccionadas a OpenAI. Hasta 30 propuestas diarias, sin gastar créditos de renders.</small>}

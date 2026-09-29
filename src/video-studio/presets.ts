@@ -15,20 +15,20 @@ export const videoPresets = [
   {
     "id": "approach",
     "label": "Acercamiento al proyecto",
-    "description": "La cámara avanza hacia el acceso. Usa un render exterior donde se vea la entrada.",
+    "description": "Acercamiento continuo hacia lo que ya se ve en tu render, sin pasar a otra escena. El resultado depende de la imagen y del modelo.",
     "mode": "animate",
     "duration": 10,
     "movement": "push",
-    "prompt": "A continuous ten-second architectural tracking shot. The camera travels directly FORWARD toward the ground-floor entrance of the reference building, covering substantial distance. Begin in the wide street view and finish near the entrance where wood, glass and vegetation fill most of the frame. Constant purposeful forward travel with visible foreground parallax, gentle ease-out only at the very end. Preserve all architecture, floors, windows and materials. No lateral orbit, no cuts or dissolves."
+    "prompt": "One continuous ten-second shot of the supplied architectural image. Move slowly FORWARD toward the visible architectural subject, along a single straight path with gentle ease-out. Keep the same room or exterior for the entire shot. Stop before entering doors, crossing walls or revealing unseen areas. Preserve the exact layout, floor count, openings, furniture, materials, vegetation and lighting. Do not assume a street or an entrance if absent from the image. No sideways motion, orbit, cut, cross-dissolve, image transition, morphing or replacement scene. Reduce travel rather than invent geometry. End looking at the same original subject."
   },
   {
     "id": "lateral",
-    "label": "Desplazamiento lateral · experimental",
-    "description": "Intenta un movimiento lateral corto sobre tu render. Puede alterar la arquitectura; revisa el resultado antes de usarlo para presentar el proyecto.",
+    "label": "Movimiento lateral · en prueba",
+    "description": "Pide un desplazamiento corto de lado en el mismo espacio. La IA puede desviarse o avanzar; todavía estamos validando este movimiento.",
     "mode": "animate",
     "duration": 5,
     "movement": "slide",
-    "prompt": "One continuous five-second shot based strictly on the supplied architectural image. Attempt only a very small, slow lateral camera translation, keeping the same visible facade and composition throughout. Preserve the exact building silhouette, floor count, openings, structural elements, materials, terrain, vegetation and lighting of the reference. Do not reveal hidden sides or interiors. Do not add streets, vehicles, neighboring buildings, people or landscape elements absent from the reference. No orbit, redesign, geometry morphing or cuts. If lateral motion would require inventing unseen geometry, reduce the motion toward a static shot instead. Fidelity to the supplied project takes priority over movement."
+    "prompt": "One continuous five-second shot of the ONE supplied interior or exterior. Request ONLY a tiny slow camera translation to the RIGHT, parallel to the visible main wall or facade, at constant height, distance and focal length. No forward or backward travel, zoom, pan or orbit. Keep the original room or building, walls, openings, furniture, materials, vegetation and lighting unchanged. Do not reveal hidden corners or cross doorways. If the image provides insufficient room for lateral motion, remain nearly static instead of switching to a forward approach. No cuts, cross-dissolves, fades, image-to-image transitions, morphing, replacement architecture or new objects. The last frame must still show the same original space."
   },
   {
     "id": "day-night",
@@ -55,16 +55,16 @@ export const videoPresets = [
     "mode": "transition",
     "duration": 5,
     "movement": "rise",
-    "prompt": "One continuous five-second aerial drone pullback between the supplied views of the same project. Begin at the exact close reference. Immediately start moving the camera smoothly backward and gradually upward, revealing the wider surroundings and reaching the wide final reference. Spread the retreat and ascent across the entire shot with gentle acceleration and deceleration. Preserve the building geometry, materials and landscape. No static hold followed by a jump, no hard cut, no sudden zoom, no orbit and no opacity dissolve replacing the physical camera movement. Do not invent a flight through walls or hidden rooms. A coherent continuous backward camera path is the priority."
+    "prompt": "One continuous five-second aerial drone pullback between the supplied views of the same project. Begin at the exact close reference. Immediately start moving the camera smoothly backward and gradually upward, revealing the wider surroundings and reaching the wide final reference. Spread the retreat and ascent across the entire shot with gentle acceleration and deceleration. Preserve the building geometry, materials and landscape. No static hold followed by a jump, no hard cut, no sudden zoom, no orbit and no opacity dissolve replacing the physical camera movement. Do not invent a flight through walls or hidden rooms. No cross-dissolves, fades, image swaps or morphing. Keep the same original project throughout; reduce travel if the supplied views cannot be connected without inventing architecture. A coherent continuous backward camera path is the priority."
   },
   {
     "id": "model",
-    "label": "Giro de maqueta",
-    "description": "La maqueta y su base giran juntas. Usa una imagen de una maqueta física con su base visible.",
+    "label": "Giro suave de maqueta · en prueba",
+    "description": "Pide un giro pequeño de la maqueta y su base, con cámara fija. Usa una maqueta física; revisa que no cambie el diseño.",
     "mode": "animate",
     "duration": 5,
     "movement": "fixed",
-    "prompt": "Product photography of a physical architectural scale model on its white display plinth. The entire model and plinth rotate together clockwise by approximately 35 degrees on a hidden turntable. The camera stays fixed at the same height and distance. Clearly visible rotation revealing the adjacent facade; miniature trees rotate with the base. Preserve every floor, window and miniature material. Soft studio light, static softly blurred background. No zoom, no morphing, no full-scale city transformation."
+    "prompt": "One uninterrupted five-second shot of the physical architectural scale model supplied in the image. Keep the camera and original background fixed. Request ONLY a very small clockwise turn of the existing model and its base together, keeping all attached miniature elements rigidly connected. Preserve the original geometry, materials, scale and lighting. Do not create a new white plinth, trees or studio background. Keep the angle minimal; if it would expose unsupported hidden geometry, reduce rotation toward zero. No camera approach, zoom, orbit, cut, fade, cross-dissolve, image transition, morphing or transformation into a full-scale building. End on the same model."
   },
   {
     "id": "rain",
@@ -77,12 +77,12 @@ export const videoPresets = [
   },
   {
     "id": "material",
-    "label": "Detalle de materiales",
-    "description": "La cámara se desliza sobre una textura. Usa un primer plano del material que quieres mostrar.",
+    "label": "Movimiento sobre un detalle · en prueba",
+    "description": "Pide un deslizamiento mínimo sobre el material que subes, sin cambiar de textura ni de escena. Usa un primer plano.",
     "mode": "animate",
     "duration": 5,
     "movement": "slide",
-    "prompt": "Architectural macro cinematography. A short smooth lateral camera slide of approximately 20 centimeters parallel to the textured concrete wall. Keep optical focus on the fine pores and grain of the wall; warm sunset grazes the texture. The distant glass frame and reflected mountains remain softly out of focus. Clearly visible subtle foreground parallax, constant focal length. Preserve the wall texture and straight metal profiles. No focus change, no orbit, no added objects, no morphing."
+    "prompt": "One uninterrupted five-second close-up of ONLY the surface supplied in the image. Request a minimal slow sideways camera translation parallel to that surface, at constant distance, height, focal length and focus. Preserve its exact material, grain, colors, joints, edges, lighting and existing background. Do not assume concrete, metal, glass, mountains or sunset. Remain within the original visible surface; if there is no room, stay nearly fixed. No forward approach, zoom, orbit, focus transition, cuts, fades, cross-dissolves, image transitions, replacement texture, morphing or new objects. End on the same original detail."
   },
   {
     "id": "roof",
@@ -100,8 +100,10 @@ export function applyPreset(scene:Scene,id:string):Scene {
  next.promptBasis=basis(next);return next;
 }
 
+// Retain definitions for saved projects; only validated options belong in the catalog.
+export const availablePresetIds:readonly string[]=['approach','day-night','render-transition'];
 export function presetsForMode(mode:Scene['mode']) {
- return videoPresets.filter(p=>p.mode===mode);
+ return videoPresets.filter(p=>p.mode===mode&&availablePresetIds.includes(p.id));
 }
 
 export function changeSceneMode(scene:Scene,mode:Scene['mode']):Scene {

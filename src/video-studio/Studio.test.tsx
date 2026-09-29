@@ -19,32 +19,36 @@ it('shows only compatible effects, keeps the mode stable, and clears old prompts
  expect(effects().queryByRole('button',{name:/Acercamiento al proyecto/})).toBeNull();
  fireEvent.click(effects().getByRole('button',{name:/Conectar día y noche/}));
  expect(screen.getByRole('button',{name:/De una imagen a otra/})).toHaveAttribute('aria-pressed','true');
- fireEvent.click(effects().getByRole('button',{name:/Conectar seco y lluvia/}));
+ expect(effects().queryByRole('button',{name:/Conectar seco y lluvia/})).toBeNull();
  expect(effects().getAllByRole('button',{pressed:true})).toHaveLength(1);
  expect(screen.getByRole('button',{name:'Elegir imagen final'})).toBeTruthy();
 });
 
-it('adds rain from one visible reference without asking for a final image',()=>{
+it('animates one visible reference without asking for a final image',()=>{
  render(<Editor session={{id:'rain-test',assets:[{id:'dry',src:'/dry.png',name:'Render seco'}]}}/>);
  fireEvent.click(screen.getByRole('button',{name:'Elegir imagen inicial'}));
  const picker=screen.getByText('Elegir imágenes de mis renders').closest('details');
  expect(picker).toHaveAttribute('open');
  fireEvent.click(screen.getByRole('button',{name:'Elegir Render seco'}));
  expect(picker).not.toHaveAttribute('open');
- fireEvent.click(screen.getByRole('button',{name:/Añadir lluvia/}));
+ fireEvent.click(screen.getByRole('button',{name:/Acercamiento al proyecto/}));
  const references=screen.getByRole('region',{name:'Imágenes de esta toma'});
  expect(within(references).getByRole('img')).toHaveAttribute('src','/dry.png');
  expect(screen.queryByRole('button',{name:'Elegir imagen final'})).toBeNull();
- expect((screen.getByRole('textbox',{name:'Prompt de la escena'}) as HTMLTextAreaElement).value).toContain('single supplied reference');
+ expect((screen.getByRole('textbox',{name:'Prompt de la escena'}) as HTMLTextAreaElement).value).toContain('supplied architectural image');
 });
-it('restores aerial camera movement and AI prompt controls',()=>{
- render(<Editor session={{id:'fusion-test',assets:[]}}/>);
- fireEvent.click(screen.getByRole('button',{name:/De una imagen a otra/}));
- fireEvent.click(screen.getByRole('button',{name:/Revelación aérea/}));
- expect(screen.queryByRole('button',{name:'Crear fusión suave · sin costo'})).toBeNull();
- expect(screen.getByRole('button',{name:'Ayudarme con el prompt'})).toBeTruthy();
- expect((screen.getByRole('textbox',{name:'Prompt de la escena'}) as HTMLTextAreaElement).value).toContain('backward');
- expect(screen.getByRole('combobox',{name:'Movimiento de cámara'})).toHaveValue('rise');
+it('removes unvalidated camera options and invalidates the prompt when custom camera changes',()=>{
+ render(<Editor session={{id:'camera-test',assets:[]}}/>);
+ const camera=screen.getByRole('combobox',{name:'Movimiento de cámara'});
+ expect(within(camera).queryByRole('option',{name:'Desplazamiento lateral'})).toBeNull();
+ expect(within(camera).queryByRole('option',{name:'Elevación suave'})).toBeNull();
+ fireEvent.change(screen.getByRole('textbox',{name:'Prompt de la escena'}),{target:{value:'Old forward instruction'}});
+ fireEvent.change(camera,{target:{value:'fixed'}});
+ expect(screen.getByRole('textbox',{name:'Prompt de la escena'})).toHaveValue('');
+ fireEvent.click(screen.getByRole('button',{name:/Acercamiento al proyecto/}));
+ expect(screen.getByRole('textbox',{name:'Movimiento de cámara'})).toHaveAttribute('readonly');
+ expect(screen.queryByRole('button',{name:/Detalle de materiales/})).toBeNull();
+ expect(screen.queryByRole('button',{name:/Anochecer/})).toBeNull();
 });
 
 it('routes between-renders to the controlled fusion without AI prompt controls',()=>{
