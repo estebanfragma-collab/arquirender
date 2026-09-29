@@ -3,8 +3,9 @@ import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import Editor from './Editor';
 import {initialEdit} from './model';
 vi.mock('@/presentaciones-demo/storage',()=>({loadDraft:vi.fn(async()=>({edit:{...initialEdit,clips:[{id:'a',mediaId:'m',start:0,end:4,speed:1},{id:'b',mediaId:'n',start:0,end:4,speed:1}]},media:[{id:'m',name:'Primera',file:new Blob(),duration:4},{id:'n',name:'Segunda',file:new Blob(),duration:4}]})),saveDraft:vi.fn()}));
-vi.mock('@/integrations/supabase/client',()=>({supabase:{}}));
-vi.mock('@/video-studio/fusion-cloud',()=>({listFusions:vi.fn()}));
+vi.mock('@/integrations/supabase/client',()=>({supabase:{auth:{getSession:vi.fn(async()=>({data:{session:{}}}))},functions:{invoke:vi.fn(async()=>({data:{jobs:[{id:'m',name:'Guardada existente',state:'completed',url:'https://example.test/existing.mp4'},{id:'remote',name:'Nueva guardada',state:'completed',url:'https://example.test/new.mp4'}]}}))}}}));
+vi.mock('@/video-studio/fusion-cloud',()=>({listFusions:vi.fn(async()=>[])}));
+vi.mock('./model',async(importOriginal)=>({...await importOriginal<typeof import('./model')>(),inspect:vi.fn(async()=>4)}));
 beforeEach(()=>{vi.spyOn(HTMLCanvasElement.prototype,'getContext').mockReturnValue(null);vi.spyOn(HTMLMediaElement.prototype,'load').mockImplementation(()=>{});vi.spyOn(HTMLMediaElement.prototype,'pause').mockImplementation(()=>{});vi.spyOn(HTMLMediaElement.prototype,'play').mockResolvedValue();URL.createObjectURL=vi.fn(()=> 'blob:test');URL.revokeObjectURL=vi.fn();});
 afterEach(()=>{cleanup();vi.restoreAllMocks();});
 it('splits at cursor, changes speed, adds overlap and undoes the edit',async()=>{
@@ -41,4 +42,27 @@ it('duplicates a selected take and trims it using keyboard-accessible handles',a
  expect(screen.getByRole('button',{name:'Toma 2: Primera'})).toBeTruthy();
  fireEvent.click(screen.getByRole('button',{name:'Deshacer'}));
  expect(screen.getByRole('button',{name:'Toma 2: Segunda'})).toBeTruthy();
+});
+
+it('adds an already imported generated take directly instead of trapping it in the library',async()=>{
+ render(<Editor/>);await screen.findByRole('button',{name:'Toma 1: Primera'});
+ fireEvent.click(screen.getByRole('button',{name:'＋ Videos'}));
+ fireEvent.click(screen.getByRole('button',{name:'Traer mis videos generados'}));
+ fireEvent.click(await screen.findByRole('button',{name:/Guardada existente.*Añadir al montaje/}));
+ expect(await screen.findByRole('button',{name:'Toma 3: Primera'})).toBeTruthy();
+ expect(screen.queryByText('Esta toma ya está en tu biblioteca.')).toBeNull();
+});
+it('downloads and inserts a dragged generated take at its drop position',async()=>{
+ vi.stubGlobal('AbortSignal',{timeout:()=>new AbortController().signal});
+ vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,blob:async()=>new Blob(['video'])})));
+ render(<Editor/>);await screen.findByRole('button',{name:'Toma 1: Primera'});
+ fireEvent.click(screen.getByRole('button',{name:'＋ Videos'}));
+ fireEvent.click(screen.getByRole('button',{name:'Traer mis videos generados'}));
+ const card=await screen.findByRole('button',{name:/Nueva guardada.*Añadir al montaje/});
+ const dataTransfer={setData:vi.fn(),files:[]};
+ fireEvent.dragStart(card,{dataTransfer});
+ fireEvent.drop(screen.getByRole('button',{name:'Toma 1: Primera'}),{dataTransfer});
+ expect(await screen.findByRole('button',{name:'Toma 1: Nueva guardada'})).toBeTruthy();
+ expect(screen.getByRole('button',{name:'Toma 2: Primera'})).toBeTruthy();
+ vi.unstubAllGlobals();
 });
