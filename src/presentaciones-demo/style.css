@@ -147,9 +147,21 @@
 .poster-formats{font-size:12px;color:#bbb;margin:12px 0}
 .poster-open-catalog{display:block;color:#ffac76;font-size:12px;margin:12px 0 16px}
 .poster-template-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.poster-template-grid>a{display:block;min-width:0;padding:5px;border:1px solid #36363a;border-radius:8px;background:#1b1b1f;color:#eee;text-decoration:none}
-.poster-template-grid>a:hover,.poster-template-grid>a:focus-visible{border-color:#ff792b;outline:2px solid #ff792b}
+.poster-template-grid>button{display:block;min-width:0;padding:5px;border:1px solid #36363a;border-radius:8px;background:#1b1b1f;color:#eee;text-decoration:none}
+.poster-template-grid>button:hover,.poster-template-grid>button:focus-visible{border-color:#ff792b;outline:2px solid #ff792b}
 .poster-design-preview{aspect-ratio:9/16;overflow:hidden;background:#222}
 .poster-design-preview svg{display:block;width:100%;height:100%}
 .poster-template-grid strong{display:block;font-size:10px;line-height:1.4;margin:7px 2px}
 }
+
+.sheet.poster-sheet{display:block;height:auto;min-height:0;background:white;padding:0;overflow:hidden}
+.sheet.poster-sheet>svg{display:block;width:100%;height:100%}
+.page-thumb>.sheet.poster-sheet{width:auto;height:100%;max-width:100%}
+.poster-editor-overlay{position:fixed;inset:0;z-index:1000;background:#171719;overflow:auto}
+.poster-editor-overlay .le{min-height:100%;color:#eee;background:#171719}
+.poster-editor-overlay .le aside,.poster-editor-overlay .le-stage{background:#242428;border-color:#414147}
+.poster-editor-overlay .le button{background:#323238;border-color:#505056;color:#fff}
+.poster-editor-overlay .le .le-primary{background:#f87522;color:white}
+.poster-editor-overlay .le p{color:#bbb}
+.le-project-images{display:flex;flex-wrap:wrap;gap:6px}.le-project-images h3{width:100%}.le-project-images button{width:65px!important;padding:3px}.le-project-images img{width:100%;height:50px;object-fit:cover}
+@media print{.poster-editor-overlay{display:none!important}.print-document .sheet.poster-9-16{page:posterStory;width:210mm!important;height:373.333mm!important}.print-document .sheet.poster-4-5{page:posterPost;width:210mm!important;height:262.5mm!important}.print-document .sheet.poster-1-1{page:posterSquare;width:210mm!important;height:210mm!important}@page posterStory{size:210mm 373.333mm;margin:0}@page posterPost{size:210mm 262.5mm;margin:0}@page posterSquare{size:210mm 210mm;margin:0}}
