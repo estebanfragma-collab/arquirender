@@ -1,4 +1,4 @@
-export type Item = { generated?:boolean;category?:string;priceKind?:string;priceReference?:string;priceFactor?:number;pendingQuantity?:boolean;pendingCost?:boolean; analysisEvidence?: {source:string;evidence:string;status:string;observation:string}; id: string; libraryId?: string; description: string; unit: string; quantity: number; cost: number; markup: number };
+export type Item = { image?:string; generated?:boolean;category?:string;priceKind?:string;priceReference?:string;priceFactor?:number;pendingQuantity?:boolean;pendingCost?:boolean; analysisEvidence?: {source:string;evidence:string;status:string;observation:string}; id: string; libraryId?: string; description: string; unit: string; quantity: number; cost: number; markup: number };
 export type Budget = { version: 1; name: string; client: string; projectType: 'local' | 'casa'; mode: 'included' | 'fees'; feeType: 'percent' | 'fixed'; fee: number; tax: number; notes: string; items: Item[] };
 export const money = (n: number) => new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(n);
 export const round = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
@@ -30,11 +30,11 @@ export function validBudget(v: unknown): v is Budget {
   if (!v || typeof v !== 'object') return false;
   const b = v as Budget;
   const positive = (n: unknown) => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1e9;
-  return b.version === 1 && typeof b.name === 'string' && typeof b.client === 'string' && typeof b.notes === 'string' && ['local','casa'].includes(b.projectType) && ['included','fees'].includes(b.mode) && ['percent','fixed'].includes(b.feeType) && positive(b.fee) && positive(b.tax) && Array.isArray(b.items) && b.items.length <= 1000 && b.items.every(i => i && typeof i.id === 'string' && (i.libraryId === undefined || typeof i.libraryId === 'string') && typeof i.description === 'string' && typeof i.unit === 'string' && positive(i.quantity) && positive(i.cost) && positive(i.markup));
+  return b.version === 1 && typeof b.name === 'string' && typeof b.client === 'string' && typeof b.notes === 'string' && ['local','casa'].includes(b.projectType) && ['included','fees'].includes(b.mode) && ['percent','fixed'].includes(b.feeType) && positive(b.fee) && positive(b.tax) && Array.isArray(b.items) && b.items.length <= 1000 && b.items.every(i => i && typeof i.id === 'string' && (i.libraryId === undefined || typeof i.libraryId === 'string') && (i.image === undefined || (typeof i.image === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(i.image) && i.image.length<350000)) && typeof i.description === 'string' && typeof i.unit === 'string' && positive(i.quantity) && positive(i.cost) && positive(i.markup));
 }
 
 export const CHAPTERS=['MOBILIARIO Y MÓDULOS','ROTULACIÓN Y SEÑALÉTICA','VIDRIO Y ALUMINIO','ACABADOS Y GYPSUM','PISOS','ILUMINACIÓN','OBRA CIVIL','VARIOS, TRANSPORTE Y MONTAJE','SIN CLASIFICAR'];
-export function categoryOf(i:Item):string {
+export function categoryOf(i:Pick<Item,'category'>):string {
  const c=(i.category||'').toUpperCase();
  if(CHAPTERS.includes(c))return c;
  if(/MÓDULOS|MOBILIARIO/.test(c))return CHAPTERS[0];

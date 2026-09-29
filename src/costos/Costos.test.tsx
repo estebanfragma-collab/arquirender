@@ -52,3 +52,26 @@ it('starts empty and renders ordered client categories and subtotals without pri
  const table=screen.getByRole('table');expect(within(table).getByText('Subtotal PISOS')).toBeTruthy();expect(within(table).queryByText('Costo unit.')).toBeNull();
  expect([...table.querySelectorAll('.cost-chapter')].map(e=>e.textContent)).toEqual(['MOBILIARIO Y MÓDULOS','PISOS']);
 });
+
+it('filters by category, edits the original row and preserves other categories',()=>{
+ const b=example();b.items[0].category='PISOS';b.items[1].category='ILUMINACIÓN';
+ localStorage.setItem('arquirender-budget-v1',JSON.stringify(b));render(<Costos/>);
+ fireEvent.change(screen.getByLabelText('Filtrar presupuesto por categoría'),{target:{value:'ILUMINACIÓN'}});
+ expect(screen.queryByLabelText('Descripción 1')).toBeNull();
+ fireEvent.change(screen.getByLabelText('Cantidad 2'),{target:{value:'7'}});
+ fireEvent.change(screen.getByLabelText('Categoría 2'),{target:{value:'PISOS'}});
+ expect(screen.queryByLabelText('Descripción 2')).toBeNull();
+ const saved=JSON.parse(localStorage.getItem('arquirender-budget-v1')!);
+ expect(saved.items[1].quantity).toBe(7);expect(saved.items[0].quantity).toBe(100);
+ fireEvent.click(screen.getByRole('button',{name:'Ver todos los rubros'}));
+ expect(screen.getByLabelText('Categoría 2')).toHaveValue('PISOS');
+});
+it('keeps graphics and categories when saving a budget row to the library and client view',()=>{
+ const b=example();b.items[0].category='PISOS';b.items[0].image='data:image/png;base64,aGVsbG8=';
+ localStorage.setItem('arquirender-budget-v1',JSON.stringify(b));render(<Costos/>);
+ fireEvent.click(screen.getByRole('button',{name:'Guardar rubro 1 en Mis costos'}));
+ const saved=JSON.parse(localStorage.getItem('arquirender-cost-library-v1')!);
+ expect(saved[0].category).toBe('PISOS');expect(saved[0].image).toBe(b.items[0].image);
+ fireEvent.click(screen.getByRole('button',{name:/Vista del cliente/}));
+ expect(screen.getByAltText(b.items[0].description)).toHaveAttribute('src',b.items[0].image);
+});
