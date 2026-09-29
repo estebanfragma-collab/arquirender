@@ -1,4 +1,4 @@
-export const templateIds = ['editorial', 'inmersiva', 'materialidad', 'sintesis'] as const;
+export const templateIds = ['editorial', 'inmersiva', 'materialidad', 'sintesis', 'portada', 'comparativa', 'planos', 'cierre'] as const;
 export type TemplateId = typeof templateIds[number];
 export function pageTemplate(page: {id?: string; template?: unknown}, legacyTemplate: string = 'editorial'): TemplateId {
   const selected = templateIds.includes(page.template as TemplateId) ? page.template : legacyTemplate;
