@@ -3,9 +3,12 @@ import { prepareImage } from '@/presentaciones-demo/analysis';
 import { pdfImages } from '@/presentaciones-demo/pdfImport';
 import { CostEntry, fromEntry } from './library';
 import { validateResult, type Result, type Proposal, type Input } from '../../supabase/functions/analyze-costs/validation';
+import type { SavedRender } from './RenderPicker';
 export type { Result, Proposal };
-export async function analyzeCosts(files:File[],context:string,library:CostEntry[],progress:(s:string)=>void):Promise<Result> {
+export async function analyzeCosts(files:File[],context:string,library:CostEntry[],progress:(s:string)=>void,renders:SavedRender[]=[]):Promise<Result> {
  const images:Input['images']=[];
+ if(files.length+renders.length>12)throw new Error('Máximo 12 imágenes o páginas en total.');
+ for(const render of renders)images.push({source:`Render ${render.id} · ${render.name}`.slice(0,300),data:await prepareImage(render.src)});
  for(const [index,file] of files.entries()) {
   if(file.size>20*1024*1024)throw new Error('Máximo 20 MB por archivo.');
   if(file.type==='application/pdf') {
