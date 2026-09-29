@@ -29,7 +29,7 @@ export async function exportMontage(edit:Edit,media:Media[],status:(s:string)=>v
     const out=`joined${i}.mp4`,fade=rows[i-1].overlap;
     status(`Uniendo toma ${i+1} de ${parts.length}…`);
     const filter=fade>0
-     ?`[0:v]settb=AVTB,setpts=PTS-STARTPTS[a];[1:v]settb=AVTB,setpts=PTS-STARTPTS[b];[a][b]xfade=transition=fade:duration=${fade}:offset=${rows[i].start}[v]`
+     ?`[0:v]settb=AVTB,setpts=PTS-STARTPTS[a];[1:v]settb=AVTB,setpts=PTS-STARTPTS[b];[a][b]xfade=transition=${edit.clips[i-1].transitionKind==='smooth'?"custom:expr='A*(P*P*(3-2*P))+B*(1-P*P*(3-2*P))'":'fade'}:duration=${fade}:offset=${rows[i].start}[v]`
      :'[0:v][1:v]concat=n=2:v=1:a=0[v]';
     await exec(['-i',joined,'-i',parts[i],'-filter_complex_threads','1','-filter_complex',filter,'-map','[v]','-an','-c:v','libx264','-preset','ultrafast','-crf','23','-pix_fmt','yuv420p','-threads','1',out]);
     await ff.deleteFile(joined);await ff.deleteFile(parts[i]);joined=out;

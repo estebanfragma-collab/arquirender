@@ -21,3 +21,9 @@ it('clamps fades after speeding up and keeps the outgoing fade only on the secon
  expect(parts[0].transition).toBe(0);expect(parts[1].transition).toBe(1);
  expect(totalDuration(parts)).toBe(duration(c));
 });
+
+import {blendProgress} from './model';
+it('mixes both clips equally at the center with continuous endpoints',()=>{
+ for(const kind of ['linear','smooth'] as const){expect(blendProgress(0,kind)).toBe(0);expect(blendProgress(.5,kind)).toBe(.5);expect(blendProgress(1,kind)).toBe(1);}
+ expect(blendProgress(.1,'smooth')).toBeLessThan(blendProgress(.1,'linear'));
+});
