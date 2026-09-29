@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {pageTemplate,setPageTemplate,sheetPrintStyles} from './templates';
+import {pageTemplate,setPageTemplate,sheetPrintStyles,documentFormat} from './templates';
 describe('estilos por lámina',()=>{
  it('cambia solo la seleccionada y mantiene texto, imágenes y las otras páginas',()=>{
   const original=[{id:'a',title:'Primera',images:['x']},{id:'b',title:'Segunda',images:['y']}];
@@ -16,9 +16,11 @@ describe('estilos por lámina',()=>{
   expect(pages.map(p=>pageTemplate(p,'sintesis'))).toEqual(['sintesis','editorial']);
   expect(pageTemplate({template:'invalid'},'invalid')).toBe('editorial');
  });
- it('imprime tamaños de página distintos según el estilo de cada lámina',()=>{
-  expect(sheetPrintStyles).toContain('@page sheetPortrait { size: 210mm 280mm');
-  expect(sheetPrintStyles).toContain('.sheet.sintesis { page: sheetPortrait; }');
-  expect(sheetPrintStyles).toContain('.sheet { page: sheetLandscape; }');
+ it('recupera documentos antiguos y conserva el formato elegido',()=>{expect(documentFormat(undefined)).toBe('16:9');expect(documentFormat(JSON.parse(JSON.stringify({format:'9:16'})).format)).toBe('9:16');});
+ it('usa una sola medida de impresión para todas las páginas',()=>{
+  expect(sheetPrintStyles('16:9')).toContain('size: 320mm 180mm');
+  expect(sheetPrintStyles('9:16')).toContain('size: 180mm 320mm');
+  expect(sheetPrintStyles('9:16')).toContain('page:presentation!important');
+  expect(sheetPrintStyles('9:16')).toContain('break-inside:avoid!important');
  });
 });

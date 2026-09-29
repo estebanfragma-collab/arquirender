@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 const db = supabase as any;
 const bucket = 'presentation-images';
 export type CloudAsset = { id:string; name:string; src:string; storagePath?:string };
-export type Snapshot = {version:number;assets:CloudAsset[];pages:{id:string;images:string[];[key:string]:unknown}[];template:string;active:string};
+export type Snapshot = {version:number;format?:'16:9'|'9:16';assets:CloudAsset[];pages:{id:string;images:string[];[key:string]:unknown}[];template:string;active:string};
 export type CloudRow = {id:string;name:string;revision:number;updated_at:string};
 export async function listPresentations(userId:string):Promise<CloudRow[]> {
  const {data,error}=await db.from('presentations').select('id,name,revision,updated_at').eq('user_id',userId).order('updated_at',{ascending:false});
