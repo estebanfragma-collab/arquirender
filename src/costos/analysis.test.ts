@@ -11,7 +11,7 @@ describe('cost analysis boundaries',()=>{
  vi.stubGlobal('AbortSignal',{timeout:()=>undefined});
  const calls:string[]=[];
  const env=(k:string)=>({SUPABASE_URL:'https://local.invalid',SUPABASE_ANON_KEY:'anon',SUPABASE_SERVICE_ROLE_KEY:'service',OPENAI_API_KEY:'test'}[k]);
- const fetcher:typeof fetch=async(url,init)=>{calls.push(String(url));if(String(url).endsWith('/user'))return Response.json({id:'u'});if(String(url).includes('/rpc/'))return Response.json('ok');const payload=JSON.parse(String(init?.body));expect(payload.messages[0].content).toContain('No inventes precios');expect(payload.messages[0].content).toContain('ETAPA 1. INVENTARIO DESDE EL PROYECTO');expect(payload.messages[0].content).toContain('ETAPA 4. AUDITORÍA DE COBERTURA');expect(payload.messages[0].content).toContain('PROHIBIDO copiar longitudes');expect(payload.store).toBe(false);return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify({items:[item],questions:[]})}}]});};
+ const fetcher:typeof fetch=async(url,init)=>{calls.push(String(url));if(String(url).endsWith('/user'))return Response.json({id:'u'});if(String(url).includes('/rpc/'))return Response.json('ok');const payload=JSON.parse(String(init?.body));expect(payload.messages[0].content).toContain('No inventes precios');expect(payload.messages[0].content).toContain('ETAPA 1. INVENTARIO DESDE EL PROYECTO');expect(payload.messages[0].content).toContain('ETAPA 4. AUDITORÍA DE COBERTURA');expect(payload.messages[0].content).toContain('PROHIBIDO copiar longitudes');expect(payload.messages[0].content).toContain('PRIORIDAD DEL USUARIO: INVENTARIO EXHAUSTIVO');expect(payload.messages[0].content).toContain('NUNCA omitas una partida');expect(payload.store).toBe(false);return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify({items:[item],questions:[]})}}]});};
  const handler=createHandler(env,fetcher);
  expect((await handler(new Request('https://local.invalid',{method:'POST',body:JSON.stringify(body)}))).status).toBe(401);expect(calls).toHaveLength(0);
  expect((await handler(new Request('https://local.invalid',{method:'POST',headers:{Authorization:'Bearer user'},body:JSON.stringify(body)}))).status).toBe(200);expect(calls).toHaveLength(3);vi.unstubAllGlobals();
@@ -27,4 +27,9 @@ it('keeps valid rows and downgrades missing quantities and mismatched units',()=
  expect(result.items[3].rubricId).toBeNull();
  expect(result.items[4].quantity).toBeNull();
  expect(validateResult(result,body)).toBe(true);
+});
+
+it('keeps inventory items without quantity or a matching price, including suggested work',()=>{
+ const result=reviewResult({items:[{...item,element:'Sugerido · Verificar conexión del rótulo',rubricId:null,quantity:null,status:'RUBRO PENDIENTE',priceKind:'SIN REFERENCIA',observation:'SUGERIDO: conexión necesaria, verificar si está incluida.'}],questions:[]},body)!;
+ expect(result.items).toHaveLength(1);expect(result.items[0].quantity).toBeNull();expect(result.items[0].rubricId).toBeNull();expect(result.items[0].element).toContain('Sugerido');
 });
