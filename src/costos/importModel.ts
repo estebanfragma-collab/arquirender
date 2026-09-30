@@ -1,7 +1,7 @@
 import type { CostEntry } from './library';
 export type ImportCell = { value: string | number | null; percent?: boolean; formula?: boolean; error?: string };
-export type ImportSheet = { name: string; rows: ImportCell[][] };
-export type Mapping = { description: number; unit: number; cost: number; markup: number; category: number };
+export type ImportSheet = { name: string; rows: ImportCell[][]; images?: Record<number,string>; imageWarnings?:string[] };
+export type Mapping = { description: number; unit: number; cost: number; markup: number; category: number; quantity?:number };
 export type ImportOptions = { header: number; last: number; decimal: ','|'.'; fraction: boolean; defaultMarkup: number; category: string; file: string };
 export const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase().replace(/\s+/g,' ');
 export function parseNumber(value: string | number | null | undefined, decimal: ','|'.'): number | null {
@@ -17,7 +17,7 @@ export function parseNumber(value: string | number | null | undefined, decimal: 
 export function guessMapping(row: ImportCell[]): Mapping {
  const names=row.map(c=>normalize(String(c?.value??'')));
  const find=(pattern:RegExp)=>names.findIndex(n=>pattern.test(n));
- return {description:find(/descripcion|concepto|detalle|rubro/),unit:find(/^(unidad|unid|und|u\.?)$/),cost:find(/^(costo unit(ario)?\.?|costo directo|costo|precio costo)$/),markup:find(/utilidad|recargo/),category:find(/categoria|capitulo/)};
+ return {description:find(/descripcion|concepto|detalle|rubro/),unit:find(/^(unidad|unid|und|u\.?)$/),cost:find(/^(costo unit(ario)?\.?|costo directo|costo|precio costo)$/),markup:find(/utilidad|recargo/),category:find(/categoria|capitulo/),quantity:find(/^cantidad$/)};
 }
 export function guessHeader(sheet:ImportSheet) { const i=sheet.rows.slice(0,60).findIndex(row=>{const m=guessMapping(row);return m.description>=0&&m.unit>=0&&m.cost>=0;}); return i>=0?i+1:1; }
 export function entryKey(e: Pick<CostEntry,'description'|'unit'|'category'>) {return [e.description,e.unit,e.category].map(normalize).join('|');}
@@ -37,7 +37,7 @@ export function reviewRows(sheet:ImportSheet, map:Mapping, o:ImportOptions) {
    markup=parsed*((m.percent||o.fraction)&&!hasSymbol?100:1);
   }
   if(cost===null || markup>1e9 || !Number.isFinite(markup)){issues.push({row:ri+1,reason:c?.error||'Costo vacío, negativo o no numérico.'});continue;}
-  const entry:CostEntry={id:`import-${ri+1}`,description,unit,cost,markup,category:text(map.category)||o.category||'Importados',sourceFile:o.file,sourceSheet:sheet.name,sourceRow:ri+1,source:'Excel personal',note:c?.formula?'Valor guardado en Excel; la fórmula no se recalcula.':undefined};
+  const entry:CostEntry={id:`import-${ri+1}`,description,unit,cost,markup,category:text(map.category)||o.category||'Importados',sourceFile:o.file,sourceSheet:sheet.name,sourceRow:ri+1,image:sheet.images?.[ri+1],source:'Excel personal',note:c?.formula?'Valor guardado en Excel; la fórmula no se recalcula.':undefined};
   accepted.push({row:ri+1,entry,cached:!!c?.formula});
  }
  return {accepted,issues};
