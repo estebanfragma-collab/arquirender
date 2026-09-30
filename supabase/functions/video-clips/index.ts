@@ -1,7 +1,13 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.103.3';
 const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version','Content-Type':'application/json','Cache-Control':'no-store'};
 const reply=(status:number,body:unknown)=>new Response(JSON.stringify(body),{status,headers});
-const MODELS={dop:'higgsfield-ai/dop/lite',minimax:'minimax/hailuo-2.3/standard/image-to-video'};
+const MODELS={
+ economy:'minimax/hailuo-2.3/standard/image-to-video',
+ standard:'kling-video/v3.0/std/image-to-video',
+ premium:'kling-video/v3.0/pro/image-to-video',
+ // Keep the former pilot model so already quoted jobs remain recoverable.
+ dop:'higgsfield-ai/dop/lite',
+} as const;
 const uuid=(v:unknown):v is string=>typeof v==='string'&&/^[a-f0-9-]{36}$/i.test(v);
 const fail=(message:string)=>{throw new Error(message);};
 Deno.serve(async req=>{
@@ -45,11 +51,12 @@ Deno.serve(async req=>{
    const {data:renders,error}=await db.from('renders').select('id,imagen_generada_url').eq('user_id',uid).in('id',ids);
    if(error||renders?.length!==ids.length)fail('No se encontraron estas imágenes en tu cuenta.');
    const source=(id:string)=>{const value=renders!.find(r=>r.id===id)?.imagen_generada_url;const u=new URL(value);const base=new URL(Deno.env.get('SUPABASE_URL')!);if(u.protocol!=='https:'||u.host!==base.host||!u.pathname.startsWith('/storage/v1/object/'))fail('Esta imagen no tiene una ubicación compatible con la prueba.');return u.href;};
-   const engine=input.engine==='minimax'?'minimax':'dop';
-   if(engine==='minimax'&&s.mode==='transition')fail('La prueba MiniMax admite una imagen inicial. Conserva la transición como plan para otro modelo.');
-   if(engine==='dop'&&s.duration!==5)fail('La prueba DoP usa 5 segundos.');
+   const engine:'economy'|'standard'|'premium'=input.engine==='standard'||input.engine==='premium'?input.engine:'economy';
+   if(engine==='economy'&&s.mode==='transition')fail('La calidad Económica admite una imagen inicial. Elige Estándar o Premium para conectar dos renders.');
    const model=MODELS[engine];
-   const modelInput=engine==='dop'?{prompt:s.prompt.trim(),image_url:source(s.startId),enhance_prompt:false,...(s.mode==='transition'?{end_image_url:source(s.endId)}:{})}:{prompt:s.prompt.trim(),image_url:source(s.startId),duration:s.duration===10?10:6,prompt_optimizer:false};
+   const modelInput=engine==='economy'
+    ?{prompt:s.prompt.trim(),image_url:source(s.startId),duration:s.duration===10?10:6,prompt_optimizer:false}
+    :{prompt:s.prompt.trim(),image_url:source(s.startId),duration:s.duration,sound:'off',cfg_scale:.5,multi_shots:false,...(s.mode==='transition'?{last_image_url:source(s.endId)}:{})};
    const payload={model,input:modelInput};
    const cost=await estimate(model,modelInput);
    const {data:job,error:err}=await db.from('video_clip_jobs').insert({user_id:uid,scene_id:s.id,name:String(s.name||'Escena').slice(0,80),payload,estimated_usd:cost}).select('*').single();
@@ -60,7 +67,7 @@ Deno.serve(async req=>{
   if(!found)return reply(404,{error:'No se encontró esta toma.'});let job=found;
   if(input.action==='start'){
    if(job.state!=='quoted')return reply(200,{job:await output(job)});
-   if(!Object.values(MODELS).includes(job.payload?.model))fail('Esta cotización pertenece a la prueba anterior. Consulta el costo con un modelo económico.');
+   if(!Object.values(MODELS).includes(job.payload?.model))fail('Esta cotización pertenece a una versión anterior. Consulta el costo nuevamente.');
    if(await estimate(job.payload.model,job.payload.input)>Number(job.estimated_usd))fail('El precio cambió. Consulta el costo de nuevo antes de generar.');
    const {data:claim,error}=await db.rpc('claim_video_clip',{p_user_id:uid,p_job_id:job.id});
    if(error)fail('No pudimos reservar la toma. No se envió a generar.');

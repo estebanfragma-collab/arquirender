@@ -10,14 +10,16 @@ it('keeps cost and confirmation in the composer and sends results to the separat
  Object.defineProperty(AbortSignal,'timeout',{configurable:true,value:()=>new AbortController().signal});
  const panel=document.createElement('div');document.body.append(panel);
  const scene:Scene={id:'scene',name:'Cubierta',mode:'animate',startId:'render',endId:'',movement:'push',duration:5,format:'16:9',brief:'',prompt:'Reveal the roof',notes:'',promptBasis:''};
- const job={id:'job',sceneId:'scene',name:'Cubierta',model:'dop',duration:5,state:'quoted',estimatedUsd:.125,url:null,expiresAt:''};
+ const job={id:'job',sceneId:'scene',name:'Cubierta',model:'kling-video/v3.0/std/image-to-video',duration:5,state:'quoted',estimatedUsd:.347,url:null,expiresAt:''};
  let finish:(value:unknown)=>void=()=>{};
  invoke.mockImplementation((_name,{body})=>body.action==='list'?Promise.resolve({data:{jobs:[]}}):body.action==='quote'?Promise.resolve({data:{job}}):new Promise(resolve=>{finish=resolve;}));
  const view=render(<Clips scene={scene} blocked={false} resultsPanel={panel}/>);
  await within(panel).findByText('Tu video aparecerá aquí cuando lo envíes a generar.');
  fireEvent.click(within(view.container).getByText('Consultar costo de esta toma'));
- const generate=await within(view.container).findByText('Generar video · USD 0.125');
- expect(within(panel).queryByText('Generar video · USD 0.125')).toBeNull();
+ const quoteCall=invoke.mock.calls.find(([,args])=>args.body.action==='quote');
+ expect(quoteCall?.[1].body.engine).toBe('standard');
+ const generate=await within(view.container).findByText('Generar video · USD 0.347');
+ expect(within(panel).queryByText('Generar video · USD 0.347')).toBeNull();
  expect(invoke.mock.calls.some(([,args])=>args.body.action==='start')).toBe(false);
  fireEvent.click(generate);
  const activity=await within(panel).findByRole('article',{name:'Estado de tu toma'});
@@ -26,6 +28,23 @@ it('keeps cost and confirmation in the composer and sends results to the separat
  await act(async()=>finish({data:{job:{...job,state:'completed',url:'https://example.com/clip.mp4'}}}));
  expect(within(activity).getByRole('status')).toHaveTextContent('Clip listo');
  panel.remove();
+});
+
+it('shows quality with its engine and sends the selected Kling tier for pricing',async()=>{
+ Object.defineProperty(AbortSignal,'timeout',{configurable:true,value:()=>new AbortController().signal});
+ const {newScene}=await import('./model');
+ const scene={...newScene(),startId:'render',prompt:'Slow architectural reveal'};
+ const job={id:'pro',sceneId:scene.id,name:scene.name,model:'kling-video/v3.0/pro/image-to-video',duration:5,state:'quoted',estimatedUsd:.462,url:null,expiresAt:''};
+ invoke.mockImplementation((_name,{body})=>Promise.resolve({data:body.action==='list'?{jobs:[]}:{job}}));
+ const view=render(<Clips scene={scene} blocked={false} resultsPanel={document.body}/>);
+ const selector=within(view.container).getByLabelText('Calidad y motor');
+ expect(selector).toHaveValue('standard');
+ fireEvent.change(selector,{target:{value:'premium'}});
+ expect(within(view.container).getByText('Más detalle y consistencia · una o dos imágenes. Sin audio.')).toBeTruthy();
+ fireEvent.click(within(view.container).getByText('Consultar costo de esta toma'));
+ await within(view.container).findByText('Generar video · USD 0.462');
+ const quoteCall=invoke.mock.calls.find(([,args])=>args.body.action==='quote');
+ expect(quoteCall?.[1].body.engine).toBe('premium');
 });
 
 it('loads saved fusions again on mount and keeps them separate from paid jobs',async()=>{
