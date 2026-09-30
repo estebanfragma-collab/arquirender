@@ -18,6 +18,7 @@ import StudioLayout, {StudioProjects} from "./components/StudioLayout";
 const PosterStudio = lazy(() => import("./poster-lab/PosterStudio"));
 const VideoEditor = lazy(() => import("./video-editor/Editor"));
 const Costos = lazy(() => import("./costos/Costos"));
+const Obras = lazy(() => import("./obras/Obras"));
 const VideoStudio = lazy(() => import("./video-studio/Studio"));
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/app/videos" element={<Suspense fallback={<p>Abriendo estudio de video…</p>}><VideoStudio /></Suspense>} />
           <Route path="/app/presentaciones" element={<Presentaciones />} />
           <Route path="/app/costos" element={<Suspense fallback={<p>Abriendo costos…</p>}><Costos/></Suspense>}/>
+          <Route path="/app/obras" element={<Suspense fallback={<p>Abriendo tus obras…</p>}><Obras/></Suspense>}/>
           <Route path="/app/proyectos" element={<StudioProjects/>}/>
           </Route>
           <Route path="/terminos" element={<Terminos />} />
