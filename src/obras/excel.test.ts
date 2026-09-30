@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import ExcelJS from 'exceljs';
 import JSZip from 'jszip';
 import { parseScheduleBuffer } from './excel';
 
@@ -13,5 +14,15 @@ describe('schedule import', () => {
     const tasks = await parseScheduleBuffer(generated);
     expect(tasks).toHaveLength(1);
     expect(tasks[0]).toMatchObject({ name: 'INSTALACIÓN DE MOBILIARIO', start: '2029-10-03', end: '2029-10-09' });
+  });
+
+  it('infers activity and dates when an existing schedule has no header row', async () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Obra');
+    sheet.addRow(['Replanteo', new Date('2029-09-03T12:00:00Z'), new Date('2029-09-04T12:00:00Z')]);
+    sheet.addRow(['Cerramiento provisional', new Date('2029-09-04T12:00:00Z'), new Date('2029-09-07T12:00:00Z')]);
+    const tasks = await parseScheduleBuffer(await workbook.xlsx.writeBuffer());
+    expect(tasks).toHaveLength(2);
+    expect(tasks[0]).toMatchObject({ name: 'Replanteo', start: '2029-09-03', end: '2029-09-04' });
   });
 });

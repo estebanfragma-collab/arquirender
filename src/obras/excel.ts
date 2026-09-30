@@ -38,7 +38,33 @@ function tasksFromRows(rows: unknown[][]) {
     Object.entries(aliases).forEach(([key, names]) => { const alias = names.find(name => cells[normal(name)] !== undefined); if (alias) found[key] = cells[normal(alias)]; });
     if (found.name !== undefined && found.start !== undefined && found.end !== undefined) { header = row; map = found; break; }
   }
-  if (header < 0) return [];
+  if (header < 0) {
+    // Some site schedules omit a formal header and begin directly with
+    // activity + start + end. Infer that layout instead of rejecting it.
+    for (let row = 0; row < Math.min(50, rows.length); row += 1) {
+      const current = rows[row] || [];
+      for (let nameColumn = 0; nameColumn < Math.min(12, current.length); nameColumn += 1) {
+        const name = text(current[nameColumn]);
+        if (!name || date(current[nameColumn]) || /^\d+(?:[.,]\d+)?$/.test(name)) continue;
+        const dateColumns = current
+          .map((value, column) => ({ column, value: date(value) }))
+          .filter(item => item.column > nameColumn && item.column <= nameColumn + 8 && item.value)
+          .map(item => item.column);
+        if (dateColumns.length < 2) continue;
+        const [startColumn, endColumn] = dateColumns;
+        const matchingRows = rows.slice(row).filter(candidate =>
+          text(candidate?.[nameColumn]) && date(candidate?.[startColumn]) && date(candidate?.[endColumn]),
+        );
+        if (matchingRows.length >= 2) {
+          header = row - 1;
+          map = { name: nameColumn, start: startColumn, end: endColumn };
+          break;
+        }
+      }
+      if (map.name !== undefined) break;
+    }
+  }
+  if (map.name === undefined || map.start === undefined || map.end === undefined) return [];
   const tasks: WorkTask[] = [];
   for (let row = header + 1; row < rows.length && tasks.length < 2000; row += 1) {
     const current = rows[row];
