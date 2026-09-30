@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CalendarDays, Check, ClipboardList, Download, HardHat, ImagePlus, Plus, ShieldAlert, Trash2, Upload } from 'lucide-react';
 import { readDocument, useDocument } from '../costos/storage';
 import { totals, validBudget } from '../costos/model';
@@ -43,6 +43,7 @@ export default function Obras() {
   const update = (id: string, transform: (work: Work) => Work) => setDocument(current => ({ ...current, works: current.works.map(work => work.id === id ? transform(work) : work) }));
   const choose = (id: string) => { setDocument(current => ({ ...current, selectedId: id })); setTab('summary'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const back = () => setDocument(current => ({ ...current, selectedId: '' }));
+  useEffect(()=>{if(!ready)return;const id=new URLSearchParams(location.search).get('work');if(id&&document.works.some(work=>work.id===id)&&document.selectedId!==id)setDocument(current=>({...current,selectedId:id}));},[document.selectedId,document.works,ready,setDocument]);
 
   if (!ready) return <main className="works-studio" role="status">Abriendo tus obras…</main>;
   return <main className="works-studio">

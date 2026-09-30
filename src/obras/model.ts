@@ -29,6 +29,7 @@ export type Work = {
   end: string;
   budget: number;
   budgetSource?: WorkBudgetSource;
+  sourceBudgetId?: string;
   status: WorkStatus;
   tasks: WorkTask[];
   team: TeamMember[];
@@ -54,6 +55,7 @@ export function newWork(input: Pick<Work, 'name' | 'client' | 'location' | 'star
 
 const day = 86_400_000;
 export function dateNumber(value: string) { const n = Date.parse(`${value}T12:00:00`); return Number.isFinite(n) ? n : 0; }
+export function addDays(value: string, amount: number) { return new Date(dateNumber(value) + amount * day).toISOString().slice(0, 10); }
 export function duration(task: Pick<WorkTask, 'start' | 'end'>) { return Math.max(1, Math.round((dateNumber(task.end) - dateNumber(task.start)) / day) + 1); }
 export function taskStatus(task: WorkTask, current = today()): TaskStatus {
   if (task.progress >= 100) return 'completed';
@@ -86,7 +88,7 @@ export function validWorksDocument(value: unknown): value is WorksDocument {
   if (!value || typeof value !== 'object') return false;
   const document = value as WorksDocument;
   if (document.version !== 1 || !validText(document.selectedId, 100) || !Array.isArray(document.works) || document.works.length > 200) return false;
-  return document.works.every(work => work && validText(work.id, 100) && validText(work.name, 500) && validText(work.client, 500) && validText(work.location, 500) && validText(work.description) && validDate(work.start) && validDate(work.end) && validNumber(work.budget) && (work.budgetSource === undefined || (work.budgetSource && ['manual','costs'].includes(work.budgetSource.type) && validText(work.budgetSource.label, 1000) && validNumber(work.budgetSource.total) && validText(work.budgetSource.updatedAt, 100))) && ['planning', 'active', 'paused', 'completed'].includes(work.status) && validText(work.createdAt, 100)
+  return document.works.every(work => work && validText(work.id, 100) && validText(work.name, 500) && validText(work.client, 500) && validText(work.location, 500) && validText(work.description) && validDate(work.start) && validDate(work.end) && validNumber(work.budget) && (work.sourceBudgetId === undefined || validText(work.sourceBudgetId, 100)) && (work.budgetSource === undefined || (work.budgetSource && ['manual','costs'].includes(work.budgetSource.type) && validText(work.budgetSource.label, 1000) && validNumber(work.budgetSource.total) && validText(work.budgetSource.updatedAt, 100))) && ['planning', 'active', 'paused', 'completed'].includes(work.status) && validText(work.createdAt, 100)
     && Array.isArray(work.tasks) && work.tasks.length <= 2000 && work.tasks.every(task => task && validText(task.id, 100) && validText(task.name, 1000) && validText(task.phase, 500) && validText(task.responsible, 500) && validDate(task.start) && validDate(task.end) && validNumber(task.progress, 100) && validText(task.notes))
     && Array.isArray(work.team) && work.team.length <= 500 && work.team.every(person => person && validText(person.id, 100) && validText(person.name, 500) && validText(person.role, 500) && validText(person.email, 500) && validText(person.phone, 100))
     && Array.isArray(work.risks) && work.risks.length <= 1000 && work.risks.every(risk => risk && validText(risk.id, 100) && validText(risk.title, 1000) && validText(risk.category, 500) && validNumber(risk.probability, 5) && validNumber(risk.impact, 5) && validText(risk.owner, 500) && validText(risk.response) && ['open', 'controlled', 'closed'].includes(risk.status))
